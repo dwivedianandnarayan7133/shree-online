@@ -40,7 +40,7 @@ In 2026, we have expanded our physical infrastructure into a state-of-the-art di
   adminRole: { type: String, default: 'Managing Director & Main Controller' },
   adminPhone: { type: String, default: '8090794210' },
   adminEmail: { type: String, default: 'kdshree778@gmail.com' },
-  adminPhoto: { type: String, default: '' },
+  adminPhoto: { type: String, default: '/uploads/customer_records/admin-profile-photo.jpg' },
   adminQuote: { 
     type: String, 
     default: `As Managing Director and Main Controller of Shree Online Sewa Kendra, my core mandate is to ensure that our technology stack, cybersecurity standards, operational efficiency, and customer satisfaction operate at absolute peak performance every single day. Modern online services demand rapid execution, stringent data privacy, and uncompromised uptime.
