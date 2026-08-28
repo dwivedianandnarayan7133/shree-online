@@ -1,34 +1,84 @@
-import React, { useState } from 'react';
-import { Layers, Lock, Mail, User, ShieldCheck, ArrowLeft, MapPin, Phone, Sparkles, CheckCircle2, RotateCw, KeyRound } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Layers, Lock, Mail, User, ShieldCheck, ArrowLeft, MapPin, 
+  Phone, Sparkles, CheckCircle2, RotateCw, KeyRound, RefreshCw, 
+  HelpCircle, Eye, EyeOff, Check
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 
+// Generates random 5-character alphanumeric CAPTCHA
+const generateCaptchaCode = () => {
+  const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  let code = '';
+  for (let i = 0; i < 5; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+};
+
 export const Login = ({ setActivePage }) => {
   const { login, loginWithDemo } = useAuth();
-  const [isRegister, setIsRegister] = useState(false);
+  const [viewMode, setViewMode] = useState('signin'); // 'signin', 'register', 'forgot'
 
-  // Form state
+  // Common Form States
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
-  // Registration OTP state
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpCode, setOtpCode] = useState('');
-  const [otpLoading, setOtpLoading] = useState(false);
+  // CAPTCHA State
+  const [captchaCode, setCaptchaCode] = useState('');
+  const [userCaptchaInput, setUserCaptchaInput] = useState('');
+  const [captchaError, setCaptchaError] = useState(false);
 
+  // Registration Gmail OTP State
+  const [registerOtpSent, setRegisterOtpSent] = useState(false);
+  const [registerOtpCode, setRegisterOtpCode] = useState('');
+
+  // Forgot Password Gmail OTP State
+  const [forgotStep, setForgotStep] = useState(1); // 1: Enter Email, 2: Enter OTP & New Password
+  const [forgotOtp, setForgotOtp] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  // UI status
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Handle Standard Sign In
+  const refreshCaptcha = () => {
+    setCaptchaCode(generateCaptchaCode());
+    setUserCaptchaInput('');
+    setCaptchaError(false);
+  };
+
+  useEffect(() => {
+    refreshCaptcha();
+  }, [viewMode]);
+
+  // Validate CAPTCHA
+  const validateCaptcha = () => {
+    if (userCaptchaInput.trim().toUpperCase() !== captchaCode.toUpperCase()) {
+      setCaptchaError(true);
+      setError('Incorrect CAPTCHA code. Please enter the characters shown in the security box.');
+      refreshCaptcha();
+      return false;
+    }
+    setCaptchaError(false);
+    return true;
+  };
+
+  // 1. Handle Sign In
   const handleSignIn = async (e) => {
     e.preventDefault();
     setError('');
     setSuccessMsg('');
-    setLoading(true);
 
+    if (!validateCaptcha()) return;
+
+    setLoading(true);
     try {
       const res = await api.login({ email, password });
       if (res.success) {
@@ -39,23 +89,21 @@ export const Login = ({ setActivePage }) => {
       }
     } catch (err) {
       setError(err.message || 'Authentication failed. Please verify your email and password.');
+      refreshCaptcha();
     } finally {
       setLoading(false);
     }
   };
 
-  // Step 1: Send Registration OTP to Gmail
+  // 2. Handle Register - Step 1: Send Gmail OTP
   const handleSendRegisterOtp = async (e) => {
     e.preventDefault();
-    if (!name || !email || !password) {
-      setError('Please fill in Name, Gmail Address, and Password.');
-      return;
-    }
-
     setError('');
     setSuccessMsg('');
-    setOtpLoading(true);
 
+    if (!validateCaptcha()) return;
+
+    setLoading(true);
     try {
       const res = await api.sendRegisterOtp({
         name,
@@ -66,31 +114,31 @@ export const Login = ({ setActivePage }) => {
       });
 
       if (res.success) {
-        setOtpSent(true);
+        setRegisterOtpSent(true);
         setSuccessMsg(res.message || `A 6-digit OTP has been sent to ${email}. Please check your Gmail.`);
       }
     } catch (err) {
-      setError(err.message || 'Failed to send OTP to Gmail. Please check your email address.');
+      setError(err.message || 'Failed to send OTP to Gmail.');
+      refreshCaptcha();
     } finally {
-      setOtpLoading(false);
+      setLoading(false);
     }
   };
 
-  // Step 2: Verify Registration OTP & Complete Account Creation
+  // 2. Handle Register - Step 2: Verify Gmail OTP
   const handleVerifyRegisterOtp = async (e) => {
     e.preventDefault();
-    if (!otpCode || otpCode.trim().length !== 6) {
-      setError('Please enter the 6-digit OTP sent to your Gmail.');
+    if (!registerOtpCode || registerOtpCode.trim().length !== 6) {
+      setError('Please enter the 6-digit OTP code sent to your Gmail.');
       return;
     }
 
     setError('');
     setLoading(true);
-
     try {
       const res = await api.verifyRegisterOtp({
         email,
-        otp: otpCode.trim()
+        otp: registerOtpCode.trim()
       });
 
       if (res.success) {
@@ -101,6 +149,79 @@ export const Login = ({ setActivePage }) => {
       }
     } catch (err) {
       setError(err.message || 'Invalid OTP code. Please check your Gmail.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 3. Handle Forgot Password - Step 1: Request Reset OTP to Gmail
+  const handleRequestForgotOtp = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccessMsg('');
+
+    if (!validateCaptcha()) return;
+
+    setLoading(true);
+    try {
+      const res = await api.forgotPassword({ email });
+      if (res.success) {
+        setForgotStep(2);
+        setSuccessMsg(res.message || `A 6-digit password recovery code has been sent to ${email}.`);
+      }
+    } catch (err) {
+      setError(err.message || 'No account found with this email address.');
+      refreshCaptcha();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 3. Handle Forgot Password - Step 2: Verify OTP & Reset Password
+  const handleResetPasswordSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccessMsg('');
+
+    if (!forgotOtp || forgotOtp.trim().length !== 6) {
+      setError('Please enter the 6-digit OTP code sent to your Gmail.');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setError('New password must be at least 6 characters.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match. Please re-enter.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await api.resetPassword({
+        email,
+        otp: forgotOtp.trim(),
+        newPassword
+      });
+
+      if (res.success) {
+        setSuccessMsg('Password reset successfully! Logging you in...');
+        setTimeout(async () => {
+          const loginRes = await api.login({ email, password: newPassword });
+          if (loginRes.success) {
+            login(loginRes.user, loginRes.token);
+            if (setActivePage) {
+              setActivePage((loginRes.user?.role === 'admin' || loginRes.user?.role === 'operator') ? 'dashboard' : 'customer-portal');
+            }
+          } else {
+            setViewMode('signin');
+          }
+        }, 1200);
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to reset password. Please check your OTP.');
     } finally {
       setLoading(false);
     }
@@ -118,7 +239,7 @@ export const Login = ({ setActivePage }) => {
       minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: '24px', background: 'radial-gradient(circle at top right, rgba(37,99,235,0.15), transparent 50%), radial-gradient(circle at bottom left, rgba(16,185,129,0.12), transparent 50%), var(--bg-main)'
     }}>
-      <div className="card" style={{ maxWidth: '440px', width: '100%', padding: '8px' }}>
+      <div className="card" style={{ maxWidth: '450px', width: '100%', padding: '8px' }}>
         
         {/* Back to Public Portal Button */}
         {setActivePage && (
@@ -136,41 +257,44 @@ export const Login = ({ setActivePage }) => {
         )}
 
         <div style={{ textAlign: 'center', padding: '16px 16px 14px 16px' }}>
-          <div className="brand-icon-wrapper" style={{ margin: '0 auto 12px auto', width: '52px', height: '52px' }}>
+          <div className="brand-icon-wrapper" style={{ margin: '0 auto 10px auto', width: '48px', height: '48px' }}>
             ⚡
           </div>
-          <h2 style={{ fontSize: '1.6rem', fontWeight: '900', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: '900', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
             Shree Online
           </h2>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', padding: '3px 10px', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: '800', margin: '4px 0 6px 0' }}>
-            <MapPin size={12} /> Mahuli, S.K.N • Est. 2013
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', padding: '2px 10px', borderRadius: 'var(--radius-full)', fontSize: '0.74rem', fontWeight: '800', margin: '4px 0' }}>
+            <MapPin size={11} /> Mahuli, S.K.N • Est. 2013
           </div>
-          <p style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <p style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             One Window. Every Digital Service.
           </p>
         </div>
 
-        {/* Tab Toggle: Sign In vs Register */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', padding: '0 16px 14px 16px' }}>
-          <button
-            type="button"
-            className={`btn btn-sm ${!isRegister ? 'btn-primary' : 'btn-secondary'}`}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-            onClick={() => { setIsRegister(false); setOtpSent(false); setError(''); setSuccessMsg(''); }}
-          >
-            <Lock size={14} /> Sign In
-          </button>
-          <button
-            type="button"
-            className={`btn btn-sm ${isRegister ? 'btn-primary' : 'btn-secondary'}`}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-            onClick={() => { setIsRegister(true); setOtpSent(false); setError(''); setSuccessMsg(''); }}
-          >
-            <User size={14} /> Register with Gmail OTP
-          </button>
-        </div>
+        {/* View Mode Selector Tabs */}
+        {viewMode !== 'forgot' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', padding: '0 16px 14px 16px' }}>
+            <button
+              type="button"
+              className={`btn btn-sm ${viewMode === 'signin' ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+              onClick={() => { setViewMode('signin'); setError(''); setSuccessMsg(''); setRegisterOtpSent(false); }}
+            >
+              <Lock size={14} /> Sign In
+            </button>
+            <button
+              type="button"
+              className={`btn btn-sm ${viewMode === 'register' ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+              onClick={() => { setViewMode('register'); setError(''); setSuccessMsg(''); setRegisterOtpSent(false); }}
+            >
+              <User size={14} /> Register (Gmail OTP)
+            </button>
+          </div>
+        )}
 
         <div className="card-body" style={{ paddingTop: 0 }}>
+          
           {error && (
             <div style={{
               background: 'var(--status-canc-bg)', color: 'var(--status-canc-text)',
@@ -194,7 +318,7 @@ export const Login = ({ setActivePage }) => {
           )}
 
           {/* 1. SIGN IN FORM */}
-          {!isRegister ? (
+          {viewMode === 'signin' && (
             <form onSubmit={handleSignIn}>
               <div className="form-group">
                 <label className="form-label">Email Address</label>
@@ -209,15 +333,81 @@ export const Login = ({ setActivePage }) => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Password</label>
-                <input 
-                  type="password"
-                  className="form-input"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  required
-                />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <label className="form-label" style={{ margin: 0 }}>Password</label>
+                  <button
+                    type="button"
+                    onClick={() => { setViewMode('forgot'); setForgotStep(1); setError(''); setSuccessMsg(''); }}
+                    style={{ background: 'none', border: 'none', color: 'var(--primary-400)', fontSize: '0.74rem', fontWeight: '700', cursor: 'pointer' }}
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type={showPassword ? 'text' : 'password'}
+                    className="form-input"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* INTERACTIVE SECURITY CAPTCHA */}
+              <div className="form-group" style={{ background: 'var(--bg-surface-alt)', padding: '10px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                <label className="form-label" style={{ fontSize: '0.76rem', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '6px' }}>
+                  <ShieldCheck size={13} color="#10b981" />
+                  <span>Security CAPTCHA Verification</span>
+                </label>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  {/* Styled CAPTCHA Display Box */}
+                  <div style={{
+                    padding: '8px 14px',
+                    background: 'linear-gradient(135deg, #1e293b, #0f172a)',
+                    color: '#38bdf8',
+                    fontFamily: 'monospace',
+                    fontSize: '1.25rem',
+                    fontWeight: '900',
+                    letterSpacing: '5px',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1.5px dashed #38bdf8',
+                    userSelect: 'none',
+                    textAlign: 'center',
+                    minWidth: '110px'
+                  }}>
+                    {captchaCode}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={refreshCaptcha}
+                    className="btn btn-secondary btn-sm"
+                    style={{ padding: '8px 10px', height: '42px' }}
+                    title="Refresh CAPTCHA code"
+                  >
+                    <RefreshCw size={14} />
+                  </button>
+
+                  <input 
+                    type="text"
+                    maxLength="5"
+                    className="form-input"
+                    placeholder="Enter code"
+                    value={userCaptchaInput}
+                    onChange={e => setUserCaptchaInput(e.target.value.toUpperCase())}
+                    style={{ textTransform: 'uppercase', letterSpacing: '2px', fontWeight: '800', height: '42px', flex: 1 }}
+                    required
+                  />
+                </div>
               </div>
 
               <button 
@@ -229,10 +419,12 @@ export const Login = ({ setActivePage }) => {
                 {loading ? <><RotateCw size={16} className="animate-spin" /> Signing in...</> : 'Sign In to Shree Online'}
               </button>
             </form>
-          ) : (
-            /* 2. REGISTRATION WITH GMAIL OTP */
+          )}
+
+          {/* 2. REGISTRATION FORM WITH GMAIL OTP */}
+          {viewMode === 'register' && (
             <div>
-              {!otpSent ? (
+              {!registerOtpSent ? (
                 <form onSubmit={handleSendRegisterOtp}>
                   <div className="form-group">
                     <label className="form-label">Full Name</label>
@@ -257,7 +449,7 @@ export const Login = ({ setActivePage }) => {
                       required
                     />
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                      🔒 A 6-digit OTP will be dispatched to this Gmail address for verification.
+                      🔒 A 6-digit verification code will be sent to this Gmail address.
                     </div>
                   </div>
 
@@ -284,13 +476,59 @@ export const Login = ({ setActivePage }) => {
                     />
                   </div>
 
+                  {/* CAPTCHA */}
+                  <div className="form-group" style={{ background: 'var(--bg-surface-alt)', padding: '10px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                    <label className="form-label" style={{ fontSize: '0.76rem', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '6px' }}>
+                      <ShieldCheck size={13} color="#10b981" />
+                      <span>Security CAPTCHA</span>
+                    </label>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <div style={{
+                        padding: '8px 14px',
+                        background: 'linear-gradient(135deg, #1e293b, #0f172a)',
+                        color: '#38bdf8',
+                        fontFamily: 'monospace',
+                        fontSize: '1.25rem',
+                        fontWeight: '900',
+                        letterSpacing: '5px',
+                        borderRadius: 'var(--radius-md)',
+                        border: '1.5px dashed #38bdf8',
+                        userSelect: 'none',
+                        textAlign: 'center',
+                        minWidth: '110px'
+                      }}>
+                        {captchaCode}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={refreshCaptcha}
+                        className="btn btn-secondary btn-sm"
+                        style={{ padding: '8px 10px', height: '42px' }}
+                      >
+                        <RefreshCw size={14} />
+                      </button>
+
+                      <input 
+                        type="text"
+                        maxLength="5"
+                        className="form-input"
+                        placeholder="Code"
+                        value={userCaptchaInput}
+                        onChange={e => setUserCaptchaInput(e.target.value.toUpperCase())}
+                        style={{ textTransform: 'uppercase', letterSpacing: '2px', fontWeight: '800', height: '42px', flex: 1 }}
+                        required
+                      />
+                    </div>
+                  </div>
+
                   <button 
                     type="submit" 
                     className="btn btn-primary btn-lg w-full"
-                    disabled={otpLoading}
+                    disabled={loading}
                     style={{ marginTop: '8px' }}
                   >
-                    {otpLoading ? (
+                    {loading ? (
                       <><RotateCw size={16} className="animate-spin" /> Sending OTP to Gmail...</>
                     ) : (
                       <><Mail size={16} /> Send 6-Digit OTP to Gmail</>
@@ -303,7 +541,7 @@ export const Login = ({ setActivePage }) => {
                     <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Verification OTP dispatched to:</div>
                     <div style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--primary-400)', marginTop: '2px' }}>{email}</div>
                     <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '6px' }}>
-                      Please check your Gmail inbox and spam folder for the 6-digit code.
+                      Please enter the 6-digit code received on your Gmail to activate account.
                     </div>
                   </div>
 
@@ -315,8 +553,8 @@ export const Login = ({ setActivePage }) => {
                       className="form-input"
                       style={{ textAlign: 'center', fontSize: '1.4rem', letterSpacing: '6px', fontWeight: '900', height: '52px' }}
                       placeholder="••••••"
-                      value={otpCode}
-                      onChange={e => setOtpCode(e.target.value.replace(/[^0-9]/g, ''))}
+                      value={registerOtpCode}
+                      onChange={e => setRegisterOtpCode(e.target.value.replace(/[^0-9]/g, ''))}
                       required
                     />
                   </div>
@@ -332,7 +570,7 @@ export const Login = ({ setActivePage }) => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px' }}>
                     <button 
                       type="button"
-                      onClick={() => { setOtpSent(false); setOtpCode(''); }}
+                      onClick={() => { setRegisterOtpSent(false); setRegisterOtpCode(''); }}
                       style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.78rem', cursor: 'pointer' }}
                     >
                       ← Change Details
@@ -340,10 +578,174 @@ export const Login = ({ setActivePage }) => {
                     <button 
                       type="button"
                       onClick={handleSendRegisterOtp}
-                      disabled={otpLoading}
+                      disabled={loading}
                       style={{ background: 'none', border: 'none', color: 'var(--primary-400)', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer' }}
                     >
                       Resend OTP
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          )}
+
+          {/* 3. FORGOT PASSWORD FLOW */}
+          {viewMode === 'forgot' && (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                <button
+                  type="button"
+                  onClick={() => { setViewMode('signin'); setError(''); setSuccessMsg(''); }}
+                  className="btn btn-secondary btn-sm"
+                  style={{ padding: '4px 8px' }}
+                >
+                  <ArrowLeft size={13} />
+                </button>
+                <div>
+                  <h3 style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--text-main)', margin: 0 }}>
+                    Reset Password
+                  </h3>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                    Verify with 6-digit Gmail OTP recovery code
+                  </div>
+                </div>
+              </div>
+
+              {forgotStep === 1 ? (
+                <form onSubmit={handleRequestForgotOtp}>
+                  <div className="form-group">
+                    <label className="form-label">Registered Gmail Address</label>
+                    <input 
+                      type="email"
+                      className="form-input"
+                      placeholder="Enter registered email"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  {/* CAPTCHA */}
+                  <div className="form-group" style={{ background: 'var(--bg-surface-alt)', padding: '10px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                    <label className="form-label" style={{ fontSize: '0.76rem', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '6px' }}>
+                      <ShieldCheck size={13} color="#10b981" />
+                      <span>Security CAPTCHA</span>
+                    </label>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <div style={{
+                        padding: '8px 14px',
+                        background: 'linear-gradient(135deg, #1e293b, #0f172a)',
+                        color: '#38bdf8',
+                        fontFamily: 'monospace',
+                        fontSize: '1.25rem',
+                        fontWeight: '900',
+                        letterSpacing: '5px',
+                        borderRadius: 'var(--radius-md)',
+                        border: '1.5px dashed #38bdf8',
+                        userSelect: 'none',
+                        textAlign: 'center',
+                        minWidth: '110px'
+                      }}>
+                        {captchaCode}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={refreshCaptcha}
+                        className="btn btn-secondary btn-sm"
+                        style={{ padding: '8px 10px', height: '42px' }}
+                      >
+                        <RefreshCw size={14} />
+                      </button>
+
+                      <input 
+                        type="text"
+                        maxLength="5"
+                        className="form-input"
+                        placeholder="Code"
+                        value={userCaptchaInput}
+                        onChange={e => setUserCaptchaInput(e.target.value.toUpperCase())}
+                        style={{ textTransform: 'uppercase', letterSpacing: '2px', fontWeight: '800', height: '42px', flex: 1 }}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    className="btn btn-primary btn-lg w-full"
+                    disabled={loading}
+                    style={{ marginTop: '8px' }}
+                  >
+                    {loading ? (
+                      <><RotateCw size={16} className="animate-spin" /> Dispatching Reset OTP...</>
+                    ) : (
+                      <><KeyRound size={16} /> Send Password Reset OTP to Gmail</>
+                    )}
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={handleResetPasswordSubmit}>
+                  <div style={{ background: 'var(--bg-surface-alt)', padding: '12px', borderRadius: 'var(--radius-md)', textAlign: 'center', marginBottom: '14px' }}>
+                    <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>Enter OTP code sent to:</div>
+                    <div style={{ fontSize: '0.92rem', fontWeight: '800', color: 'var(--primary-400)' }}>{email}</div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">6-Digit Reset OTP</label>
+                    <input 
+                      type="text"
+                      maxLength="6"
+                      className="form-input"
+                      style={{ textAlign: 'center', fontSize: '1.3rem', letterSpacing: '6px', fontWeight: '900', height: '48px' }}
+                      placeholder="••••••"
+                      value={forgotOtp}
+                      onChange={e => setForgotOtp(e.target.value.replace(/[^0-9]/g, ''))}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">New Password</label>
+                    <input 
+                      type="password"
+                      className="form-input"
+                      placeholder="At least 6 characters"
+                      value={newPassword}
+                      onChange={e => setNewPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Confirm New Password</label>
+                    <input 
+                      type="password"
+                      className="form-input"
+                      placeholder="Re-enter new password"
+                      value={confirmPassword}
+                      onChange={e => setConfirmPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    className="btn btn-primary btn-lg w-full"
+                    disabled={loading}
+                    style={{ marginTop: '8px' }}
+                  >
+                    {loading ? 'Updating Password...' : 'Save New Password & Log In'}
+                  </button>
+
+                  <div style={{ textAlign: 'center', marginTop: '12px' }}>
+                    <button 
+                      type="button"
+                      onClick={handleRequestForgotOtp}
+                      disabled={loading}
+                      style={{ background: 'none', border: 'none', color: 'var(--primary-400)', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer' }}
+                    >
+                      Resend Reset OTP
                     </button>
                   </div>
                 </form>
