@@ -1,10 +1,6 @@
 try {
-  require('dotenv').config({ path: require('path').join(__dirname, '../server/.env') });
-} catch (e) {
-  try {
-    require('../server/node_modules/dotenv').config({ path: require('path').join(__dirname, '../server/.env') });
-  } catch (err) {}
-}
+  require('dotenv').config();
+} catch (e) {}
 
 const app = require('../server/app');
 const connectDB = require('../server/config/db');
@@ -12,6 +8,18 @@ const connectDB = require('../server/config/db');
 let isConnected = false;
 
 module.exports = async (req, res) => {
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization'
+  );
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (!isConnected) {
     try {
       await connectDB();
