@@ -1,84 +1,122 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   LayoutDashboard, Inbox, Camera, FileText, Sparkles, 
   Archive, QrCode, Globe, Printer, Scan, Receipt, Settings, 
   UserCheck, ShieldCheck, HeartHandshake, Award, Menu, X,
-  ChevronDown, Sun, Moon, Bell, LogOut, Phone, MessageCircle, MapPin
+  ChevronDown, Sun, Moon, Bell, LogOut, Phone, MessageCircle, MapPin,
+  ExternalLink, Layers, CheckCircle2, UserPlus, IndianRupee, HardDrive
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { useSocket } from '../context/SocketContext';
 
 export const NavigationBar = ({ activePage, setActivePage }) => {
   const { user, logout, loginWithDemo } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { notifications, clearNotifications } = useSocket();
+  
+  const [openDropdown, setOpenDropdown] = useState(null); // 'workspace', 'studios', 'operations', 'admin' or null
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showNotifs, setShowNotifs] = useState(false);
+
+  const navRef = useRef(null);
 
   const isAdmin = user?.role === 'admin';
   const isOperator = user?.role === 'admin' || user?.role === 'operator';
 
-  // Navigation Items
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (navRef.current && !navRef.current.contains(e.target)) {
+        setOpenDropdown(null);
+        setShowUserMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Main Categories with Dropdown Menus
   const navCategories = [
     {
-      category: 'Workspace',
+      id: 'workspace',
+      label: 'Workspace',
+      icon: LayoutDashboard,
+      role: 'all',
       items: [
-        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, role: 'operator' },
-        { id: 'requests', label: 'Request Pipeline', icon: Inbox, role: 'operator' },
-        { id: 'customer-portal', label: 'Customer Portal', icon: UserCheck, role: 'all' },
-        { id: 'about-us', label: 'About Us (Est. 2013)', icon: Award, role: 'all' },
+        { id: 'dashboard', label: 'Command Center Dashboard', desc: 'Real-time KPIs, live queue & quick tools', icon: LayoutDashboard, role: 'operator' },
+        { id: 'requests', label: 'Request Pipeline', desc: 'Manage customer submissions & orders', icon: Inbox, role: 'operator' },
+        { id: 'customer-portal', label: 'Customer Portal', desc: 'Submit form & live tracking status', icon: UserCheck, role: 'all' },
+        { id: 'about-us', label: 'About Us & Leadership', desc: 'Est. 2013 history & owner/admin messages', icon: Award, role: 'all' },
       ]
     },
     {
-      category: 'Digital Studios',
+      id: 'studios',
+      label: 'Digital Studios',
+      icon: Sparkles,
+      role: 'all',
       items: [
-        { id: 'passport-photo', label: 'Passport Photo Studio', icon: Camera, role: 'all' },
-        { id: 'conversion-studio', label: 'Doc Restore & OCR', icon: Sparkles, role: 'all' },
-        { id: 'document-tools', label: 'Document & PDF', icon: FileText, role: 'all' },
-        { id: 'file-tools', label: 'ZIP & Files', icon: Archive, role: 'all' },
-        { id: 'utility-hub', label: 'QR Utilities', icon: QrCode, role: 'all' },
+        { id: 'passport-photo', label: 'Passport Photo Studio', desc: '6/line A4 sheet & exam sky-blue BG', icon: Camera, role: 'all' },
+        { id: 'conversion-studio', label: 'Old Doc Restore & OCR', desc: 'Extract scans to Word (.docx) & Excel', icon: Sparkles, role: 'all' },
+        { id: 'document-tools', label: 'Document & PDF Studio', desc: 'Images to PDF, Merge, Split & Compress', icon: FileText, role: 'all' },
+        { id: 'file-tools', label: 'Compressor & ZIP Studio', desc: 'Batch compression & extraction', icon: Archive, role: 'all' },
+        { id: 'utility-hub', label: 'Utilities (QR & Barcode)', desc: 'Instant QR code & barcode generator', icon: QrCode, role: 'all' },
       ]
     },
     {
-      category: 'Operations & POS',
+      id: 'operations',
+      label: 'Operations & POS',
+      icon: Printer,
+      role: 'all',
       items: [
-        { id: 'website-launcher', label: 'Custom Browser', icon: Globe, role: 'all' },
-        { id: 'print-manager', label: 'Print Manager', icon: Printer, role: 'operator' },
-        { id: 'scanner-studio', label: 'Scanner Studio', icon: Scan, role: 'operator' },
-        { id: 'billing-manager', label: 'Billing & POS', icon: Receipt, role: 'operator' },
+        { id: 'website-launcher', label: 'Custom Browser & Gateway', desc: 'In-portal ad-blocked govt browser', icon: Globe, role: 'all' },
+        { id: 'print-manager', label: 'Print Job Manager', desc: 'A4/Color queue & printer telemetry', icon: Printer, role: 'operator' },
+        { id: 'scanner-studio', label: 'Scanner Studio', desc: 'Device presets, de-skew & scan to PDF', icon: Scan, role: 'operator' },
+        { id: 'billing-manager', label: 'Billing & POS Invoices', desc: 'Thermal receipts & GST calculations', icon: Receipt, role: 'operator' },
       ]
     }
   ];
 
   if (isAdmin) {
     navCategories.push({
-      category: 'MD Controller',
+      id: 'admin',
+      label: 'MD Controller',
+      icon: Settings,
+      role: 'admin',
       items: [
-        { id: 'admin-panel', label: 'Admin Controller', icon: Settings, role: 'admin' }
+        { id: 'admin-panel', label: 'Admin Control Center', desc: 'Static pages, operators, catalog & retention', icon: Settings, role: 'admin' }
       ]
     });
   }
 
-  const handleNavClick = (pageId) => {
+  const handleItemClick = (pageId) => {
     setActivePage(pageId);
+    setOpenDropdown(null);
     setMobileDrawerOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const getActiveCategory = () => {
+    for (const cat of navCategories) {
+      if (cat.items.some(it => it.id === activePage)) {
+        return cat.id;
+      }
+    }
+    return 'workspace';
+  };
+
+  const activeCatId = getActiveCategory();
+
   return (
-    <header className="universal-nav-header">
-      {/* Upper Brand & Controls Bar */}
+    <header className="universal-nav-header" ref={navRef}>
       <div className="universal-nav-top">
-        <div className="brand-logo" onClick={() => handleNavClick('dashboard')} style={{ cursor: 'pointer' }}>
+        {/* Brand */}
+        <div className="brand-logo" onClick={() => handleItemClick('dashboard')} style={{ cursor: 'pointer' }}>
           <div className="brand-icon-wrapper">
             ⚡
           </div>
           <div>
             <div className="brand-text-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span>Shree Online</span>
-              <span className="badge badge-primary" style={{ fontSize: '0.7rem', padding: '2px 8px' }}>
+              <span className="badge badge-primary" style={{ fontSize: '0.68rem', padding: '2px 8px' }}>
                 Mahuli, S.K.N
               </span>
             </div>
@@ -86,42 +124,84 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
           </div>
         </div>
 
-        {/* Center Notice & Helplines (Desktop & Tablet) */}
-        <div className="nav-center-desk-info">
-          <button 
-            onClick={() => handleNavClick('about-us')}
-            className="btn btn-sm btn-outline"
-            style={{ fontSize: '0.75rem', padding: '4px 10px', borderColor: 'rgba(245, 158, 11, 0.4)', color: '#f59e0b' }}
-          >
-            <Award size={13} />
-            <span>Est. 2013 (13+ Yrs)</span>
-          </button>
+        {/* Compact Dropdown Menus (Desktop / Laptop / Tablet) */}
+        <nav className="desktop-dropdown-nav">
+          {navCategories.map(cat => {
+            const isCatActive = activeCatId === cat.id;
+            const isOpen = openDropdown === cat.id;
+            const CatIcon = cat.icon;
 
-          <a 
-            href="https://wa.me/919161400719" 
-            target="_blank" 
-            rel="noreferrer" 
-            className="desk-pill"
-            style={{ color: '#25d366', textDecoration: 'none', fontSize: '0.75rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '5px' }}
-          >
-            <MessageCircle size={14} />
-            <span>Owner: 9161400719</span>
-          </a>
+            const visibleItems = cat.items.filter(item => {
+              if (item.role === 'all') return true;
+              if (item.role === 'operator' && isOperator) return true;
+              if (item.role === 'admin' && isAdmin) return true;
+              return false;
+            });
 
-          <a 
-            href="https://wa.me/918090794210" 
-            target="_blank" 
-            rel="noreferrer" 
-            className="desk-pill"
-            style={{ color: '#25d366', textDecoration: 'none', fontSize: '0.75rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '5px' }}
-          >
-            <MessageCircle size={14} />
-            <span>Admin MD: 8090794210</span>
-          </a>
-        </div>
+            if (visibleItems.length === 0) return null;
+
+            return (
+              <div key={cat.id} className="nav-dropdown-wrapper">
+                <button
+                  type="button"
+                  onClick={() => setOpenDropdown(isOpen ? null : cat.id)}
+                  className={`nav-dropdown-btn ${isCatActive ? 'active' : ''} ${isOpen ? 'open' : ''}`}
+                >
+                  <CatIcon size={16} />
+                  <span>{cat.label}</span>
+                  <ChevronDown size={14} className={`caret ${isOpen ? 'rotate' : ''}`} />
+                </button>
+
+                {isOpen && (
+                  <div className="nav-dropdown-menu">
+                    <div className="dropdown-menu-header">
+                      <span>{cat.label} Services</span>
+                    </div>
+                    <div className="dropdown-menu-items">
+                      {visibleItems.map(item => {
+                        const ItemIcon = item.icon;
+                        const isCurrent = activePage === item.id;
+                        return (
+                          <div
+                            key={item.id}
+                            onClick={() => handleItemClick(item.id)}
+                            className={`dropdown-menu-item ${isCurrent ? 'active' : ''}`}
+                          >
+                            <div className="dropdown-item-icon">
+                              <ItemIcon size={18} />
+                            </div>
+                            <div className="dropdown-item-info">
+                              <div className="dropdown-item-title">{item.label}</div>
+                              <div className="dropdown-item-desc">{item.desc}</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </nav>
 
         {/* Right Controls */}
         <div className="nav-actions">
+          {/* Direct WhatsApp Quick Helplines */}
+          <div className="nav-quick-helplines">
+            <a 
+              href="https://wa.me/919161400719" 
+              target="_blank" 
+              rel="noreferrer" 
+              className="desk-pill"
+              style={{ color: '#25d366', textDecoration: 'none', fontSize: '0.74rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '5px' }}
+              title="Chat with Owner Krishan Narayan Dwivedi"
+            >
+              <MessageCircle size={13} />
+              <span>Owner: 9161400719</span>
+            </a>
+          </div>
+
           {/* Theme Toggle */}
           <button 
             className="theme-toggle-btn" 
@@ -143,7 +223,7 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
                 background: 'var(--primary-600)', color: '#fff',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: '700'
               }}>
-                {user?.name ? user.name[0].toUpperCase() : 'U'}
+                {user?.name ? user.name[0].toUpperCase() : 'K'}
               </div>
               <span style={{ fontWeight: '700', fontSize: '0.82rem' }}>
                 {user?.name?.split(' ')[0] || 'Kamal'}
@@ -211,44 +291,6 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
         </div>
       </div>
 
-      {/* Horizontal Navigation Ribbon (Desktop, Laptops & Wide Tablets) */}
-      <nav className="universal-nav-ribbon">
-        <div className="ribbon-inner">
-          {navCategories.map((cat, cIdx) => {
-            const visibleItems = cat.items.filter(item => {
-              if (item.role === 'all') return true;
-              if (item.role === 'operator' && isOperator) return true;
-              if (item.role === 'admin' && isAdmin) return true;
-              return false;
-            });
-
-            if (visibleItems.length === 0) return null;
-
-            return (
-              <div key={cIdx} className="ribbon-group">
-                <div className="ribbon-group-label">{cat.category}</div>
-                <div className="ribbon-group-items">
-                  {visibleItems.map(item => {
-                    const Icon = item.icon;
-                    const isActive = activePage === item.id;
-                    return (
-                      <button
-                        key={item.id}
-                        onClick={() => handleNavClick(item.id)}
-                        className={`ribbon-item ${isActive ? 'active' : ''}`}
-                      >
-                        <Icon size={16} />
-                        <span>{item.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </nav>
-
       {/* Mobile Touch Navigation Drawer */}
       {mobileDrawerOpen && (
         <div className="mobile-nav-drawer-overlay" onClick={() => setMobileDrawerOpen(false)}>
@@ -264,7 +306,7 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
             </div>
 
             <div className="drawer-content">
-              {navCategories.map((cat, cIdx) => {
+              {navCategories.map(cat => {
                 const visibleItems = cat.items.filter(item => {
                   if (item.role === 'all') return true;
                   if (item.role === 'operator' && isOperator) return true;
@@ -275,8 +317,8 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
                 if (visibleItems.length === 0) return null;
 
                 return (
-                  <div key={cIdx} className="drawer-section">
-                    <div className="drawer-section-title">{cat.category}</div>
+                  <div key={cat.id} className="drawer-section">
+                    <div className="drawer-section-title">{cat.label}</div>
                     <div className="drawer-section-items">
                       {visibleItems.map(item => {
                         const Icon = item.icon;
@@ -284,7 +326,7 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
                         return (
                           <button
                             key={item.id}
-                            onClick={() => handleNavClick(item.id)}
+                            onClick={() => handleItemClick(item.id)}
                             className={`drawer-item ${isActive ? 'active' : ''}`}
                           >
                             <Icon size={18} />
