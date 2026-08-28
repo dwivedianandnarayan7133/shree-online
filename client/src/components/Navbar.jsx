@@ -1,13 +1,13 @@
 ﻿import React, { useState } from 'react';
 import { 
   ShieldCheck, Moon, Sun, Bell, User as UserIcon, 
-  Layers, LogOut, CheckCircle, Sparkles, ChevronDown, Laptop, MapPin
+  Layers, LogOut, CheckCircle, Sparkles, ChevronDown, Laptop, MapPin, Award
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useSocket } from '../context/SocketContext';
 
-export const Navbar = ({ onOpenCustomerSubmit }) => {
+export const Navbar = ({ onOpenCustomerSubmit, onOpenAboutUs }) => {
   const { user, logout, loginWithDemo } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { notifications, clearNotifications } = useSocket();
@@ -17,7 +17,7 @@ export const Navbar = ({ onOpenCustomerSubmit }) => {
   return (
     <header className="navbar">
       {/* Brand & Tagline */}
-      <div className="brand-logo">
+      <div className="brand-logo" onClick={onOpenAboutUs} style={{ cursor: 'pointer' }} title="View Shree Online Sewa Kendra (Est. 2013)">
         <div className="brand-icon-wrapper">
           <Layers size={22} />
         </div>
@@ -28,15 +28,29 @@ export const Navbar = ({ onOpenCustomerSubmit }) => {
               Mahuli, S.K.N
             </span>
           </div>
-          <div className="brand-tagline">Digital Service Center • One Window. Every Digital Service.</div>
+          <div className="brand-tagline">Sewa Kendra (Est. 2013) • One Window. Every Digital Service.</div>
         </div>
       </div>
 
-      {/* Center Actions / AdShield Status */}
+      {/* Center Actions / AdShield & Est 2013 Status */}
       <div className="flex items-center gap-3">
+        <button 
+          onClick={onOpenAboutUs}
+          style={{
+            background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.3)',
+            color: '#f59e0b', padding: '5px 12px', borderRadius: 'var(--radius-full)',
+            fontSize: '0.75rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px',
+            cursor: 'pointer'
+          }}
+          title="Learn about Shree Online Sewa Kendra history & leadership"
+        >
+          <Award size={14} />
+          <span>Est. 2013 (13+ Yrs)</span>
+        </button>
+
         <div className="notice-shield" style={{ padding: '6px 14px', borderRadius: 'var(--radius-full)', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: '700' }}>
           <ShieldCheck size={16} />
-          <span>AdShield Active • Mahuli, S.K.N Central Hub</span>
+          <span>AdShield Active • Mahuli, S.K.N</span>
         </div>
       </div>
 

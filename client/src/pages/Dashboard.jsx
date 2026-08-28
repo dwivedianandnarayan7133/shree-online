@@ -1,7 +1,8 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { 
   Users, Inbox, Printer, Sparkles, IndianRupee, HardDrive, 
-  Clock, CheckCircle, PlusCircle, ArrowRight, Eye, RefreshCw 
+  Clock, CheckCircle, PlusCircle, ArrowRight, Eye, RefreshCw,
+  Award, HeartHandshake, ShieldCheck, MessageCircle, Phone
 } from 'lucide-react';
 import { api } from '../services/api';
 import { StatusBadge } from '../components/StatusBadge';
@@ -62,6 +63,111 @@ export const Dashboard = ({ setActivePage }) => {
         </div>
       </div>
 
+      {/* FEATURED: ABOUT SHREE ONLINE SEWA KENDRA (EST. 2013) & LEADERSHIP SHOWCASE */}
+      <div className="card" style={{
+        marginBottom: '24px',
+        background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(16, 185, 129, 0.06) 50%, rgba(99, 102, 241, 0.1) 100%)',
+        borderColor: 'rgba(99, 102, 241, 0.3)',
+        overflow: 'hidden'
+      }}>
+        <div className="card-body" style={{ padding: '22px 24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{
+                width: '46px', height: '46px', borderRadius: 'var(--radius-md)',
+                background: 'linear-gradient(135deg, #f59e0b, #3b82f6)', color: '#ffffff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>
+                <Award size={26} />
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h2 style={{ fontSize: '1.2rem', fontWeight: '900', color: 'var(--text-main)' }}>
+                    Shree Online Sewa Kendra
+                  </h2>
+                  <span className="badge badge-completed" style={{ fontSize: '0.72rem', padding: '2px 8px' }}>
+                    Est. 2013 • 13+ Years Trust
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                  Main Market, Mahuli, Sant Kabir Nagar (S.K.N), U.P. • Pioneer in Online Operations & Digital Seva
+                </div>
+              </div>
+            </div>
+
+            <button 
+              className="btn btn-secondary btn-sm"
+              onClick={() => setActivePage('about-us')}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <span>View Full History & Leadership Messages</span>
+              <ArrowRight size={14} />
+            </button>
+          </div>
+
+          {/* Mini Leadership Avatars & Quote Previews */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
+            {/* Owner Quote Snapshot */}
+            <div style={{
+              background: 'var(--bg-surface)', border: '1px solid var(--border-color)',
+              borderRadius: 'var(--radius-md)', padding: '14px 16px', display: 'flex', gap: '14px', alignItems: 'center'
+            }}>
+              <div style={{
+                width: '56px', height: '56px', borderRadius: '50%', flexShrink: 0,
+                background: 'linear-gradient(135deg, #f59e0b, #ef4444)', padding: '2px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>
+                <div style={{
+                  width: '100%', height: '100%', borderRadius: '50%', background: '#1e293b',
+                  color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontWeight: '900', fontSize: '1rem', border: '1.5px solid #fff'
+                }}>
+                  AD
+                </div>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ fontWeight: '800', fontSize: '0.86rem', color: 'var(--text-main)' }}>Anand Narayan Dwivedi</div>
+                  <span style={{ fontSize: '0.68rem', color: '#f59e0b', fontWeight: '800' }}>Founder & Owner</span>
+                </div>
+                <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '2px', lineHeight: '1.4' }}>
+                  "Serving Mahuli, S.K.N since 2013 with 100% reliable government applications and customer trust."
+                </div>
+              </div>
+            </div>
+
+            {/* Admin Quote Snapshot */}
+            <div style={{
+              background: 'var(--bg-surface)', border: '1px solid var(--border-color)',
+              borderRadius: 'var(--radius-md)', padding: '14px 16px', display: 'flex', gap: '14px', alignItems: 'center'
+            }}>
+              <div style={{
+                width: '56px', height: '56px', borderRadius: '50%', flexShrink: 0,
+                background: 'linear-gradient(135deg, #10b981, #06b6d4)', padding: '2px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>
+                <div style={{
+                  width: '100%', height: '100%', borderRadius: '50%', background: '#0f172a',
+                  color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontWeight: '900', fontSize: '1rem', border: '1.5px solid #fff'
+                }}>
+                  KV
+                </div>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ fontWeight: '800', fontSize: '0.86rem', color: 'var(--text-main)' }}>Krish Verma</div>
+                  <span style={{ fontSize: '0.68rem', color: '#10b981', fontWeight: '800' }}>Technical Admin</span>
+                </div>
+                <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '2px', lineHeight: '1.4' }}>
+                  "Engineered with AdShield protection, WhatsApp OTP & AI document studios for zero-error speed."
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* AdShield Security Banner */}
       <AdShieldBanner />
 
@@ -92,7 +198,7 @@ export const Dashboard = ({ setActivePage }) => {
             <div className="stat-val" style={{ color: 'var(--accent-emerald)' }}>{stats?.completedRequests ?? 1}</div>
             <div className="stat-label">Completed Deliveries</div>
           </div>
-          <div className="stat-icon-wrapper" style={{ background: 'rgba(16, 185, 129, 0.15)', color: 'var(--accent-emerald)' }}>
+          <div className="stat-icon-wrapper" style={{ background: 'rgba(168, 85, 247, 0.15)', color: 'var(--accent-purple)' }}>
             <CheckCircle size={24} />
           </div>
         </div>
@@ -122,7 +228,7 @@ export const Dashboard = ({ setActivePage }) => {
             <div className="stat-val" style={{ fontSize: '1.4rem' }}>{stats?.storageMb ?? '0.00'} MB</div>
             <div className="stat-label">Temp Storage (Auto-Clean)</div>
           </div>
-          <div className="stat-icon-wrapper" style={{ background: 'rgba(168, 85, 247, 0.15)', color: 'var(--accent-purple)' }}>
+          <div className="stat-icon-wrapper" style={{ background: 'rgba(16, 185, 129, 0.15)', color: 'var(--accent-emerald)' }}>
             <HardDrive size={24} />
           </div>
         </div>
@@ -163,18 +269,14 @@ export const Dashboard = ({ setActivePage }) => {
                 <tbody>
                   {recentRequests.length === 0 ? (
                     <tr>
-                      <td colSpan="5" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
-                        No service requests recorded today.
+                      <td colSpan="5" style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+                        No active service requests today.
                       </td>
                     </tr>
                   ) : (
-                    recentRequests.map((req) => (
+                    recentRequests.map(req => (
                       <tr key={req._id}>
-                        <td>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: '700', color: 'var(--primary-600)' }}>
-                            {req.requestId}
-                          </span>
-                        </td>
+                        <td><span className="font-mono font-bold text-primary">{req.requestId}</span></td>
                         <td>
                           <div style={{ fontWeight: '600' }}>{req.customerName}</div>
                           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{req.customerPhone}</div>
@@ -186,7 +288,7 @@ export const Dashboard = ({ setActivePage }) => {
                             className="btn btn-secondary btn-sm"
                             onClick={() => setActivePage('requests')}
                           >
-                            Open
+                            <Eye size={12} /> Manage
                           </button>
                         </td>
                       </tr>
@@ -202,53 +304,55 @@ export const Dashboard = ({ setActivePage }) => {
         <div className="card">
           <div className="card-header">
             <div className="card-title">
-              <Printer size={18} color="var(--accent-amber)" />
+              <Printer size={18} color="var(--accent-cyan)" />
               <span>Active Print Queue</span>
             </div>
             <button className="btn btn-secondary btn-sm" onClick={() => setActivePage('print-manager')}>
-              Manage Queue
+              Queue <ArrowRight size={14} />
             </button>
           </div>
-          <div className="card-body" style={{ padding: '16px' }}>
+          <div className="card-body" style={{ padding: 0 }}>
             {printJobs.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--text-muted)' }}>
-                <Printer size={36} style={{ margin: '0 auto 10px auto', opacity: 0.4 }} />
-                <p style={{ fontSize: '0.88rem' }}>No pending print jobs in queue.</p>
+              <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+                No print jobs pending.
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {printJobs.map(job => (
-                  <div 
-                    key={job._id}
-                    style={{
-                      padding: '12px', background: 'var(--bg-surface-alt)',
-                      borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)',
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontWeight: '700', fontSize: '0.88rem' }}>{job.title}</div>
-                      <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
-                        {job.copies} Copies • {job.paperSize} • {job.colorMode === 'bw' ? 'B&W' : 'Color'} • ₹{job.cost}
-                      </div>
-                    </div>
-                    <span className="badge badge-processing" style={{ fontSize: '0.7rem' }}>
-                      {job.status}
-                    </span>
-                  </div>
-                ))}
+              <div className="table-wrapper" style={{ border: 'none', borderRadius: 0 }}>
+                <table className="custom-table">
+                  <thead>
+                    <tr>
+                      <th>Title</th>
+                      <th>Copies</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {printJobs.map(job => (
+                      <tr key={job._id}>
+                        <td>
+                          <div style={{ fontWeight: '600' }}>{job.title}</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{job.paperSize} • {job.colorMode}</div>
+                        </td>
+                        <td>{job.copies}</td>
+                        <td><StatusBadge status={job.status} /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      <DocPreviewModal 
-        isOpen={Boolean(previewDoc)}
-        onClose={() => setPreviewDoc(null)}
-        fileUrl={previewDoc?.url}
-        fileName={previewDoc?.name}
-      />
+      {previewDoc && (
+        <DocPreviewModal 
+          isOpen={Boolean(previewDoc)} 
+          onClose={() => setPreviewDoc(null)} 
+          fileUrl={previewDoc.url}
+          fileName={previewDoc.name}
+        />
+      )}
     </div>
   );
 };

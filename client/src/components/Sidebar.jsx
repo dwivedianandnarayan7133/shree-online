@@ -2,7 +2,7 @@
 import { 
   LayoutDashboard, Inbox, Camera, FileText, Sparkles, 
   Archive, QrCode, Globe, Printer, Scan, Receipt, Settings, 
-  UserCheck, ShieldCheck
+  UserCheck, ShieldCheck, HeartHandshake, Award
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -18,6 +18,7 @@ export const Sidebar = ({ activePage, setActivePage }) => {
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, role: 'operator' },
         { id: 'requests', label: 'Request Pipeline', icon: Inbox, role: 'operator' },
         { id: 'customer-portal', label: 'Customer Portal', icon: UserCheck, role: 'all' },
+        { id: 'about-us', label: 'About Us & Leadership', icon: Award, role: 'all' },
       ]
     },
     {

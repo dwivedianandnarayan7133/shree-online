@@ -2,6 +2,7 @@
 import { useAuth } from './context/AuthContext';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
+import { Footer } from './components/Footer';
 import { WhatsAppChatWidget } from './components/WhatsAppChatWidget';
 import { Dashboard } from './pages/Dashboard';
 import { CustomerPortal } from './pages/CustomerPortal';
@@ -16,6 +17,7 @@ import { PrintManager } from './pages/PrintManager';
 import { ScannerStudio } from './pages/ScannerStudio';
 import { BillingManager } from './pages/BillingManager';
 import { AdminPanel } from './pages/AdminPanel';
+import { AboutUs } from './pages/AboutUs';
 import { Login } from './pages/Login';
 
 export default function App() {
@@ -46,6 +48,8 @@ export default function App() {
         return <Dashboard setActivePage={setActivePage} />;
       case 'customer-portal':
         return <CustomerPortal />;
+      case 'about-us':
+        return <AboutUs setActivePage={setActivePage} />;
       case 'requests':
         return <RequestManager setActivePage={setActivePage} />;
       case 'passport-photo':
@@ -74,12 +78,19 @@ export default function App() {
   };
 
   return (
-    <div>
-      <Navbar onOpenCustomerSubmit={() => setActivePage('customer-portal')} />
-      <div className="app-container">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <Navbar onOpenCustomerSubmit={() => setActivePage('customer-portal')} onOpenAboutUs={() => setActivePage('about-us')} />
+      <div className="app-container" style={{ flex: 1 }}>
         <Sidebar activePage={activePage} setActivePage={setActivePage} />
-        <main className="main-content">
-          {renderActivePage()}
+        <main className="main-content" style={{ display: 'flex', flexDirection: 'column', flex: 1, paddingBottom: activePage === 'website-launcher' ? 0 : '16px' }}>
+          <div style={{ flex: 1 }}>
+            {renderActivePage()}
+          </div>
+
+          {/* Global Footer on ALL pages except the in-portal custom browser */}
+          {activePage !== 'website-launcher' && (
+            <Footer setActivePage={setActivePage} />
+          )}
         </main>
       </div>
 
