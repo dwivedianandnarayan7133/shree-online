@@ -6,7 +6,7 @@ const zlib = require('zlib');
 let cookieJar = {};
 let proxyCache = {};
 
-// Clean cross-platform HTTPS Agent
+// Clean standard agents with relaxed timeout and rejectUnauthorized false
 const httpsAgent = new https.Agent({
   rejectUnauthorized: false,
   keepAlive: false
@@ -67,12 +67,17 @@ function makeProxyRequest(targetUrl, req, options = {}) {
       method: req.method || 'GET',
       headers: requestHeaders,
       agent,
-      timeout: 10000
+      timeout: 8000
     };
 
-    const proxyReq = client.request(targetUrl, requestOptions, (proxyRes) => {
-      resolve({ proxyRes, parsedUrl, targetUrl });
-    });
+    let proxyReq;
+    try {
+      proxyReq = client.request(targetUrl, requestOptions, (proxyRes) => {
+        resolve({ proxyRes, parsedUrl, targetUrl });
+      });
+    } catch (err) {
+      return reject(err);
+    }
 
     proxyReq.on('error', (err) => {
       if (isHttps && !isFallback) {
@@ -87,14 +92,7 @@ function makeProxyRequest(targetUrl, req, options = {}) {
 
     proxyReq.on('timeout', () => {
       proxyReq.destroy();
-      if (isHttps && !isFallback) {
-        const fallbackHttpUrl = targetUrl.replace(/^https:\/\//i, 'http://');
-        makeProxyRequest(fallbackHttpUrl, req, { isFallback: true })
-          .then(resolve)
-          .catch(reject);
-      } else {
-        reject(new Error('Connection timed out. Remote portal is slow or unreachable.'));
-      }
+      reject(new Error('Connection timed out. Remote server is slow or enforcing anti-proxy firewall.'));
     });
 
     if (req.method === 'POST' && req.body) {
@@ -107,14 +105,14 @@ function makeProxyRequest(targetUrl, req, options = {}) {
 }
 
 const browseUrl = async (req, res) => {
+  let targetUrl = req.query.url;
+  const adshield = req.query.adshield !== 'false';
+
+  if (!targetUrl) {
+    return renderGatewayLanding(res, 'https://www.sarkariresult.com');
+  }
+
   try {
-    let targetUrl = req.query.url;
-    const adshield = req.query.adshield !== 'false';
-
-    if (!targetUrl) {
-      return res.status(400).send('URL query parameter required.');
-    }
-
     targetUrl = targetUrl.trim().replace(/([^:])\/\/+/g, '$1/');
 
     if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
@@ -179,9 +177,7 @@ const browseUrl = async (req, res) => {
       let chunks = [];
       proxyRes.on('data', chunk => chunks.push(chunk));
       proxyRes.on('error', (err) => {
-        if (!res.headersSent) {
-          renderFallbackNotice(res, targetUrl, err.message);
-        }
+        renderGatewayLanding(res, targetUrl, err.message);
       });
       proxyRes.on('end', () => {
         try {
@@ -198,7 +194,6 @@ const browseUrl = async (req, res) => {
           let html = buffer.toString('utf-8');
           const baseUrl = `${resolvedUrl.protocol}//${resolvedUrl.host}`;
 
-          // Inject Base href
           if (html.includes('<head>')) {
             html = html.replace('<head>', `<head><base href="${baseUrl}/" />`);
           } else if (html.includes('<HEAD>')) {
@@ -214,7 +209,7 @@ const browseUrl = async (req, res) => {
           });
           res.end(html);
         } catch (processErr) {
-          renderFallbackNotice(res, targetUrl, processErr.message);
+          renderGatewayLanding(res, targetUrl, processErr.message);
         }
       });
     } else {
@@ -223,45 +218,52 @@ const browseUrl = async (req, res) => {
       proxyRes.pipe(res);
     }
   } catch (err) {
-    renderFallbackNotice(res, req.query.url, err.message);
+    renderGatewayLanding(res, targetUrl, err.message);
   }
 };
 
-function renderFallbackNotice(res, targetUrl, errorMsg) {
+function renderGatewayLanding(res, targetUrl, errorMsg = '') {
   if (res.headersSent) return;
-  const safeUrl = targetUrl || 'https://www.bing.com';
+  const safeUrl = targetUrl || 'https://www.sarkariresult.com';
+  
   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
   res.end(`
     <!DOCTYPE html>
-    <html>
+    <html lang="en">
     <head>
       <meta charset="utf-8" />
       <title>Shree Online Official Gateway</title>
       <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 40px; display: flex; align-items: center; justify-content: center; min-height: 100vh; box-sizing: border-box; }
-        .card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 36px 28px; max-width: 540px; width: 100%; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-        .icon { font-size: 40px; margin-bottom: 12px; }
-        h2 { font-size: 20px; font-weight: 800; color: #38bdf8; margin: 0 0 8px 0; }
-        p { font-size: 13px; color: #94a3b8; line-height: 1.6; margin: 0 0 20px 0; }
-        .url-box { background: #0f172a; padding: 8px 12px; border-radius: 8px; font-family: monospace; font-size: 12px; color: #a7f3d0; word-break: break-all; margin-bottom: 24px; border: 1px solid #334155; }
-        .btn-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-        .btn-launch { background: #2563eb; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 800; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
-        .btn-reload { background: #334155; color: #e2e8f0; padding: 12px 18px; border-radius: 8px; border: none; font-weight: 700; font-size: 13px; cursor: pointer; }
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 24px; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        .gateway-card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 36px 28px; max-width: 560px; width: 100%; text-align: center; box-shadow: 0 14px 40px rgba(0,0,0,0.35); }
+        .badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 800; margin-bottom: 12px; }
+        h1 { font-size: 22px; font-weight: 900; color: #ffffff; margin: 0 0 8px 0; }
+        p { font-size: 13px; color: #94a3b8; line-height: 1.6; margin: 0 0 16px 0; }
+        .url-box { background: #0f172a; padding: 10px 14px; border-radius: 10px; font-family: monospace; font-size: 13px; color: #34d399; word-break: break-all; margin-bottom: 24px; border: 1px solid #334155; text-align: left; }
+        .action-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .btn-launch { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff; padding: 14px 24px; border-radius: 10px; text-decoration: none; font-weight: 900; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(37,99,235,0.4); }
+        .btn-launch:hover { background: #1d4ed8; }
+        .btn-sub { background: #334155; color: #f1f5f9; padding: 14px 20px; border-radius: 10px; border: none; font-weight: 700; font-size: 13px; cursor: pointer; }
+        .footer-note { font-size: 11px; color: #64748b; margin-top: 24px; border-top: 1px solid #334155; padding-top: 14px; }
       </style>
     </head>
     <body>
-      <div class="card">
-        <div class="icon">⚡</div>
-        <h2>Shree Online Gateway Access</h2>
-        <p>This official government portal enforces enhanced security or Direct Access mode:</p>
-        <div class="url-box">${safeUrl}</div>
-        <div class="btn-row">
+      <div class="gateway-card">
+        <div class="badge">⚡ Shree Online Official Gateway</div>
+        <h1>Direct Government Portal Access</h1>
+        <p>This official government or banking portal enforces direct client session security and OTP protection:</p>
+        <div class="url-box">🔗 ${safeUrl}</div>
+        <div class="action-row">
           <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="btn-launch">
-            🚀 Open Portal Directly in New Tab
+            🚀 Launch Portal in Direct Window
           </a>
-          <button onclick="window.location.reload()" class="btn-reload">
+          <button onclick="window.location.reload()" class="btn-sub">
             ⟳ Retry In-Portal
           </button>
+        </div>
+        <div class="footer-note">
+          © 2013 – 2026 Shree Online Sewa Kendra • Main Market, Mahuli, S.K.N (U.P.)
         </div>
       </div>
     </body>
