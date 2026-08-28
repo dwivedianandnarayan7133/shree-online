@@ -5,16 +5,17 @@ import {
   Layers, Users, Calendar, ArrowRight, ExternalLink
 } from 'lucide-react';
 import { api, getFullUrl } from '../services/api';
+import { DEFAULT_CONFIG } from '../services/defaultConfig';
 
 export const AboutUs = ({ setActivePage }) => {
-  const [config, setConfig] = useState(null);
+  const [config, setConfig] = useState(DEFAULT_CONFIG);
 
   useEffect(() => {
     api.getSystemConfig().then(res => {
-      if (res.success && res.config) {
+      if (res && res.success && res.config) {
         setConfig(res.config);
       }
-    }).catch(err => console.error(err));
+    }).catch(err => console.warn('AboutUs background sync:', err));
   }, []);
 
   const adminPhoto = config?.adminPhoto ? getFullUrl(config.adminPhoto) : '/admin-photo.jpg';

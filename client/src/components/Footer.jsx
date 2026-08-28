@@ -5,16 +5,17 @@ import {
   CheckCircle2, ExternalLink, Mail
 } from 'lucide-react';
 import { api } from '../services/api';
+import { DEFAULT_CONFIG } from '../services/defaultConfig';
 
 export const Footer = ({ setActivePage }) => {
-  const [config, setConfig] = useState(null);
+  const [config, setConfig] = useState(DEFAULT_CONFIG);
 
   useEffect(() => {
     api.getSystemConfig().then(res => {
-      if (res.success && res.config) {
+      if (res && res.success && res.config) {
         setConfig(res.config);
       }
-    }).catch(err => console.error(err));
+    }).catch(err => console.warn('Footer background sync:', err));
   }, []);
 
   const scrollToTop = () => {
@@ -92,36 +93,13 @@ export const Footer = ({ setActivePage }) => {
           </div>
         </div>
 
-        {/* Column 3: Leadership Desks & Direct Helplines */}
+        {/* Column 3: Leadership Desks & Direct Helplines — MANAGING DIRECTOR FIRST */}
         <div>
           <div style={{ fontWeight: '800', fontSize: '0.84rem', color: 'var(--text-main)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Leadership Desks & Helplines
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.82rem' }}>
-            {/* Owner Helpline */}
-            <div style={{ background: 'var(--bg-surface)', padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-              <div style={{ fontSize: '0.72rem', color: '#f59e0b', fontWeight: '800' }}>👑 Founder & Owner</div>
-              <div style={{ fontWeight: '700', color: 'var(--text-main)' }}>{config?.ownerName || 'Krishan Narayan Dwivedi'}</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '4px' }}>
-                <a 
-                  href={`https://wa.me/91${config?.ownerPhone || '9161400719'}`} 
-                  target="_blank" 
-                  rel="noreferrer" 
-                  style={{ color: '#25d366', fontWeight: '700', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
-                >
-                  <MessageCircle size={12} /> {config?.ownerPhone || '9161400719'}
-                </a>
-                <span style={{ color: 'var(--text-muted)' }}>•</span>
-                <a 
-                  href={`mailto:${config?.ownerEmail || 'onlinebaba111111@gmail.com'}`}
-                  style={{ color: 'var(--primary-400)', textDecoration: 'none' }}
-                >
-                  {config?.ownerEmail || 'onlinebaba111111@gmail.com'}
-                </a>
-              </div>
-            </div>
-
-            {/* Admin MD Helpline */}
+            {/* Admin MD Helpline (FIRST) */}
             <div style={{ background: 'var(--bg-surface)', padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
               <div style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: '800' }}>🛡️ Managing Director & Controller</div>
               <div style={{ fontWeight: '700', color: 'var(--text-main)' }}>{config?.adminName || 'Kamal Narayan Dwivedi'}</div>
@@ -140,6 +118,29 @@ export const Footer = ({ setActivePage }) => {
                   style={{ color: 'var(--primary-400)', textDecoration: 'none' }}
                 >
                   {config?.adminEmail || 'kdshree778@gmail.com'}
+                </a>
+              </div>
+            </div>
+
+            {/* Owner Helpline (SECOND) */}
+            <div style={{ background: 'var(--bg-surface)', padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+              <div style={{ fontSize: '0.72rem', color: '#f59e0b', fontWeight: '800' }}>👑 Founder & Owner</div>
+              <div style={{ fontWeight: '700', color: 'var(--text-main)' }}>{config?.ownerName || 'Krishan Narayan Dwivedi'}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '4px' }}>
+                <a 
+                  href={`https://wa.me/91${config?.ownerPhone || '9161400719'}`} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  style={{ color: '#25d366', fontWeight: '700', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                >
+                  <MessageCircle size={12} /> {config?.ownerPhone || '9161400719'}
+                </a>
+                <span style={{ color: 'var(--text-muted)' }}>•</span>
+                <a 
+                  href={`mailto:${config?.ownerEmail || 'onlinebaba111111@gmail.com'}`}
+                  style={{ color: 'var(--primary-400)', textDecoration: 'none' }}
+                >
+                  {config?.ownerEmail || 'onlinebaba111111@gmail.com'}
                 </a>
               </div>
             </div>
