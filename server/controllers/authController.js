@@ -113,7 +113,7 @@ const login = async (req, res) => {
   }
 };
 
-// Send WhatsApp OTP for Register / Login
+// Send WhatsApp OTP (Forwarded via Owner WhatsApp)
 const sendWhatsAppOtp = async (req, res) => {
   try {
     const { phone, name, type = 'login' } = req.body;
@@ -132,25 +132,24 @@ const sendWhatsAppOtp = async (req, res) => {
       type
     };
 
-    const messageText = `*SHREE ONLINE (Mahuli, S.K.N)*\nYour verification code is: *${otp}*.\nValid for 10 minutes.\nHelplines: ${WHATSAPP_NUMBERS.formattedPrimary} / ${WHATSAPP_NUMBERS.formattedSecondary}`;
-
-    const waLink1 = `https://wa.me/91${WHATSAPP_NUMBERS.primary}?text=${encodeURIComponent(`Shree Online OTP Verification: ${otp} for Mobile +91${cleanPhone}`)}`;
-    const waLink2 = `https://wa.me/91${WHATSAPP_NUMBERS.secondary}?text=${encodeURIComponent(`Shree Online OTP Verification: ${otp} for Mobile +91${cleanPhone}`)}`;
+    // Owner WhatsApp forward links (Never exposes OTP on browser screen)
+    const ownerMsg = `Hello Shree Online Owner (Mahuli, S.K.N),\nCustomer (+91 ${cleanPhone}) is requesting ${type === 'register' ? 'Registration' : 'Login'} OTP verification.\n\n*One-Time Password: ${otp}*`;
+    const waOwnerLink1 = `https://wa.me/91${WHATSAPP_NUMBERS.primary}?text=${encodeURIComponent(ownerMsg)}`;
+    const waOwnerLink2 = `https://wa.me/91${WHATSAPP_NUMBERS.secondary}?text=${encodeURIComponent(ownerMsg)}`;
 
     await logAudit({
-      action: 'WHATSAPP_OTP_SENT',
+      action: 'WHATSAPP_OTP_FORWARDED_BY_OWNER',
       user: name || cleanPhone,
-      details: { phone: cleanPhone, type, gatewayNumbers: [WHATSAPP_NUMBERS.primary, WHATSAPP_NUMBERS.secondary] }
+      details: { phone: cleanPhone, type, forwardedBy: WHATSAPP_NUMBERS.primary }
     });
 
     res.json({
       success: true,
-      message: `WhatsApp OTP generated successfully for +91 ${cleanPhone}.`,
-      otp, // provided for seamless instant verification
+      message: `OTP forwarded by Shree Online Owner WhatsApp (+91 ${WHATSAPP_NUMBERS.primary}). Please check your WhatsApp.`,
       cleanPhone,
       whatsappNumbers: WHATSAPP_NUMBERS,
-      waLink1,
-      waLink2
+      waOwnerLink1,
+      waOwnerLink2
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -179,7 +178,7 @@ const verifyWhatsAppOtp = async (req, res) => {
     }
 
     if (record.otp !== String(otp).trim()) {
-      return res.status(400).json({ success: false, message: 'Invalid OTP entered. Please try again.' });
+      return res.status(400).json({ success: false, message: 'Invalid OTP entered. Please check your WhatsApp and try again.' });
     }
 
     // OTP is valid - clear store
@@ -252,7 +251,7 @@ const getMe = async (req, res) => {
   });
 };
 
-// Get all operators and admins (for task assignment)
+// Get all operators and admins
 const getOperators = async (req, res) => {
   try {
     const operators = await User.find({ role: { $in: ['admin', 'operator'] }, isActive: true }).select('name email role phone');

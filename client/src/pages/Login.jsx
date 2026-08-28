@@ -1,5 +1,5 @@
 ﻿import React, { useState } from 'react';
-import { Layers, Lock, Mail, User, ShieldCheck, ArrowRight, MapPin, MessageCircle, Phone, Sparkles, CheckCircle2, RotateCw } from 'lucide-react';
+import { Layers, Lock, Mail, User, ShieldCheck, ArrowRight, MapPin, MessageCircle, Phone, Sparkles, CheckCircle2, RotateCw, ExternalLink } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 
@@ -19,7 +19,8 @@ export const Login = () => {
   const [waName, setWaName] = useState('');
   const [waOtp, setWaOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
-  const [generatedOtpHint, setGeneratedOtpHint] = useState('');
+  const [ownerLink1, setOwnerLink1] = useState('');
+  const [ownerLink2, setOwnerLink2] = useState('');
   const [otpLoading, setOtpLoading] = useState(false);
 
   const [error, setError] = useState('');
@@ -52,7 +53,7 @@ export const Login = () => {
     }
   };
 
-  // 1. Send WhatsApp OTP
+  // 1. Send WhatsApp OTP via Owner WhatsApp Forwarding
   const handleSendWhatsAppOtp = async (e) => {
     if (e) e.preventDefault();
     if (!waPhone || waPhone.replace(/[^0-9]/g, '').length < 10) {
@@ -71,11 +72,17 @@ export const Login = () => {
 
       if (res.success) {
         setOtpSent(true);
-        setGeneratedOtpHint(res.otp);
-        setSuccessMsg(`OTP sent for +91 ${res.cleanPhone}! Contact helpline: 9161400719 / 8090794210`);
+        setOwnerLink1(res.waOwnerLink1 || 'https://wa.me/919161400719');
+        setOwnerLink2(res.waOwnerLink2 || 'https://wa.me/918090794210');
+        setSuccessMsg(`OTP forwarded via Shree Online Owner WhatsApp (+91 9161400719). Check your WhatsApp for the code.`);
+        
+        // Open owner WhatsApp in new tab for instant delivery
+        if (res.waOwnerLink1) {
+          window.open(res.waOwnerLink1, '_blank');
+        }
       }
     } catch (err) {
-      setError(err.message || 'Failed to send WhatsApp OTP');
+      setError(err.message || 'Failed to request WhatsApp OTP');
     } finally {
       setOtpLoading(false);
     }
@@ -85,7 +92,7 @@ export const Login = () => {
   const handleVerifyWhatsAppOtp = async (e) => {
     e.preventDefault();
     if (!waOtp || waOtp.trim().length !== 6) {
-      setError('Please enter the 6-digit verification code.');
+      setError('Please enter the 6-digit verification code received on WhatsApp.');
       return;
     }
 
@@ -103,7 +110,7 @@ export const Login = () => {
         login(res.user, res.token);
       }
     } catch (err) {
-      setError(err.message || 'OTP verification failed');
+      setError(err.message || 'Invalid OTP code. Please check your WhatsApp.');
     } finally {
       setLoading(false);
     }
@@ -168,7 +175,7 @@ export const Login = () => {
               borderRadius: 'var(--radius-md)', fontSize: '0.82rem', marginBottom: '14px',
               display: 'flex', alignItems: 'center', gap: '8px'
             }}>
-              <CheckCircle2 size={16} />
+              <CheckCircle2 size={16} style={{ flexShrink: 0 }} />
               <span>{successMsg}</span>
             </div>
           )}
@@ -213,6 +220,9 @@ export const Login = () => {
                         style={{ flex: 1, letterSpacing: '1px', fontWeight: '700' }}
                       />
                     </div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                      🔒 OTP is forwarded securely by Owner WhatsApp (+91 9161400719 / +91 8090794210)
+                    </div>
                   </div>
 
                   <button 
@@ -222,28 +232,48 @@ export const Login = () => {
                     style={{ background: '#25d366', borderColor: '#25d366', color: '#ffffff', fontWeight: '800', marginTop: '6px' }}
                   >
                     {otpLoading ? (
-                      <><RotateCw size={16} className="animate-spin" /> Generating WhatsApp OTP...</>
+                      <><RotateCw size={16} className="animate-spin" /> Forwarding via Owner WhatsApp...</>
                     ) : (
-                      <><MessageCircle size={18} /> Send WhatsApp OTP</>
+                      <><MessageCircle size={18} /> Request OTP via Owner WhatsApp</>
                     )}
                   </button>
                 </form>
               ) : (
                 <form onSubmit={handleVerifyWhatsAppOtp}>
                   <div style={{ background: 'var(--bg-surface-alt)', padding: '12px', borderRadius: 'var(--radius-md)', marginBottom: '14px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Verification code sent to</div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>OTP dispatched via Owner WhatsApp for</div>
                     <div style={{ fontSize: '1rem', fontWeight: '800', color: '#25d366', marginTop: '2px' }}>
                       +91 {waPhone.slice(-10)}
                     </div>
-                    {generatedOtpHint && (
-                      <div style={{
-                        marginTop: '8px', padding: '6px 10px', background: 'rgba(37, 211, 102, 0.15)',
-                        border: '1px dashed #25d366', borderRadius: 'var(--radius-sm)',
-                        fontSize: '0.8rem', fontWeight: '800', color: '#25d366'
-                      }}>
-                        🔑 Instant OTP: <span style={{ letterSpacing: '3px', fontSize: '1.05rem' }}>{generatedOtpHint}</span>
-                      </div>
-                    )}
+                    <div style={{ marginTop: '8px', fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
+                      Please open your WhatsApp chat to view the 6-digit code.
+                    </div>
+                  </div>
+
+                  {/* Direct Link to Owner WhatsApp */}
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
+                    <a
+                      href={ownerLink1}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn btn-sm btn-secondary flex-1"
+                      style={{ fontSize: '0.74rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}
+                    >
+                      <MessageCircle size={13} color="#25d366" />
+                      <span>Owner Desk (9161400719)</span>
+                      <ExternalLink size={11} />
+                    </a>
+                    <a
+                      href={ownerLink2}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn btn-sm btn-secondary flex-1"
+                      style={{ fontSize: '0.74rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}
+                    >
+                      <MessageCircle size={13} color="#25d366" />
+                      <span>Helpline (8090794210)</span>
+                      <ExternalLink size={11} />
+                    </a>
                   </div>
 
                   <div className="form-group">
@@ -396,7 +426,7 @@ export const Login = () => {
           }}>
             <div style={{ fontWeight: '800', color: 'var(--text-main)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
               <MessageCircle size={14} color="#25d366" />
-              <span>Official WhatsApp & Helpline Numbers:</span>
+              <span>Shree Online Owner Desk & WhatsApp Helpline:</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '14px', marginTop: '6px', fontWeight: '800', color: '#25d366' }}>
               <a href="https://wa.me/919161400719" target="_blank" rel="noreferrer" style={{ color: '#25d366', textDecoration: 'none' }}>
