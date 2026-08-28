@@ -247,7 +247,7 @@ export const AdminPanel = () => {
             <span className="badge badge-primary" style={{ fontSize: '0.75rem' }}>Kamal Narayan Dwivedi</span>
           </h1>
           <p className="page-subtitle">
-            Central controller for static content, profile photo uploads, operators, pricing catalog, and system logs.
+            Central controller for static content, large circular profile photos, operators, pricing catalog, and system logs.
           </p>
         </div>
         <button className="btn btn-secondary btn-sm" onClick={fetchAdminData}>
@@ -295,7 +295,7 @@ export const AdminPanel = () => {
         })}
       </div>
 
-      {/* 1. STATIC PAGES, LEADERSHIP MESSAGES & PHOTO UPLOADS */}
+      {/* 1. STATIC PAGES, LEADERSHIP MESSAGES & BIG CIRCULAR PHOTO UPLOADS */}
       {activeTab === 'static_pages' && (
         <form onSubmit={handleSaveStaticPages} className="card">
           <div className="card-header">
@@ -355,35 +355,55 @@ export const AdminPanel = () => {
               />
             </div>
 
-            {/* Leadership Profiles & Circular Photo Uploads */}
+            {/* Leadership Profiles & BIG Circular Photo Uploads */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '24px' }}>
               
-              {/* OWNER PROFILE & PHOTO UPLOADER */}
-              <div style={{ background: 'var(--bg-surface-alt)', padding: '20px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {/* OWNER PROFILE & BIG CIRCULAR PHOTO UPLOADER */}
+              <div style={{ background: 'var(--bg-surface-alt)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <h4 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#f59e0b', margin: 0 }}>
+                  <h4 style={{ fontSize: '1rem', fontWeight: '800', color: '#f59e0b', margin: 0 }}>
                     👑 Founder & Managing Owner
                   </h4>
-                  <span className="badge badge-warning" style={{ fontSize: '0.72rem' }}>Krishan Narayan</span>
+                  <span className="badge badge-warning" style={{ fontSize: '0.75rem' }}>Krishan Narayan</span>
                 </div>
 
-                {/* Circular Photo Preview & Upload Control */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '10px 0' }}>
-                  <div style={{ position: 'relative' }}>
+                {/* BIG Circular Photo Preview (130px) & Upload Control */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', padding: '12px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                  <div style={{ position: 'relative', flexShrink: 0 }}>
                     {ownerPhotoUrl ? (
                       <img 
                         src={ownerPhotoUrl} 
                         alt="Owner" 
-                        style={{ width: '70px', height: '70px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #f59e0b' }} 
+                        style={{
+                          width: '130px', height: '130px', borderRadius: '50%',
+                          objectFit: 'cover', border: '5px solid #f59e0b',
+                          boxShadow: '0 6px 20px rgba(245, 158, 11, 0.35)',
+                          aspectRatio: '1/1'
+                        }} 
                       />
                     ) : (
-                      <div style={{ width: '70px', height: '70px', borderRadius: '50%', background: '#f59e0b', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '1.4rem' }}>
+                      <div style={{
+                        width: '130px', height: '130px', borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#fff',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontWeight: '900', fontSize: '2.8rem', border: '5px solid #f59e0b',
+                        boxShadow: '0 6px 20px rgba(245, 158, 11, 0.35)',
+                        aspectRatio: '1/1'
+                      }}>
                         KD
                       </div>
                     )}
+                    <div style={{
+                      position: 'absolute', bottom: '2px', right: '2px',
+                      background: '#f59e0b', color: '#000', borderRadius: '50%',
+                      width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '0.85rem', fontWeight: '900', border: '2px solid #fff'
+                    }}>
+                      👑
+                    </div>
                   </div>
 
-                  <div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <input 
                       type="file" 
                       ref={ownerPhotoInputRef} 
@@ -396,12 +416,13 @@ export const AdminPanel = () => {
                       className="btn btn-secondary btn-sm"
                       onClick={() => ownerPhotoInputRef.current?.click()}
                       disabled={uploadingTarget === 'owner'}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                     >
-                      <Camera size={14} />
+                      <Camera size={15} />
                       <span>{uploadingTarget === 'owner' ? 'Uploading...' : 'Upload Owner Photo'}</span>
                     </button>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                      JPG, PNG or WebP • Circular crop applied
+                    <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                      Large high-res circular photo<br />(Auto cropped to 1:1 circle)
                     </div>
                   </div>
                 </div>
@@ -448,32 +469,52 @@ export const AdminPanel = () => {
                 </div>
               </div>
 
-              {/* ADMIN PROFILE & PHOTO UPLOADER */}
-              <div style={{ background: 'var(--bg-surface-alt)', padding: '20px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {/* ADMIN PROFILE & BIG CIRCULAR PHOTO UPLOADER */}
+              <div style={{ background: 'var(--bg-surface-alt)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <h4 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#10b981', margin: 0 }}>
+                  <h4 style={{ fontSize: '1rem', fontWeight: '800', color: '#10b981', margin: 0 }}>
                     🛡️ Managing Director & Main Controller
                   </h4>
-                  <span className="badge badge-completed" style={{ fontSize: '0.72rem' }}>Kamal Narayan</span>
+                  <span className="badge badge-completed" style={{ fontSize: '0.75rem' }}>Kamal Narayan</span>
                 </div>
 
-                {/* Circular Photo Preview & Upload Control */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '10px 0' }}>
-                  <div style={{ position: 'relative' }}>
+                {/* BIG Circular Photo Preview (130px) & Upload Control */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', padding: '12px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                  <div style={{ position: 'relative', flexShrink: 0 }}>
                     {adminPhotoUrl ? (
                       <img 
                         src={adminPhotoUrl} 
                         alt="Admin MD" 
-                        style={{ width: '70px', height: '70px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #10b981' }} 
+                        style={{
+                          width: '130px', height: '130px', borderRadius: '50%',
+                          objectFit: 'cover', border: '5px solid #10b981',
+                          boxShadow: '0 6px 20px rgba(16, 185, 129, 0.35)',
+                          aspectRatio: '1/1'
+                        }} 
                       />
                     ) : (
-                      <div style={{ width: '70px', height: '70px', borderRadius: '50%', background: '#10b981', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '1.4rem' }}>
+                      <div style={{
+                        width: '130px', height: '130px', borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontWeight: '900', fontSize: '2.8rem', border: '5px solid #10b981',
+                        boxShadow: '0 6px 20px rgba(16, 185, 129, 0.35)',
+                        aspectRatio: '1/1'
+                      }}>
                         KD
                       </div>
                     )}
+                    <div style={{
+                      position: 'absolute', bottom: '2px', right: '2px',
+                      background: '#10b981', color: '#fff', borderRadius: '50%',
+                      width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '0.85rem', fontWeight: '900', border: '2px solid #fff'
+                    }}>
+                      🛡️
+                    </div>
                   </div>
 
-                  <div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <input 
                       type="file" 
                       ref={adminPhotoInputRef} 
@@ -486,12 +527,13 @@ export const AdminPanel = () => {
                       className="btn btn-secondary btn-sm"
                       onClick={() => adminPhotoInputRef.current?.click()}
                       disabled={uploadingTarget === 'admin'}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                     >
-                      <Camera size={14} />
+                      <Camera size={15} />
                       <span>{uploadingTarget === 'admin' ? 'Uploading...' : 'Upload Admin Photo'}</span>
                     </button>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                      JPG, PNG or WebP • Circular crop applied
+                    <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                      Large high-res circular photo<br />(Auto cropped to 1:1 circle)
                     </div>
                   </div>
                 </div>
@@ -618,29 +660,40 @@ export const AdminPanel = () => {
                     return (
                       <tr key={u._id}>
                         <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             {avatarUrl ? (
                               <img 
                                 src={avatarUrl} 
                                 alt={u.name} 
-                                style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border-color)' }} 
+                                style={{
+                                  width: '46px', height: '46px', borderRadius: '50%',
+                                  objectFit: 'cover', border: '2px solid var(--primary-500)',
+                                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                                  aspectRatio: '1/1'
+                                }} 
                               />
                             ) : (
-                              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary-600)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.82rem' }}>
+                              <div style={{
+                                width: '46px', height: '46px', borderRadius: '50%',
+                                background: 'var(--primary-600)', color: '#fff',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontWeight: '800', fontSize: '1rem',
+                                aspectRatio: '1/1'
+                              }}>
                                 {u.name ? u.name[0].toUpperCase() : 'U'}
                               </div>
                             )}
                             <button
                               type="button"
                               className="btn btn-secondary btn-sm"
-                              style={{ padding: '2px 6px', fontSize: '0.68rem' }}
+                              style={{ padding: '3px 8px', fontSize: '0.72rem' }}
                               onClick={() => {
                                 setActiveOpIdForUpload(u._id);
                                 opPhotoInputRef.current?.click();
                               }}
                               title="Upload Operator Profile Photo"
                             >
-                              <Camera size={11} /> Photo
+                              <Camera size={12} /> Photo
                             </button>
                           </div>
                         </td>
