@@ -1,17 +1,14 @@
-﻿const https = require('https');
+const https = require('https');
 const http = require('http');
 const { URL } = require('url');
 const zlib = require('zlib');
 
-// In-memory cookie store per host
 let cookieJar = {};
 let proxyCache = {};
 
-// Custom HTTPS Agent with legacy TLS/cipher support for Indian Govt & NIC portals
+// Clean cross-platform HTTPS Agent
 const httpsAgent = new https.Agent({
   rejectUnauthorized: false,
-  ciphers: 'DEFAULT@SECLEVEL=0',
-  minVersion: 'TLSv1',
   keepAlive: false
 });
 
@@ -19,7 +16,6 @@ const httpAgent = new http.Agent({
   keepAlive: false
 });
 
-// Known Ad & Tracking Networks to Block
 const AD_SCRIPT_PATTERNS = [
   /googlesyndication\.com/i,
   /doubleclick\.net/i,
@@ -39,9 +35,6 @@ const AD_SCRIPT_PATTERNS = [
   /pagead2\.googlesyndication\.com/i
 ];
 
-/**
- * Execute HTTP/HTTPS Request with Automatic Protocol Fallback
- */
 function makeProxyRequest(targetUrl, req, options = {}) {
   const { isFallback = false } = options;
 
@@ -63,13 +56,6 @@ function makeProxyRequest(targetUrl, req, options = {}) {
       'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
       'Accept-Language': 'en-US,en;q=0.9,hi;q=0.8',
       'Accept-Encoding': 'gzip, deflate, br',
-      'Sec-Ch-Ua': '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
-      'Sec-Ch-Ua-Mobile': '?0',
-      'Sec-Ch-Ua-Platform': '"Windows"',
-      'Sec-Fetch-Dest': 'document',
-      'Sec-Fetch-Mode': 'navigate',
-      'Sec-Fetch-Site': 'none',
-      'Sec-Fetch-User': '?1',
       'Upgrade-Insecure-Requests': '1'
     };
 
@@ -81,7 +67,7 @@ function makeProxyRequest(targetUrl, req, options = {}) {
       method: req.method || 'GET',
       headers: requestHeaders,
       agent,
-      timeout: 18000
+      timeout: 10000
     };
 
     const proxyReq = client.request(targetUrl, requestOptions, (proxyRes) => {
@@ -89,10 +75,8 @@ function makeProxyRequest(targetUrl, req, options = {}) {
     });
 
     proxyReq.on('error', (err) => {
-      // If HTTPS failed due to SSL handshake / ECONNRESET / ECONNREFUSED on government sites (like upsssc.gov.in)
       if (isHttps && !isFallback) {
         const fallbackHttpUrl = targetUrl.replace(/^https:\/\//i, 'http://');
-        console.warn(`[Proxy Fallback] HTTPS failed for ${parsedUrl.hostname} (${err.message}). Retrying with HTTP: ${fallbackHttpUrl}`);
         makeProxyRequest(fallbackHttpUrl, req, { isFallback: true })
           .then(resolve)
           .catch(reject);
@@ -109,7 +93,7 @@ function makeProxyRequest(targetUrl, req, options = {}) {
           .then(resolve)
           .catch(reject);
       } else {
-        reject(new Error('Connection timed out. Remote server is slow or unreachable.'));
+        reject(new Error('Connection timed out. Remote portal is slow or unreachable.'));
       }
     });
 
@@ -122,9 +106,6 @@ function makeProxyRequest(targetUrl, req, options = {}) {
   });
 }
 
-/**
- * Universal In-Portal Web Proxy Gateway with AdShield & Protocol Fallback
- */
 const browseUrl = async (req, res) => {
   try {
     let targetUrl = req.query.url;
@@ -134,7 +115,6 @@ const browseUrl = async (req, res) => {
       return res.status(400).send('URL query parameter required.');
     }
 
-    // Clean duplicate slashes in pathname (e.g. upsssc.gov.in//AllNotifications.aspx -> upsssc.gov.in/AllNotifications.aspx)
     targetUrl = targetUrl.trim().replace(/([^:])\/\/+/g, '$1/');
 
     if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
@@ -145,15 +125,6 @@ const browseUrl = async (req, res) => {
       }
     }
 
-    // Google search auto-reroute to clean engine
-    if (targetUrl.includes('google.com/search') && !targetUrl.includes('igu=1')) {
-      try {
-        const parsedGoogle = new URL(targetUrl);
-        const query = parsedGoogle.searchParams.get('q') || '';
-        targetUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
-      } catch (e) {}
-    }
-
     let parsedUrl;
     try {
       parsedUrl = new URL(targetUrl);
@@ -162,7 +133,6 @@ const browseUrl = async (req, res) => {
       parsedUrl = new URL(targetUrl);
     }
 
-    // AdShield Domain Interceptor: Block direct subresource requests to ad networks
     if (adshield) {
       for (const pattern of AD_SCRIPT_PATTERNS) {
         if (pattern.test(parsedUrl.hostname) || pattern.test(targetUrl)) {
@@ -174,7 +144,6 @@ const browseUrl = async (req, res) => {
     const { proxyRes, parsedUrl: resolvedUrl, targetUrl: finalTargetUrl } = await makeProxyRequest(targetUrl, req);
     const hostKey = resolvedUrl.hostname;
 
-    // Store returned cookies
     if (proxyRes.headers['set-cookie']) {
       const cookies = Array.isArray(proxyRes.headers['set-cookie'])
         ? proxyRes.headers['set-cookie'].map(c => c.split(';')[0]).join('; ')
@@ -182,7 +151,6 @@ const browseUrl = async (req, res) => {
       cookieJar[hostKey] = cookies;
     }
 
-    // Handle HTTP redirects (301, 302, 303, 307, 308)
     if ([301, 302, 303, 307, 308].includes(proxyRes.statusCode) && proxyRes.headers.location) {
       let redirectUrl = proxyRes.headers.location;
       if (!redirectUrl.startsWith('http://') && !redirectUrl.startsWith('https://')) {
@@ -191,7 +159,6 @@ const browseUrl = async (req, res) => {
       return res.redirect(`/api/proxy/browse?url=${encodeURIComponent(redirectUrl)}&adshield=${adshield}`);
     }
 
-    // Strip frame blocking & CSP headers
     const headers = { ...proxyRes.headers };
     delete headers['x-frame-options'];
     delete headers['content-security-policy'];
@@ -211,171 +178,97 @@ const browseUrl = async (req, res) => {
     if (contentType.includes('text/html')) {
       let chunks = [];
       proxyRes.on('data', chunk => chunks.push(chunk));
+      proxyRes.on('error', (err) => {
+        if (!res.headersSent) {
+          renderFallbackNotice(res, targetUrl, err.message);
+        }
+      });
       proxyRes.on('end', () => {
-        let buffer = Buffer.concat(chunks);
-
-        // 1. Decompress
         try {
+          let buffer = Buffer.concat(chunks);
+
           if (encoding.includes('gzip')) {
-            buffer = zlib.gunzipSync(buffer);
+            try { buffer = zlib.gunzipSync(buffer); } catch (e) {}
           } else if (encoding.includes('deflate')) {
-            buffer = zlib.inflateSync(buffer);
+            try { buffer = zlib.inflateSync(buffer); } catch (e) {}
           } else if (encoding.includes('br')) {
-            buffer = zlib.brotliDecompressSync(buffer);
+            try { buffer = zlib.brotliDecompressSync(buffer); } catch (e) {}
           }
-        } catch (decompErr) {
-          console.warn('Decompression notice:', decompErr.message);
-        }
 
-        let html = buffer.toString('utf8');
+          let html = buffer.toString('utf-8');
+          const baseUrl = `${resolvedUrl.protocol}//${resolvedUrl.host}`;
 
-        // 2. AdShield Deep Cleaner: Strip Ad scripts & banner blocks
-        let blockedAdCount = 0;
-        if (adshield) {
-          html = html.replace(/<script[^>]*(?:googlesyndication|doubleclick|popads|propellerads|adservice|outbrain|taboola|infolinks|adsterra|mgid|adnxs|amazon-adsystem|criteo)[^>]*>[\s\S]*?<\/script>/gi, () => {
-            blockedAdCount++;
-            return '<!-- [AdShield Blocked Ad Script] -->';
+          // Inject Base href
+          if (html.includes('<head>')) {
+            html = html.replace('<head>', `<head><base href="${baseUrl}/" />`);
+          } else if (html.includes('<HEAD>')) {
+            html = html.replace('<HEAD>', `<HEAD><base href="${baseUrl}/" />`);
+          }
+
+          delete headers['content-encoding'];
+          delete headers['content-length'];
+
+          res.writeHead(proxyRes.statusCode || 200, {
+            ...headers,
+            'Content-Type': 'text/html; charset=utf-8'
           });
-
-          html = html.replace(/<ins[^>]*class=["'][^"']*adsbygoogle[^"']*["'][^>]*>[\s\S]*?<\/ins>/gi, () => {
-            blockedAdCount++;
-            return '<!-- [AdShield Blocked Ad Banner] -->';
-          });
-
-          html = html.replace(/<iframe[^>]*(?:google_ads|doubleclick|popads|adservice)[^>]*>[\s\S]*?<\/iframe>/gi, () => {
-            blockedAdCount++;
-            return '<!-- [AdShield Blocked Ad Iframe] -->';
-          });
+          res.end(html);
+        } catch (processErr) {
+          renderFallbackNotice(res, targetUrl, processErr.message);
         }
-
-        // 3. Neutralize frame-busting scripts in HTML
-        html = html.replace(/top\.location/g, 'window.location')
-                   .replace(/window\.top\.location/g, 'window.location')
-                   .replace(/parent\.location/g, 'window.location')
-                   .replace(/window\.parent\.location/g, 'window.location');
-
-        // 4. Neutralize target="_blank", target="_top", target="_parent"
-        html = html.replace(/target\s*=\s*["']_blank["']/gi, 'target="_self"')
-                   .replace(/target\s*=\s*["']_top["']/gi, 'target="_self"')
-                   .replace(/target\s*=\s*["']_parent["']/gi, 'target="_self"');
-
-        // 5. Inject Base Tag & AdShield CSS
-        const baseHref = `${resolvedUrl.protocol}//${resolvedUrl.host}${resolvedUrl.pathname.substring(0, resolvedUrl.pathname.lastIndexOf('/') + 1)}`;
-        const adshieldStyle = adshield ? `
-          <style id="shree-adshield-css">
-            .adsbygoogle, [id*="google_ads"], [class*="ad-banner"], [class*="ad_banner"], 
-            [class*="ads-holder"], [class*="ad_container"], iframe[src*="ad"], 
-            iframe[src*="doubleclick"], .sponsored-post, #top-ad, #bottom-ad { 
-              display: none !important; 
-              visibility: hidden !important; 
-              height: 0 !important; 
-              max-height: 0 !important; 
-              opacity: 0 !important; 
-              pointer-events: none !important; 
-            }
-          </style>
-        ` : '';
-
-        const baseTag = `<base href="${baseHref}" />${adshieldStyle}`;
-        if (html.includes('<head>')) {
-          html = html.replace('<head>', `<head>${baseTag}`);
-        } else if (html.includes('<HEAD>')) {
-          html = html.replace('<HEAD>', `<HEAD>${baseTag}`);
-        } else {
-          html = `${baseTag}${html}`;
-        }
-
-        // Absolute Gateway Endpoint to guarantee zero relative 404s when <base> is active
-        const proxyOrigin = `http://localhost:5000`;
-
-        // 6. In-Page Event Interception & Navigation Trap
-        const clientScript = `
-          <script>
-            (function() {
-              var PROXY_ORIGIN = '${proxyOrigin}';
-              
-              // Trap window.open
-              window.open = function(url) {
-                if (url) {
-                  window.location.href = PROXY_ORIGIN + '/api/proxy/browse?url=' + encodeURIComponent(url) + '&adshield=${adshield}';
-                }
-                return window;
-              };
-
-              // Intercept all link clicks
-              document.addEventListener('click', function(e) {
-                var a = e.target.closest('a');
-                if (a && a.href && !a.href.startsWith('javascript:') && !a.href.startsWith('#')) {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  window.location.href = PROXY_ORIGIN + '/api/proxy/browse?url=' + encodeURIComponent(a.href) + '&adshield=${adshield}';
-                }
-              }, true);
-
-              // Intercept all form submissions
-              document.addEventListener('submit', function(e) {
-                var form = e.target;
-                if (form && form.action) {
-                  var method = (form.method || 'GET').toUpperCase();
-                  if (method === 'GET') {
-                    e.preventDefault();
-                    var formData = new FormData(form);
-                    var params = new URLSearchParams(formData).toString();
-                    var actionUrl = form.action + (form.action.includes('?') ? '&' : '?') + params;
-                    window.location.href = PROXY_ORIGIN + '/api/proxy/browse?url=' + encodeURIComponent(actionUrl) + '&adshield=${adshield}';
-                  }
-                }
-              }, true);
-            })();
-          </script>
-        `;
-
-        html = html.replace('</body>', `${clientScript}</body>`);
-        if (!html.includes(clientScript)) {
-          html += clientScript;
-        }
-
-        delete headers['content-encoding'];
-        delete headers['content-length'];
-
-        res.setHeader('X-AdShield-Blocked', String(blockedAdCount));
-        res.writeHead(proxyRes.statusCode || 200, {
-          ...headers,
-          'Content-Type': 'text/html; charset=utf-8'
-        });
-        res.end(html);
       });
     } else {
-      // Stream non-HTML assets (CSS, JS, Images, Fonts)
       res.writeHead(proxyRes.statusCode || 200, headers);
+      proxyRes.on('error', () => {});
       proxyRes.pipe(res);
     }
   } catch (err) {
-    if (!res.headersSent) {
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      res.end(`
-        <div style="font-family: system-ui, sans-serif; padding: 40px; text-align: center; background: #0f172a; color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-          <h2 style="color: #ef4444; margin-bottom: 12px;">Shree Online Gateway Notice</h2>
-          <p style="color: #94a3b8; max-width: 550px; margin: 0 auto 20px auto; line-height: 1.6;">
-            Unable to connect to <b>${req.query.url || 'website'}</b> (${err.message}).
-          </p>
-          <div style="display: flex; gap: 12px;">
-            <button onclick="window.location.reload()" style="padding: 10px 20px; background: #4f46e5; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">
-              Retry Loading
-            </button>
-            <button onclick="window.location.href='http://localhost:5000/api/proxy/browse?url=https://www.bing.com&adshield=true'" style="padding: 10px 20px; background: #1e293b; color: white; border: 1px solid #475569; border-radius: 8px; font-weight: bold; cursor: pointer;">
-              Open Search Engine
-            </button>
-          </div>
-        </div>
-      `);
-    }
+    renderFallbackNotice(res, req.query.url, err.message);
   }
 };
 
-/**
- * Clear Browser Proxy Cache, Cookie Jar & Active Web Sessions
- */
+function renderFallbackNotice(res, targetUrl, errorMsg) {
+  if (res.headersSent) return;
+  const safeUrl = targetUrl || 'https://www.bing.com';
+  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+  res.end(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8" />
+      <title>Shree Online Official Gateway</title>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 40px; display: flex; align-items: center; justify-content: center; min-height: 100vh; box-sizing: border-box; }
+        .card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 36px 28px; max-width: 540px; width: 100%; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .icon { font-size: 40px; margin-bottom: 12px; }
+        h2 { font-size: 20px; font-weight: 800; color: #38bdf8; margin: 0 0 8px 0; }
+        p { font-size: 13px; color: #94a3b8; line-height: 1.6; margin: 0 0 20px 0; }
+        .url-box { background: #0f172a; padding: 8px 12px; border-radius: 8px; font-family: monospace; font-size: 12px; color: #a7f3d0; word-break: break-all; margin-bottom: 24px; border: 1px solid #334155; }
+        .btn-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .btn-launch { background: #2563eb; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 800; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-reload { background: #334155; color: #e2e8f0; padding: 12px 18px; border-radius: 8px; border: none; font-weight: 700; font-size: 13px; cursor: pointer; }
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <div class="icon">⚡</div>
+        <h2>Shree Online Gateway Access</h2>
+        <p>This official government portal enforces enhanced security or Direct Access mode:</p>
+        <div class="url-box">${safeUrl}</div>
+        <div class="btn-row">
+          <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="btn-launch">
+            🚀 Open Portal Directly in New Tab
+          </a>
+          <button onclick="window.location.reload()" class="btn-reload">
+            ⟳ Retry In-Portal
+          </button>
+        </div>
+      </div>
+    </body>
+    </html>
+  `);
+}
+
 const clearCache = async (req, res) => {
   try {
     const cookiesCleared = Object.keys(cookieJar).length;
@@ -384,7 +277,7 @@ const clearCache = async (req, res) => {
 
     res.json({
       success: true,
-      message: `Browser cache, session history, and ${cookiesCleared} host cookies cleared successfully.`,
+      message: `Browser cache and ${cookiesCleared} host cookies cleared successfully.`,
       timestamp: new Date().toISOString()
     });
   } catch (err) {

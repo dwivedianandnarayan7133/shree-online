@@ -20,9 +20,17 @@ async function request(endpoint, options = {}) {
     headers
   });
 
-  const data = await response.json();
+  let data = {};
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    data = await response.json().catch(() => ({}));
+  } else {
+    const rawText = await response.text();
+    data = { message: rawText || `Server responded with status ${response.status}` };
+  }
+
   if (!response.ok) {
-    throw new Error(data.message || 'API request failed');
+    throw new Error(data.message || `API request failed with status ${response.status}`);
   }
 
   return data;

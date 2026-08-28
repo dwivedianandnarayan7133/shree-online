@@ -32,6 +32,7 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(rateLimiter(300, 60 * 1000));
 
 // Serve processed & temp uploads securely
+app.use('/uploads', express.static(require('./config/constants').UPLOAD_PATHS.BASE, { setHeaders: (res) => { res.set('X-Content-Type-Options', 'nosniff'); res.set('Content-Disposition', 'inline'); } }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
   setHeaders: (res) => {
     res.set('X-Content-Type-Options', 'nosniff');

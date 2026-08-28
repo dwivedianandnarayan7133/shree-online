@@ -1,27 +1,19 @@
-﻿import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { API_BASE } from '../services/config';
 
 const AuthContext = createContext();
-
-const DEFAULT_USER = {
-  id: 'admin-kamal',
-  name: 'Kamal Narayan Dwivedi',
-  email: 'kdshree778@gmail.com',
-  role: 'admin',
-  phone: '8090794210'
-};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
       const stored = localStorage.getItem('cybercafe_user');
-      return stored ? JSON.parse(stored) : DEFAULT_USER;
+      return stored ? JSON.parse(stored) : null;
     } catch (e) {
-      return DEFAULT_USER;
+      return null;
     }
   });
 
-  const [token, setToken] = useState(() => localStorage.getItem('cybercafe_token') || 'demo-token');
+  const [token, setToken] = useState(() => localStorage.getItem('cybercafe_token') || null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -66,7 +58,9 @@ export const AuthProvider = ({ children }) => {
         ? 'kdshree778@gmail.com' 
         : role === 'operator' 
           ? 'operator@cybercafe.com' 
-          : 'onlinebaba111111@gmail.com';
+          : role === 'owner'
+            ? 'onlinebaba111111@gmail.com'
+            : 'citizen@gmail.com';
       const password = role === 'admin' ? 'admin123' : role === 'operator' ? 'operator123' : 'owner123';
 
       const res = await fetch(`${API_BASE}/auth/login`, {
@@ -85,7 +79,7 @@ export const AuthProvider = ({ children }) => {
 
     const fallbackUser = {
       id: `user-${role}`,
-      name: role === 'admin' ? 'Kamal Narayan Dwivedi (Admin)' : role === 'operator' ? 'Desk Operator (Mahuli)' : 'Krishan Narayan Dwivedi (Owner)',
+      name: role === 'admin' ? 'Kamal Narayan Dwivedi (Admin MD)' : role === 'operator' ? 'Desk Operator (Mahuli)' : role === 'owner' ? 'Krishan Narayan Dwivedi (Owner)' : 'Citizen Applicant',
       email: role === 'admin' ? 'kdshree778@gmail.com' : role === 'operator' ? 'operator@cybercafe.com' : 'onlinebaba111111@gmail.com',
       role: role,
       phone: role === 'admin' ? '8090794210' : '9161400719'

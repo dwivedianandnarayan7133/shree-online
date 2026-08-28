@@ -1,4 +1,27 @@
-﻿const path = require('path');
+const path = require('path');
+const os = require('os');
+const fs = require('fs');
+
+const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NOW_REGION);
+const baseUploadDir = isServerless 
+  ? path.join(os.tmpdir(), 'shree_uploads') 
+  : path.join(__dirname, '../uploads');
+
+const UPLOAD_PATHS = {
+  BASE: baseUploadDir,
+  TEMP: path.join(baseUploadDir, 'temp'),
+  PROCESSED: path.join(baseUploadDir, 'processed'),
+  CUSTOMER: path.join(baseUploadDir, 'customer_records')
+};
+
+// Ensure directories exist safely
+try {
+  fs.mkdirSync(UPLOAD_PATHS.TEMP, { recursive: true });
+  fs.mkdirSync(UPLOAD_PATHS.PROCESSED, { recursive: true });
+  fs.mkdirSync(UPLOAD_PATHS.CUSTOMER, { recursive: true });
+} catch (e) {
+  // Ignore in read-only setups where tempdir is managed per invocation
+}
 
 module.exports = {
   PORT: process.env.PORT || 5000,
@@ -8,9 +31,6 @@ module.exports = {
   RETENTION_HOURS: 24,
   MAX_FILE_SIZE_MB: 50,
   PORTAL_NAME: 'Shree Online (Mahuli, S.K.N)',
-  UPLOAD_PATHS: {
-    TEMP: path.join(__dirname, '../uploads/temp'),
-    PROCESSED: path.join(__dirname, '../uploads/processed'),
-    CUSTOMER: path.join(__dirname, '../uploads/customer_records')
-  }
+  IS_SERVERLESS: isServerless,
+  UPLOAD_PATHS
 };

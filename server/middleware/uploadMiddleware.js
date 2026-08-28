@@ -2,16 +2,21 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
+const { UPLOAD_PATHS } = require('../config/constants');
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    let destDir = path.join(__dirname, '../uploads/temp');
+    let destDir = UPLOAD_PATHS.TEMP;
     if (req.baseUrl.includes('customer') || req.baseUrl.includes('request')) {
-      destDir = path.join(__dirname, '../uploads/customer_records');
+      destDir = UPLOAD_PATHS.CUSTOMER;
     } else if (req.baseUrl.includes('processed') || req.baseUrl.includes('tools')) {
-      destDir = path.join(__dirname, '../uploads/temp');
+      destDir = UPLOAD_PATHS.TEMP;
     }
-    fs.mkdirSync(destDir, { recursive: true });
+    
+    try {
+      fs.mkdirSync(destDir, { recursive: true });
+    } catch (e) {}
+    
     cb(null, destDir);
   },
   filename: function (req, file, cb) {
