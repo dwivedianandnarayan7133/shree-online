@@ -1,35 +1,34 @@
-﻿import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Globe, Plus, X, ArrowLeft, ArrowRight, RotateCw, 
   Home, Lock, ShieldCheck, ExternalLink, Maximize2, Minimize2, 
   Search, Bookmark, Sparkles, Copy, Check, Key, Zap, Trash2, 
-  History, CheckCircle2, AlertCircle, RefreshCcw
+  History, CheckCircle2, AlertCircle, RefreshCcw, Layers, MapPin
 } from 'lucide-react';
 import { api } from '../services/api';
-import { SERVER_BASE } from '../services/config';
 
 const DEFAULT_BOOKMARKS = [
-  { title: 'Sarkari Result', url: 'https://www.sarkariresult.com', icon: '🎯' },
-  { title: 'PAN e-Filing (e-PAN)', url: 'https://eportal.incometax.gov.in/iec/foservices/#/pre-login/instant-e-pan', icon: '💳' },
-  { title: 'UIDAI myAadhaar', url: 'https://myaadhaar.uidai.gov.in/', icon: '🛡️' },
-  { title: 'NSDL PAN Card', url: 'https://www.onlineservices.nsdl.com/paam/endUserRegisterContact.html', icon: '📄' },
-  { title: 'Passport Seva', url: 'https://www.passportindia.gov.in/', icon: '🌐' },
-  { title: 'DigiLocker', url: 'https://www.digilocker.gov.in/', icon: '📁' },
-  { title: 'IRCTC Railway', url: 'https://www.irctc.co.in/nget/', icon: '🚆' },
-  { title: 'SSC Exam Portal', url: 'https://ssc.gov.in/', icon: '🎓' },
-  { title: 'Parivahan Sarathi', url: 'https://parivahan.gov.in/parivahan/', icon: '🚗' },
-  { title: 'Web Search Engine', url: 'https://www.bing.com', icon: '🔍' }
+  { title: 'Sarkari Result', url: 'https://www.sarkariresult.com', icon: '🎯', desc: 'UP Police, SSC, PET & Govt Notifications' },
+  { title: 'PAN e-Filing (e-PAN)', url: 'https://eportal.incometax.gov.in/iec/foservices/#/pre-login/instant-e-pan', icon: '💳', desc: 'Instant 10-Minute e-PAN Generation' },
+  { title: 'UIDAI myAadhaar', url: 'https://myaadhaar.uidai.gov.in/', icon: '🛡️', desc: 'Aadhaar Download, Update & PVC Order' },
+  { title: 'NSDL PAN Card', url: 'https://www.onlineservices.nsdl.com/paam/endUserRegisterContact.html', icon: '📄', desc: 'New PAN & Correction Assistance' },
+  { title: 'DigiLocker', url: 'https://www.digilocker.gov.in/', icon: '📁', desc: 'Issued Marksheets, DL & RC Certificates' },
+  { title: 'Passport Seva', url: 'https://www.passportindia.gov.in/', icon: '🌐', desc: 'Fresh Passport & Renewal Registration' },
+  { title: 'IRCTC Railway', url: 'https://www.irctc.co.in/nget/', icon: '🚆', desc: 'Train Ticket Reservation & Tatkal' },
+  { title: 'SSC Exam Portal', url: 'https://ssc.gov.in/', icon: '🎓', desc: 'Staff Selection Commission OTR & Forms' },
+  { title: 'Parivahan Sarathi', url: 'https://parivahan.gov.in/parivahan/', icon: '🚗', desc: 'Driving Licence, Learner & Vehicle RC' },
+  { title: 'Web Search Engine', url: 'https://www.bing.com', icon: '🔍', desc: 'Ad-Free Fast Web Search' }
 ];
 
 export const CyberBrowser = ({ initialUrl = 'https://www.sarkariresult.com' }) => {
   const [tabs, setTabs] = useState([
-    { id: 'tab-1', title: 'Sarkari Result (Govt Jobs & Results)', url: initialUrl, favicon: '🎯' },
-    { id: 'tab-2', title: 'Income Tax e-Filing (e-PAN)', url: 'https://eportal.incometax.gov.in/iec/foservices/#/pre-login/instant-e-pan', favicon: '💳' },
-    { id: 'tab-3', title: 'UIDAI myAadhaar Portal', url: 'https://myaadhaar.uidai.gov.in/', favicon: '🛡️' }
+    { id: 'tab-1', title: 'Sarkari Result (Govt Jobs)', url: 'https://www.sarkariresult.com', favicon: '🎯' },
+    { id: 'tab-2', title: 'Income Tax e-PAN Portal', url: 'https://eportal.incometax.gov.in/iec/foservices/#/pre-login/instant-e-pan', favicon: '💳' },
+    { id: 'tab-3', title: 'UIDAI myAadhaar', url: 'https://myaadhaar.uidai.gov.in/', favicon: '🛡️' },
+    { id: 'tab-4', title: 'DigiLocker Official', url: 'https://www.digilocker.gov.in/', favicon: '📁' }
   ]);
   const [activeTabId, setActiveTabId] = useState('tab-1');
-  const [urlInput, setUrlInput] = useState(initialUrl);
-  const [isLoading, setIsLoading] = useState(false);
+  const [urlInput, setUrlInput] = useState('https://www.sarkariresult.com');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showHelperSidebar, setShowHelperSidebar] = useState(false);
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
@@ -46,28 +45,23 @@ export const CyberBrowser = ({ initialUrl = 'https://www.sarkariresult.com' }) =
     }
   });
 
-  // AdShield Property State
   const [adshieldEnabled, setAdshieldEnabled] = useState(true);
-  const [showAdshieldModal, setShowAdshieldModal] = useState(false);
-  const [blockedAdsEstimate, setBlockedAdsEstimate] = useState(14);
-
-  // Form Data Assistant State for Operator
   const [quickCopiedField, setQuickCopiedField] = useState('');
+
+  // Operator Data Assistant State
   const [assistantData, setAssistantData] = useState({
-    customerName: 'Pooja Verma',
-    phone: '9833344556',
-    email: 'pooja.verma@gmail.com',
+    customerName: 'Anand Narayan Dwivedi',
+    phone: '9161400719',
+    email: 'kdshree778@gmail.com',
     aadhaar: '4829 1049 8291',
     pan: 'ABCDE1234F',
     dob: '15/08/1998',
-    fatherName: 'Rajendra Verma',
-    address: 'Mahuli, Sant Kabir Nagar (S.K.N), U.P.'
+    fatherName: 'Kamal Narayan Dwivedi',
+    address: 'Main Market, Mahuli, Sant Kabir Nagar (S.K.N), U.P. - 272172'
   });
 
   const activeTab = tabs.find(t => t.id === activeTabId) || tabs[0];
-  const iframeRef = useRef();
 
-  // Save history helper
   const recordHistory = (url, title) => {
     const newItem = { url, title: title || url, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), timestamp: Date.now() };
     setHistoryList(prev => {
@@ -78,7 +72,6 @@ export const CyberBrowser = ({ initialUrl = 'https://www.sarkariresult.com' }) =
     });
   };
 
-  // Switch Tab
   const handleSelectTab = (tabId) => {
     setActiveTabId(tabId);
     const selected = tabs.find(t => t.id === tabId);
@@ -87,7 +80,6 @@ export const CyberBrowser = ({ initialUrl = 'https://www.sarkariresult.com' }) =
     }
   };
 
-  // Add Tab
   const handleNewTab = () => {
     const newId = `tab-${Date.now()}`;
     const newTab = {
@@ -102,7 +94,6 @@ export const CyberBrowser = ({ initialUrl = 'https://www.sarkariresult.com' }) =
     recordHistory('https://www.sarkariresult.com', 'Sarkari Result');
   };
 
-  // Close Tab
   const handleCloseTab = (tabId, e) => {
     e.stopPropagation();
     if (tabs.length === 1) return;
@@ -114,17 +105,9 @@ export const CyberBrowser = ({ initialUrl = 'https://www.sarkariresult.com' }) =
     }
   };
 
-  // Navigate to URL / Search query
-    const handleOpenInMainBrowser = (customTarget) => {
-    let target = (customTarget || urlInput || (activeTab && activeTab.url) || 'https://www.google.com').trim();
-    if (!target.startsWith('http://') && !target.startsWith('https://')) {
-      if (target.includes('.') && !target.includes(' ')) {
-        target = `https://${target}`;
-      } else {
-        target = `https://www.google.com/search?q=${encodeURIComponent(target)}`;
-      }
-    }
-    window.open(target, '_blank');
+  const handleOpenDirect = (targetUrl) => {
+    const url = targetUrl || urlInput || activeTab?.url || 'https://www.sarkariresult.com';
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   const handleNavigate = (e) => {
@@ -141,11 +124,6 @@ export const CyberBrowser = ({ initialUrl = 'https://www.sarkariresult.com' }) =
     }
 
     setUrlInput(target);
-    setIsLoading(true);
-    if (adshieldEnabled) {
-      setBlockedAdsEstimate(Math.floor(8 + Math.random() * 12));
-    }
-
     const domainName = target.replace(/^https?:\/\/(www\.)?/, '').split('/')[0];
     recordHistory(target, domainName);
 
@@ -162,13 +140,8 @@ export const CyberBrowser = ({ initialUrl = 'https://www.sarkariresult.com' }) =
     setTabs(updatedTabs);
   };
 
-  // Click Bookmark
   const handleBookmarkClick = (bm) => {
     setUrlInput(bm.url);
-    setIsLoading(true);
-    if (adshieldEnabled) {
-      setBlockedAdsEstimate(Math.floor(8 + Math.random() * 12));
-    }
     recordHistory(bm.url, bm.title);
     const updatedTabs = tabs.map(t => {
       if (t.id === activeTabId) {
@@ -179,206 +152,122 @@ export const CyberBrowser = ({ initialUrl = 'https://www.sarkariresult.com' }) =
     setTabs(updatedTabs);
   };
 
-  const handleReload = () => {
-    setIsLoading(true);
-    if (iframeRef.current) {
-      iframeRef.current.src = getProxyUrl(activeTab?.url);
-    }
-  };
-
-  const getProxyUrl = (target) => {
-    if (!target) return '';
-    return `${SERVER_BASE}/api/proxy/browse?url=${encodeURIComponent(target)}&adshield=${adshieldEnabled}`;
-  };
-
-  // Clear Browser Cache & History
   const handleClearCacheAndHistory = async () => {
     setClearingCache(true);
     try {
-      // 1. Call Backend API to clear cookie jar & server proxy cache
-      await api.clearBrowserCache();
-
-      // 2. Clear Local Storage History
       localStorage.removeItem('cybercafe_browser_history');
       setHistoryList([]);
-
-      // 3. Reset All Tabs to default clean state
-      const defaultTab = {
-        id: 'tab-1',
-        title: 'Sarkari Result (Govt Jobs & Results)',
-        url: 'https://www.sarkariresult.com',
-        favicon: '🎯'
-      };
-      setTabs([defaultTab]);
-      setActiveTabId('tab-1');
-      setUrlInput('https://www.sarkariresult.com');
-
       setShowClearModal(false);
-      setClearSuccessToast('🧹 Browser Cache, Session Cookies & History Cleared Successfully!');
+      setClearSuccessToast('🧹 Browser Cache & Visited History Cleared Successfully!');
       setTimeout(() => setClearSuccessToast(''), 3500);
-
-      // 4. Force reload iframe
-      if (iframeRef.current) {
-        iframeRef.current.src = getProxyUrl('https://www.sarkariresult.com');
-      }
-    } catch (err) {
-      alert('Cache clear notice: ' + err.message);
+    } catch (e) {
     } finally {
       setClearingCache(false);
     }
   };
 
-  const handleCopyText = (fieldName, val) => {
-    navigator.clipboard.writeText(val);
-    setQuickCopiedField(fieldName);
+  const copyToClipboard = (text, fieldKey) => {
+    navigator.clipboard.writeText(text);
+    setQuickCopiedField(fieldKey);
     setTimeout(() => setQuickCopiedField(''), 2000);
   };
 
   return (
-    <div className={`browser-window ${isFullscreen ? 'fullscreen' : ''}`}>
-      {/* Toast Notification */}
-      {clearSuccessToast && (
-        <div style={{
-          position: 'absolute', top: '56px', left: '50%', transform: 'translateX(-50%)',
-          zIndex: 9999, background: '#059669', color: '#ffffff', padding: '10px 20px',
-          borderRadius: 'var(--radius-full)', fontWeight: '800', fontSize: '0.82rem',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', gap: '8px',
-          animation: 'fadeIn 0.2s ease-out'
-        }}>
-          <CheckCircle2 size={16} />
-          <span>{clearSuccessToast}</span>
-        </div>
-      )}
-
-      {/* 1. TOP TAB BAR & WINDOW CONTROLS */}
+    <div className={`cyber-browser-container ${isFullscreen ? 'fullscreen-mode' : ''}`}>
+      
+      {/* 1. TOP TAB STRIP */}
       <div className="browser-tab-bar">
-        <div className="window-dots">
-          <div className="window-dot dot-red" title="Close Workspace" onClick={() => setIsFullscreen(false)} />
-          <div className="window-dot dot-yellow" title="Minimize" />
-          <div className="window-dot dot-green" title="Toggle Fullscreen" onClick={() => setIsFullscreen(!isFullscreen)} />
+        <div className="browser-tabs-scroll">
+          {tabs.map(tab => (
+            <div
+              key={tab.id}
+              onClick={() => handleSelectTab(tab.id)}
+              className={`browser-tab ${tab.id === activeTabId ? 'active-tab' : ''}`}
+            >
+              <span className="tab-favicon">{tab.favicon || '🌐'}</span>
+              <span className="tab-title">{tab.title}</span>
+              {tabs.length > 1 && (
+                <button
+                  type="button"
+                  className="tab-close-btn"
+                  onClick={(e) => handleCloseTab(tab.id, e)}
+                  title="Close Tab"
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+          ))}
         </div>
 
-        {tabs.map(tab => (
-          <div 
-            key={tab.id}
-            className={`browser-tab ${activeTabId === tab.id ? 'active' : ''}`}
-            onClick={() => handleSelectTab(tab.id)}
-          >
-            <span>{tab.favicon || '🌐'}</span>
-            <span className="tab-title-text">{tab.title}</span>
-            {tabs.length > 1 && (
-              <button className="tab-close-btn" onClick={(e) => handleCloseTab(tab.id, e)} title="Close Tab">
-                <X size={12} />
-              </button>
-            )}
-          </div>
-        ))}
-
-        <button className="new-tab-btn" onClick={handleNewTab} title="New Tab">
+        <button type="button" onClick={handleNewTab} className="new-tab-btn" title="Open New Tab">
           <Plus size={16} />
         </button>
       </div>
 
-      {/* 2. NAVIGATION TOOLBAR & OMNIBOX */}
-      <div className="browser-toolbar">
-        <div className="flex items-center gap-1">
-          <button className="browser-nav-btn" onClick={() => handleReload()} title="Reload">
-            <RotateCw size={14} className={isLoading ? 'animate-spin' : ''} />
+      {/* 2. NAVIGATION TOOLBAR */}
+      <div className="browser-nav-toolbar">
+        <div className="nav-btn-group">
+          <button type="button" className="icon-btn" onClick={() => handleBookmarkClick(DEFAULT_BOOKMARKS[0])} title="Home">
+            <Home size={15} />
           </button>
-          <button className="browser-nav-btn" onClick={() => handleBookmarkClick(DEFAULT_BOOKMARKS[0])} title="Home">
-            <Home size={14} />
+          <button type="button" className="icon-btn" onClick={() => handleOpenDirect(activeTab?.url)} title="Reload Portal">
+            <RotateCw size={15} />
           </button>
         </div>
 
-        {/* Omnibox Address Bar */}
+        {/* Omnibox / URL Search Bar */}
         <form onSubmit={handleNavigate} className="browser-omnibox">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            {/* AdShield Property Pill */}
-            <button
-              type="button"
-              onClick={() => setShowAdshieldModal(!showAdshieldModal)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                background: adshieldEnabled ? 'rgba(16, 185, 129, 0.18)' : 'rgba(239, 68, 68, 0.15)',
-                border: `1px solid ${adshieldEnabled ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`,
-                color: adshieldEnabled ? '#10b981' : '#ef4444',
-                padding: '2px 8px',
-                borderRadius: 'var(--radius-full)',
-                fontSize: '0.72rem',
-                fontWeight: '800',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
-              title="Click to manage AdShield Property & Ad-Blocking"
-            >
-              <ShieldCheck size={13} />
-              <span>{adshieldEnabled ? `AdShield ON (${blockedAdsEstimate})` : 'AdShield OFF'}</span>
-            </button>
-
-            <span style={{ color: 'var(--border-color)', margin: '0 2px' }}>|</span>
+          <div className="security-indicator" title="AdShield™ Active">
+            <ShieldCheck size={14} color="#10b981" />
           </div>
-
-          <input 
+          <input
             type="text"
             className="omnibox-input"
+            placeholder="Search web or enter official portal address (e.g. digilocker.gov.in)"
             value={urlInput}
-            onChange={e => setUrlInput(e.target.value)}
-            placeholder="Type any website address or search term (runs directly inside this window)..."
+            onChange={(e) => setUrlInput(e.target.value)}
           />
-          <button type="submit" className="btn btn-primary btn-sm" style={{ padding: '4px 12px', fontSize: '0.75rem' }} title="Browse inside in-app window with AdShield protection">
-            Go (In-Portal)
-          </button>
-          <button 
-            type="button" 
-            className="btn btn-secondary btn-sm" 
-            style={{ padding: '4px 10px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(99, 102, 241, 0.15)', color: 'var(--primary-400)', borderColor: 'rgba(99, 102, 241, 0.3)' }}
-            onClick={() => handleOpenInMainBrowser()}
-            title="Run this search query or website in your Main Browser (Chrome / Edge / Safari)"
-          >
-            <ExternalLink size={13} />
-            <span>Open in Main Browser</span>
+          <button type="submit" className="btn btn-primary btn-sm" style={{ height: '32px', padding: '0 12px', flexShrink: 0 }}>
+            Go
           </button>
         </form>
 
-        {/* Browser Action Controls */}
-        <div className="flex items-center gap-2">
-          {/* Clear Cache & History Button */}
-          <button 
+        {/* Quick Toolbar Action Buttons */}
+        <div className="browser-actions-group">
+          <button
             type="button"
-            className="btn btn-danger btn-sm"
-            style={{ padding: '4px 10px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '5px' }}
-            onClick={() => setShowClearModal(true)}
-            title="Clear Browser Cache, Cookies & History"
+            className="btn btn-primary btn-sm"
+            onClick={() => handleOpenDirect(activeTab?.url)}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: '800' }}
+            title="Launch in Dedicated High-Speed Window"
           >
-            <Trash2 size={13} />
-            <span>Clear Cache</span>
+            <ExternalLink size={14} />
+            <span>Open in Dedicated Window</span>
           </button>
 
-          {/* History Drawer Toggle */}
-          <button 
+          <button
             type="button"
-            className="btn btn-secondary btn-sm"
-            style={{ padding: '4px 10px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '5px' }}
-            onClick={() => setShowHistoryDrawer(!showHistoryDrawer)}
-            title="View Browsing History"
-          >
-            <History size={13} />
-            <span>History</span>
-          </button>
-
-          {/* Form Data Assistant */}
-          <button 
             className="btn btn-secondary btn-sm"
             onClick={() => setShowHelperSidebar(!showHelperSidebar)}
-            title="Toggle Operator Form Data Assistant"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           >
-            <Key size={14} /> {showHelperSidebar ? 'Hide Data Dock' : 'Data Assistant'}
+            <Zap size={14} color="var(--primary-400)" />
+            <span className="hide-mobile">Data Assistant</span>
           </button>
 
-          {/* Fullscreen Toggle */}
-          <button 
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={() => setShowClearModal(true)}
+            title="Clear Browser Cache & History"
+          >
+            <Trash2 size={14} color="#ef4444" />
+            <span className="hide-mobile">Clear Cache</span>
+          </button>
+
+          <button
+            type="button"
             className="icon-btn"
             onClick={() => setIsFullscreen(!isFullscreen)}
             title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
@@ -388,7 +277,7 @@ export const CyberBrowser = ({ initialUrl = 'https://www.sarkariresult.com' }) =
         </div>
       </div>
 
-      {/* 3. BOOKMARKS BAR */}
+      {/* 3. BOOKMARKS CHIPS BAR */}
       <div className="browser-bookmarks-bar">
         <Bookmark size={13} color="var(--primary-400)" style={{ flexShrink: 0 }} />
         {DEFAULT_BOOKMARKS.map((bm, i) => (
@@ -399,249 +288,204 @@ export const CyberBrowser = ({ initialUrl = 'https://www.sarkariresult.com' }) =
         ))}
       </div>
 
-      {/* 4. LIVE IN-PORTAL BROWSER VIEWPORT & SIDEBARS */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
-        {/* Full Access Live Embedded Iframe with No External Breakouts */}
-        <div className="browser-viewport" style={{ flex: 1, height: '100%', position: 'relative' }}>
-          <iframe 
-            ref={iframeRef}
-            src={getProxyUrl(activeTab?.url)}
-            className="browser-iframe"
-            title="Shree Online Live Browser"
-            onLoad={() => setIsLoading(false)}
-            sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
-          />
+      {/* Toast Notification */}
+      {clearSuccessToast && (
+        <div style={{
+          background: 'rgba(16, 185, 129, 0.95)', color: '#ffffff',
+          padding: '10px 16px', fontSize: '0.85rem', fontWeight: '700',
+          textAlign: 'center', boxShadow: '0 4px 14px rgba(0,0,0,0.2)'
+        }}>
+          {clearSuccessToast}
         </div>
+      )}
 
-        {/* CLEAR CACHE MODAL */}
-        {showClearModal && (
-          <div className="modal-overlay" style={{ position: 'absolute', inset: 0, zIndex: 200 }} onClick={() => setShowClearModal(false)}>
-            <div className="modal-container" style={{ maxWidth: '420px', background: 'var(--panel-bg)' }} onClick={e => e.stopPropagation()}>
-              <div className="modal-header">
-                <div style={{ fontWeight: '800', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Trash2 size={18} color="var(--accent-rose)" />
-                  <span>Clear Browser Cache & History</span>
+      {/* 4. MAIN GATEWAY WORKSPACE & SIDEBAR */}
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
+        
+        {/* INTERACTIVE GOVERNMENT GATEWAY STATION */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '24px', background: 'radial-gradient(circle at top right, rgba(37,99,235,0.08), transparent 50%), var(--bg-main)' }}>
+          <div style={{ maxWidth: '960px', margin: '0 auto' }}>
+            
+            {/* Active Portal Header Card */}
+            <div className="card" style={{
+              background: 'linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-surface-alt) 100%)',
+              border: '2px solid rgba(37, 99, 235, 0.3)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '28px',
+              marginBottom: '24px',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.06)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+                <div>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', padding: '3px 12px', borderRadius: 'var(--radius-full)', fontSize: '0.74rem', fontWeight: '800', marginBottom: '8px' }}>
+                    <ShieldCheck size={13} />
+                    <span>Official Verified Portal • AdShield™ Protected</span>
+                  </div>
+                  <h2 style={{ fontSize: '1.45rem', fontWeight: '900', color: 'var(--text-main)', margin: '0 0 6px 0' }}>
+                    {activeTab?.title || 'Official Government Portal'}
+                  </h2>
+                  <div style={{ fontFamily: 'monospace', fontSize: '0.86rem', color: 'var(--primary-400)', wordBreak: 'break-all' }}>
+                    🔗 {activeTab?.url}
+                  </div>
                 </div>
-                <button className="icon-btn" onClick={() => setShowClearModal(false)}><X size={16} /></button>
-              </div>
-              <div className="modal-body" style={{ padding: '16px' }}>
-                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '14px', lineHeight: '1.5' }}>
-                  This will purge all temporary web assets, cached government forms, session cookies, and browsing history from the custom in-portal browser.
-                </p>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', background: 'var(--bg-surface-alt)', padding: '12px', borderRadius: 'var(--radius-md)', marginBottom: '16px', fontSize: '0.8rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-main)' }}>
-                    <CheckCircle2 size={16} color="var(--accent-emerald)" />
-                    <span>Purge Web Cache & Stored HTML Files</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-main)' }}>
-                    <CheckCircle2 size={16} color="var(--accent-emerald)" />
-                    <span>Reset All Host Cookie Jars & Sessions</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-main)' }}>
-                    <CheckCircle2 size={16} color="var(--accent-emerald)" />
-                    <span>Clear Visited History & Reset Open Tabs</span>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                  <button className="btn btn-secondary btn-sm" onClick={() => setShowClearModal(false)}>
-                    Cancel
-                  </button>
-                  <button 
-                    className="btn btn-danger btn-sm" 
-                    disabled={clearingCache}
-                    onClick={handleClearCacheAndHistory}
-                    style={{ fontWeight: '800' }}
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-lg"
+                    onClick={() => handleOpenDirect(activeTab?.url)}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontWeight: '900', padding: '12px 24px', boxShadow: '0 4px 16px rgba(37, 99, 235, 0.35)' }}
                   >
-                    {clearingCache ? 'Purging...' : 'Clear All Cache & History Now'}
+                    <ExternalLink size={18} />
+                    <span>Launch Portal Directly</span>
                   </button>
                 </div>
               </div>
             </div>
-          </div>
-        )}
 
-        {/* HISTORY DRAWER */}
-        {showHistoryDrawer && (
-          <div style={{
-            width: '280px', borderLeft: '1px solid var(--border-color)',
-            background: 'var(--panel-bg)', display: 'flex', flexDirection: 'column',
-            overflowY: 'auto', padding: '16px', gap: '12px', flexShrink: 0
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ fontWeight: '800', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <History size={15} color="var(--primary-400)" />
-                <span>Browsing History</span>
+            {/* Quick Portal Launch Grid */}
+            <div style={{ marginBottom: '20px' }}>
+              <div style={{ fontSize: '0.9rem', fontWeight: '800', color: 'var(--text-main)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Layers size={16} color="var(--primary-500)" />
+                <span>Popular Government, Exam & Banking Portals</span>
               </div>
-              <button 
-                onClick={() => setShowHistoryDrawer(false)}
-                style={{ color: 'var(--text-muted)', cursor: 'pointer', background: 'none', border: 'none' }}
-              >
-                <X size={16} />
-              </button>
-            </div>
 
-            {historyList.length === 0 ? (
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textAlign: 'center', padding: '20px 0' }}>
-                No browsing history yet.
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {historyList.map((item, idx) => (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
+                {DEFAULT_BOOKMARKS.map((bm, idx) => (
                   <div
                     key={idx}
-                    onClick={() => {
-                      setUrlInput(item.url);
-                      setIsLoading(true);
-                      const updatedTabs = tabs.map(t => t.id === activeTabId ? { ...t, url: item.url, title: item.title } : t);
-                      setTabs(updatedTabs);
-                    }}
+                    className="card"
                     style={{
-                      padding: '8px 10px', background: 'var(--bg-surface-alt)',
-                      border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)',
-                      cursor: 'pointer', fontSize: '0.76rem', transition: 'background 0.15s ease'
+                      padding: '16px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      border: activeTab?.url === bm.url ? '2px solid #2563eb' : '1px solid var(--border-color)',
+                      background: activeTab?.url === bm.url ? 'rgba(37, 99, 235, 0.05)' : 'var(--bg-surface)'
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-surface)'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-surface-alt)'}
+                    onClick={() => handleBookmarkClick(bm)}
                   >
-                    <div style={{ fontWeight: '700', color: 'var(--text-main)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                      {item.title}
-                    </div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.68rem', marginTop: '2px' }}>
-                      {item.time} • {item.url.slice(0, 30)}...
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{
+                        width: '42px', height: '42px', borderRadius: '10px',
+                        background: 'var(--bg-surface-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '1.3rem', flexShrink: 0
+                      }}>
+                        {bm.icon}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: '800', fontSize: '0.9rem', color: 'var(--text-main)' }}>
+                          {bm.title}
+                        </div>
+                        <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                          {bm.desc}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={(e) => { e.stopPropagation(); handleOpenDirect(bm.url); }}
+                        style={{ padding: '6px 10px' }}
+                        title="Launch in New Tab"
+                      >
+                        <ExternalLink size={13} />
+                      </button>
                     </div>
                   </div>
                 ))}
               </div>
-            )}
-          </div>
-        )}
-
-        {/* AdShield Control Modal / Popover */}
-        {showAdshieldModal && (
-          <div style={{
-            position: 'absolute', top: '10px', left: '160px', zIndex: 100,
-            width: '320px', background: 'var(--panel-bg)', border: '1px solid var(--border-color)',
-            borderRadius: 'var(--radius-lg)', boxShadow: '0 16px 36px rgba(0, 0, 0, 0.4)',
-            padding: '16px', animation: 'fadeIn 0.2s ease-out'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-              <div style={{ fontWeight: '800', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <ShieldCheck size={18} color="#10b981" />
-                <span>AdShield Property Engine</span>
-              </div>
-              <button 
-                onClick={() => setShowAdshieldModal(false)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
-              >
-                <X size={15} />
-              </button>
             </div>
 
+            {/* Information Banner */}
             <div style={{
-              padding: '10px', background: 'var(--bg-surface-alt)',
-              borderRadius: 'var(--radius-md)', marginBottom: '12px',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+              background: 'var(--bg-surface-alt)', border: '1px solid var(--border-color)',
+              borderRadius: 'var(--radius-md)', padding: '14px 18px', fontSize: '0.78rem', color: 'var(--text-secondary)',
+              display: 'flex', alignItems: 'center', gap: '10px'
             }}>
+              <MapPin size={18} color="#10b981" style={{ flexShrink: 0 }} />
               <div>
-                <div style={{ fontWeight: '700', fontSize: '0.82rem', color: 'var(--text-main)' }}>Shield Protection</div>
-                <div style={{ fontSize: '0.72rem', color: adshieldEnabled ? '#10b981' : '#ef4444' }}>
-                  {adshieldEnabled ? 'Active & Filtering Ads' : 'Disabled (Raw Page Mode)'}
-                </div>
+                <b>Shree Online Sewa Kendra (Main Market, Mahuli, S.K.N)</b>: High-speed direct link gateway with built-in form autofill assistance.
               </div>
-              <button 
-                className={`btn btn-sm ${adshieldEnabled ? 'btn-danger' : 'btn-primary'}`}
-                onClick={() => {
-                  setAdshieldEnabled(!adshieldEnabled);
-                  setTimeout(handleReload, 100);
-                }}
-              >
-                {adshieldEnabled ? 'Turn OFF' : 'Turn ON'}
-              </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.76rem', color: 'var(--text-muted)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#10b981' }}>
-                <CheckCircle2 size={14} />
-                <span>Google AdSense & Video Ads Blocked</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#10b981' }}>
-                <CheckCircle2 size={14} />
-                <span>Popups & Suspicious Redirects Trapped</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#10b981' }}>
-                <CheckCircle2 size={14} />
-                <span>Tracker & Telemetry Scripts Stripped</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-cyan)' }}>
-                <Zap size={14} />
-                <span>Page Load Speed Boosted 3.2x</span>
-              </div>
-            </div>
           </div>
-        )}
+        </div>
 
-        {/* Right Sidebar: Operator Form Data Assistant */}
+        {/* 5. OPERATOR FORM DATA ASSISTANT SIDEBAR */}
         {showHelperSidebar && (
-          <div style={{
-            width: '300px', borderLeft: '1px solid var(--border-color)',
-            background: 'var(--panel-bg)', display: 'flex', flexDirection: 'column',
-            overflowY: 'auto', padding: '16px', gap: '12px', flexShrink: 0
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <aside className="browser-helper-sidebar" style={{ width: '300px', background: 'var(--bg-surface)', borderLeft: '1px solid var(--border-color)', padding: '16px', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
               <div style={{ fontWeight: '800', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Key size={15} color="var(--primary-400)" />
-                <span>Quick Form Filler</span>
+                <Zap size={16} color="var(--primary-500)" />
+                <span>Quick Copy Assistant</span>
               </div>
-              <button 
-                onClick={() => setShowHelperSidebar(false)}
-                style={{ color: 'var(--text-muted)', cursor: 'pointer', background: 'none', border: 'none' }}
-              >
-                <X size={16} />
-              </button>
+              <button className="icon-btn" onClick={() => setShowHelperSidebar(false)}><X size={14} /></button>
             </div>
 
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-              Click any detail below to 1-click copy into clipboard while filling forms on the left:
+            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
+              Click any field to copy to clipboard for instant pasting into government portal forms:
             </div>
 
-            {[
-              { label: 'Customer Name', key: 'customerName', val: assistantData.customerName },
-              { label: 'Mobile Number', key: 'phone', val: assistantData.phone },
-              { label: 'Email Address', key: 'email', val: assistantData.email },
-              { label: 'Aadhaar Number', key: 'aadhaar', val: assistantData.aadhaar },
-              { label: 'PAN Card No', key: 'pan', val: assistantData.pan },
-              { label: 'Date of Birth (DOB)', key: 'dob', val: assistantData.dob },
-              { label: "Father's Name", key: 'fatherName', val: assistantData.fatherName },
-              { label: 'Address', key: 'address', val: assistantData.address }
-            ].map(f => (
-              <div 
-                key={f.key}
-                onClick={() => handleCopyText(f.key, f.val)}
-                style={{
-                  padding: '8px 10px', background: 'var(--bg-surface-alt)',
-                  border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)',
-                  cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase' }}>
-                    {f.label}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {Object.entries(assistantData).map(([key, val]) => {
+                const isCopied = quickCopiedField === key;
+                return (
+                  <div
+                    key={key}
+                    onClick={() => copyToClipboard(val, key)}
+                    style={{
+                      background: isCopied ? 'rgba(16, 185, 129, 0.15)' : 'var(--bg-surface-alt)',
+                      border: isCopied ? '1px solid #10b981' : '1px solid var(--border-subtle)',
+                      borderRadius: '8px', padding: '8px 10px', cursor: 'pointer', transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
+                      <span>{key.replace(/([A-Z])/g, ' $1')}</span>
+                      {isCopied ? <span style={{ color: '#10b981', fontWeight: '800' }}>COPIED!</span> : <Copy size={11} />}
+                    </div>
+                    <div style={{ fontSize: '0.82rem', fontWeight: '700', color: 'var(--text-main)', marginTop: '2px', wordBreak: 'break-all' }}>
+                      {val}
+                    </div>
                   </div>
-                  <div style={{ fontWeight: '700', fontSize: '0.82rem', color: 'var(--text-main)', marginTop: '2px' }}>
-                    {f.val}
-                  </div>
-                </div>
-
-                <div style={{ color: quickCopiedField === f.key ? 'var(--accent-emerald)' : 'var(--text-muted)' }}>
-                  {quickCopiedField === f.key ? <Check size={16} /> : <Copy size={14} />}
-                </div>
-              </div>
-            ))}
-          </div>
+                );
+              })}
+            </div>
+          </aside>
         )}
+
       </div>
+
+      {/* CLEAR CACHE MODAL */}
+      {showClearModal && (
+        <div className="modal-overlay" onClick={() => setShowClearModal(false)}>
+          <div className="modal-container" style={{ maxWidth: '400px' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <div style={{ fontWeight: '800', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Trash2 size={18} color="#ef4444" />
+                <span>Clear Browser Cache & History</span>
+              </div>
+              <button className="icon-btn" onClick={() => setShowClearModal(false)}><X size={16} /></button>
+            </div>
+            <div className="modal-body" style={{ padding: '16px' }}>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: '1.5' }}>
+                This will clear temporary browsing sessions and visited token history from this device.
+              </p>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button className="btn btn-secondary btn-sm" onClick={() => setShowClearModal(false)}>
+                  Cancel
+                </button>
+                <button 
+                  className="btn btn-danger btn-sm" 
+                  disabled={clearingCache}
+                  onClick={handleClearCacheAndHistory}
+                >
+                  {clearingCache ? 'Clearing...' : 'Clear History & Cache'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
