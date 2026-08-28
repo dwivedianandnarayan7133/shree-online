@@ -1,3 +1,4 @@
+const { UPLOAD_PATHS } = require('../config/constants');
 ﻿const { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType } = require('docx');
 const path = require('path');
 const fs = require('fs');

@@ -1,3 +1,4 @@
+const { UPLOAD_PATHS } = require('../config/constants');
 ﻿const archiver = require('archiver');
 const AdmZip = require('adm-zip');
 const path = require('path');

@@ -1,3 +1,4 @@
+const { UPLOAD_PATHS } = require('../config/constants');
 ﻿const { PDFDocument, rgb, degrees } = require('pdf-lib');
 const sharp = require('sharp');
 const path = require('path');

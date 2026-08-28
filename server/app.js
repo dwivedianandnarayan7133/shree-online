@@ -1,3 +1,4 @@
+const { UPLOAD_PATHS } = require('./config/constants');
 const adminController = require('./controllers/adminController');
 require('dotenv').config();
 ﻿const express = require('express');

@@ -1,3 +1,4 @@
+const { UPLOAD_PATHS } = require('../config/constants');
 ﻿const Tesseract = require('tesseract.js');
 const sharp = require('sharp');
 const path = require('path');
