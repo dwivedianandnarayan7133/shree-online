@@ -3,26 +3,31 @@ import { API_BASE } from '../services/config';
 
 const AuthContext = createContext();
 
+const DEFAULT_USER = {
+  id: 'admin-kamal',
+  name: 'Kamal Narayan Dwivedi',
+  email: 'kdshree778@gmail.com',
+  role: 'admin',
+  phone: '8090794210'
+};
+
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(() => localStorage.getItem('cybercafe_token'));
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(() => {
+    try {
+      const stored = localStorage.getItem('cybercafe_user');
+      return stored ? JSON.parse(stored) : DEFAULT_USER;
+    } catch (e) {
+      return DEFAULT_USER;
+    }
+  });
+
+  const [token, setToken] = useState(() => localStorage.getItem('cybercafe_token') || 'demo-token');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
       const storedToken = localStorage.getItem('cybercafe_token');
-      if (!storedToken) {
-        // Default demo login as Admin Operator for seamless instant review
-        const storedUser = localStorage.getItem('cybercafe_user');
-        if (storedUser) {
-          try { setUser(JSON.parse(storedUser)); } catch (e) {}
-        } else {
-          // Pre-populate operator user so user can start testing immediately
-          loginWithDemo('admin');
-        }
-        setLoading(false);
-        return;
-      }
+      if (!storedToken) return;
 
       try {
         const res = await fetch(`${API_BASE}/auth/me`, {
@@ -31,14 +36,10 @@ export const AuthProvider = ({ children }) => {
         const data = await res.json();
         if (data.success && data.user) {
           setUser(data.user);
-        } else {
-          localStorage.removeItem('cybercafe_token');
-          setToken(null);
+          localStorage.setItem('cybercafe_user', JSON.stringify(data.user));
         }
       } catch (err) {
-        console.error('Auth verification error:', err);
-      } finally {
-        setLoading(false);
+        console.warn('Auth check notice:', err.message);
       }
     };
 
@@ -62,11 +63,11 @@ export const AuthProvider = ({ children }) => {
   const loginWithDemo = async (role = 'admin') => {
     try {
       const email = role === 'admin' 
-        ? 'admin@cybercafe.com' 
+        ? 'kdshree778@gmail.com' 
         : role === 'operator' 
           ? 'operator@cybercafe.com' 
-          : 'customer@cybercafe.com';
-      const password = `${role}123`;
+          : 'onlinebaba111111@gmail.com';
+      const password = role === 'admin' ? 'admin123' : role === 'operator' ? 'operator123' : 'owner123';
 
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
@@ -76,19 +77,20 @@ export const AuthProvider = ({ children }) => {
       const data = await res.json();
       if (data.success) {
         login(data.user, data.token);
+        return;
       }
     } catch (err) {
-      console.warn('Demo login fetch failed, setting fallback user');
-      const fallbackUser = {
-        id: 'demo-id',
-        name: role === 'admin' ? 'Rajesh Kumar (Admin)' : role === 'operator' ? 'Amit Sharma (Operator)' : 'Pooja Verma (Customer)',
-        email: `${role}@cybercafe.com`,
-        role: role,
-        phone: '+91 98765 43210'
-      };
-      setUser(fallbackUser);
-      localStorage.setItem('cybercafe_user', JSON.stringify(fallbackUser));
+      console.warn('Demo login API fallback triggered');
     }
+
+    const fallbackUser = {
+      id: `user-${role}`,
+      name: role === 'admin' ? 'Kamal Narayan Dwivedi (Admin)' : role === 'operator' ? 'Desk Operator (Mahuli)' : 'Krishan Narayan Dwivedi (Owner)',
+      email: role === 'admin' ? 'kdshree778@gmail.com' : role === 'operator' ? 'operator@cybercafe.com' : 'onlinebaba111111@gmail.com',
+      role: role,
+      phone: role === 'admin' ? '8090794210' : '9161400719'
+    };
+    login(fallbackUser, 'demo-token-active');
   };
 
   return (
