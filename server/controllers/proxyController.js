@@ -119,7 +119,7 @@ const browseUrl = async (req, res) => {
       if (targetUrl.includes('.') && !targetUrl.includes(' ')) {
         targetUrl = `https://${targetUrl}`;
       } else {
-        targetUrl = `https://www.bing.com/search?q=${encodeURIComponent(targetUrl)}`;
+        targetUrl = `https://www.google.com/search?q=${encodeURIComponent(targetUrl)}`;
       }
     }
 
@@ -127,7 +127,7 @@ const browseUrl = async (req, res) => {
     try {
       parsedUrl = new URL(targetUrl);
     } catch (e) {
-      targetUrl = `https://www.bing.com/search?q=${encodeURIComponent(targetUrl)}`;
+      targetUrl = `https://www.google.com/search?q=${encodeURIComponent(targetUrl)}`;
       parsedUrl = new URL(targetUrl);
     }
 

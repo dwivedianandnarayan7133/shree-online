@@ -57,10 +57,10 @@ export const CyberBrowser = () => {
 
   const handleNewTab = () => {
     const newId = `tab-${Date.now()}`;
-    const newTab = { id: newId, title: 'Web Search', url: 'https://www.bing.com', icon: '🔍' };
+    const newTab = { id: newId, title: 'Web Search', url: 'https://www.google.com', icon: '🔍' };
     setTabs([...tabs, newTab]);
     setActiveTabId(newId);
-    setUrlInput('https://www.bing.com');
+    setUrlInput('https://www.google.com');
   };
 
   const handleCloseTab = (tabId, e) => {
@@ -88,7 +88,7 @@ export const CyberBrowser = () => {
       if (target.includes('.') && !target.includes(' ')) {
         target = `https://${target}`;
       } else {
-        target = `https://www.bing.com/search?q=${encodeURIComponent(target)}`;
+        target = `https://www.google.com/search?q=${encodeURIComponent(target)}`;
       }
     }
 
