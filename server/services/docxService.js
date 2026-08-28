@@ -113,7 +113,7 @@ async function generateDocxFromText(text, options = {}) {
 
   const buffer = await Packer.toBuffer(doc);
   const outName = `doc-${Date.now()}-${uuidv4().substring(0, 6)}.docx`;
-  const outPath = path.join(__dirname, '../uploads/processed', outName);
+  const outPath = path.join(UPLOAD_PATHS.PROCESSED, outName);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, buffer);
 

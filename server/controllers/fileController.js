@@ -1,3 +1,4 @@
+const { UPLOAD_PATHS } = require('../config/constants');
 ﻿const path = require('path');
 const fs = require('fs');
 const sharp = require('sharp');
@@ -32,7 +33,7 @@ const compressFiles = async (req, res) => {
       } else if (['.jpg', '.jpeg', '.png', '.webp'].includes(ext)) {
         const qualityVal = quality === 'low' ? 50 : quality === 'medium' ? 70 : 85;
         const outName = `compressed-${Date.now()}-${file.filename}`;
-        const outPath = path.join(__dirname, '../uploads/processed', outName);
+        const outPath = path.join(UPLOAD_PATHS.PROCESSED, outName);
         fs.mkdirSync(path.dirname(outPath), { recursive: true });
 
         if (ext === '.png') {

@@ -101,7 +101,7 @@ async function processSinglePassportPhoto(inputPath, options = {}) {
   }
 
   const outFilename = `passport-${Date.now()}-${uuidv4().substring(0, 6)}.jpg`;
-  const outPath = path.join(__dirname, '../uploads/processed', outFilename);
+  const outPath = path.join(UPLOAD_PATHS.PROCESSED, outFilename);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
 
   await pipeline.jpeg({ quality: 96 }).toFile(outPath);
@@ -204,7 +204,7 @@ async function generatePassportSheet(singlePhotoPath, options = {}) {
   }
 
   const sheetFilename = `shree-passport-sheet-${count}x-${Date.now()}.jpg`;
-  const sheetPath = path.join(__dirname, '../uploads/processed', sheetFilename);
+  const sheetPath = path.join(UPLOAD_PATHS.PROCESSED, sheetFilename);
   fs.mkdirSync(path.dirname(sheetPath), { recursive: true });
 
   await sharp({
@@ -235,7 +235,7 @@ async function generatePassportSheet(singlePhotoPath, options = {}) {
   });
 
   const pdfFilename = `shree-passport-sheet-${count}x-${Date.now()}.pdf`;
-  const pdfPath = path.join(__dirname, '../uploads/processed', pdfFilename);
+  const pdfPath = path.join(UPLOAD_PATHS.PROCESSED, pdfFilename);
   const pdfBytes = await pdfDoc.save();
   fs.writeFileSync(pdfPath, pdfBytes);
 

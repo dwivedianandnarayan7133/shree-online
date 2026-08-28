@@ -54,7 +54,7 @@ async function generateExcelFromTable(tableRows, options = {}) {
   }
 
   const outName = `sheet-${Date.now()}-${uuidv4().substring(0, 6)}.xlsx`;
-  const outPath = path.join(__dirname, '../uploads/processed', outName);
+  const outPath = path.join(UPLOAD_PATHS.PROCESSED, outName);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
 
   await workbook.xlsx.writeFile(outPath);

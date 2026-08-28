@@ -146,7 +146,7 @@ async function performOcr(inputPath, options = {}) {
   let tempClean = null;
 
   try {
-    tempClean = path.join(__dirname, '../uploads/temp', `ocr-prep-${Date.now()}.png`);
+    tempClean = path.join(UPLOAD_PATHS.TEMP, `ocr-prep-${Date.now()}.png`);
     fs.mkdirSync(path.dirname(tempClean), { recursive: true });
 
     await sharp(inputPath)

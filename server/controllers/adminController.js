@@ -1,3 +1,4 @@
+const { UPLOAD_PATHS } = require('../config/constants');
 const fs = require('fs');
 const path = require('path');
 const User = require('../models/User');
@@ -42,9 +43,9 @@ const getDashboardStats = async (req, res) => {
     let totalStorageBytes = 0;
     let fileCount = 0;
     const uploadDirs = [
-      path.join(__dirname, '../uploads/temp'),
-      path.join(__dirname, '../uploads/processed'),
-      path.join(__dirname, '../uploads/customer_records')
+      path.join(UPLOAD_PATHS.TEMP, ),
+      path.join(UPLOAD_PATHS.PROCESSED, ),
+      path.join(UPLOAD_PATHS.CUSTOMER, )
     ];
 
     uploadDirs.forEach(dir => {

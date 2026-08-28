@@ -9,7 +9,7 @@ const { v4: uuidv4 } = require('uuid');
  */
 async function createZip(fileItems, zipName = null) {
   const outName = zipName || `archive-${Date.now()}-${uuidv4().substring(0, 6)}.zip`;
-  const outPath = path.join(__dirname, '../uploads/processed', outName);
+  const outPath = path.join(UPLOAD_PATHS.PROCESSED, outName);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
 
   const output = fs.createWriteStream(outPath);
@@ -44,7 +44,7 @@ async function createZip(fileItems, zipName = null) {
 function extractZip(zipPath) {
   const zip = new AdmZip(zipPath);
   const zipEntries = zip.getEntries();
-  const extractDir = path.join(__dirname, '../uploads/temp', `extracted-${Date.now()}-${uuidv4().substring(0, 6)}`);
+  const extractDir = path.join(UPLOAD_PATHS.TEMP, `extracted-${Date.now()}-${uuidv4().substring(0, 6)}`);
   fs.mkdirSync(extractDir, { recursive: true });
 
   zip.extractAllTo(extractDir, true);

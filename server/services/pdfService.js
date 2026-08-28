@@ -72,7 +72,7 @@ async function imagesToPdf(imagePaths, options = {}) {
 
   const pdfBytes = await pdfDoc.save();
   const outName = `converted-${Date.now()}-${uuidv4().substring(0, 6)}.pdf`;
-  const outPath = path.join(__dirname, '../uploads/processed', outName);
+  const outPath = path.join(UPLOAD_PATHS.PROCESSED, outName);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, pdfBytes);
 
@@ -99,7 +99,7 @@ async function mergePdfs(pdfPaths) {
 
   const mergedBytes = await mergedPdf.save();
   const outName = `merged-${Date.now()}-${uuidv4().substring(0, 6)}.pdf`;
-  const outPath = path.join(__dirname, '../uploads/processed', outName);
+  const outPath = path.join(UPLOAD_PATHS.PROCESSED, outName);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, mergedBytes);
 
@@ -149,7 +149,7 @@ async function splitOrExtractPdf(pdfPath, pageRangeStr) {
 
   const outBytes = await newDoc.save();
   const outName = `extracted-pages-${Date.now()}-${uuidv4().substring(0, 6)}.pdf`;
-  const outPath = path.join(__dirname, '../uploads/processed', outName);
+  const outPath = path.join(UPLOAD_PATHS.PROCESSED, outName);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, outBytes);
 
@@ -177,7 +177,7 @@ async function rotatePdf(pdfPath, angle = 90) {
 
   const outBytes = await pdfDoc.save();
   const outName = `rotated-${Date.now()}-${uuidv4().substring(0, 6)}.pdf`;
-  const outPath = path.join(__dirname, '../uploads/processed', outName);
+  const outPath = path.join(UPLOAD_PATHS.PROCESSED, outName);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, outBytes);
 
@@ -201,7 +201,7 @@ async function compressPdf(pdfPath, quality = 'medium') {
 
   const compressedBytes = await pdfDoc.save({ useObjectStreams: true });
   const outName = `compressed-${Date.now()}-${uuidv4().substring(0, 6)}.pdf`;
-  const outPath = path.join(__dirname, '../uploads/processed', outName);
+  const outPath = path.join(UPLOAD_PATHS.PROCESSED, outName);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, compressedBytes);
 

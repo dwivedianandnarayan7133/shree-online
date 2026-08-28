@@ -13,8 +13,8 @@ function initCleanupScheduler() {
       const maxAgeMs = retentionHours * 60 * 60 * 1000;
       const now = Date.now();
 
-      const tempDir = path.join(__dirname, '../uploads/temp');
-      const processedDir = path.join(__dirname, '../uploads/processed');
+      const tempDir = path.join(UPLOAD_PATHS.TEMP, );
+      const processedDir = path.join(UPLOAD_PATHS.PROCESSED, );
 
       let cleanedFilesCount = 0;
       let freedBytes = 0;
@@ -58,8 +58,8 @@ function initCleanupScheduler() {
 async function performManualCleanup(retentionHours = 1) {
   const maxAgeMs = retentionHours * 60 * 60 * 1000;
   const now = Date.now();
-  const tempDir = path.join(__dirname, '../uploads/temp');
-  const processedDir = path.join(__dirname, '../uploads/processed');
+  const tempDir = path.join(UPLOAD_PATHS.TEMP, );
+  const processedDir = path.join(UPLOAD_PATHS.PROCESSED, );
 
   let cleanedFilesCount = 0;
   let freedBytes = 0;

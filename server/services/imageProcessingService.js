@@ -61,7 +61,7 @@ async function restoreOldDocument(inputPath, options = {}) {
   }
 
   const outName = `restored-${Date.now()}-${uuidv4().substring(0, 6)}.png`;
-  const outPath = path.join(__dirname, '../uploads/processed', outName);
+  const outPath = path.join(UPLOAD_PATHS.PROCESSED, outName);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
 
   await pipeline.png({ compressionLevel: 8 }).toFile(outPath);
@@ -108,7 +108,7 @@ async function processSignature(inputPath, options = {}) {
   }
 
   const outName = `signature-${Date.now()}-${uuidv4().substring(0, 6)}.png`;
-  const outPath = path.join(__dirname, '../uploads/processed', outName);
+  const outPath = path.join(UPLOAD_PATHS.PROCESSED, outName);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
 
   await pipeline.png().toFile(outPath);
@@ -130,7 +130,7 @@ async function cleanImageBackground(inputPath, options = {}) {
     .sharpen({ sigma: 1.0 });
 
   const outName = `bg-clean-${Date.now()}-${uuidv4().substring(0, 6)}.png`;
-  const outPath = path.join(__dirname, '../uploads/processed', outName);
+  const outPath = path.join(UPLOAD_PATHS.PROCESSED, outName);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
 
   await pipeline.png().toFile(outPath);
@@ -182,7 +182,7 @@ async function transformImage(inputPath, options = {}) {
 
   const ext = format === 'jpeg' || format === 'jpg' ? 'jpg' : format;
   const outName = `transformed-${Date.now()}-${uuidv4().substring(0, 6)}.${ext}`;
-  const outPath = path.join(__dirname, '../uploads/processed', outName);
+  const outPath = path.join(UPLOAD_PATHS.PROCESSED, outName);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
 
   if (format === 'png') {
