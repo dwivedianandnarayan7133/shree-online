@@ -1,0 +1,11 @@
+{
+  "name": "cybercafe-portal",
+  "version": "1.0.0",
+  "description": "Cyber Cafe Management & Digital Service Portal - One Window. Every Digital Service.",
+  "scripts": {
+    "server": "cd server && npm start",
+    "client": "cd client && npm run dev",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "build": "cd client && npm run build"
+  }
+}

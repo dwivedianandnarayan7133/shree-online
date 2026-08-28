@@ -1,0 +1,66 @@
+﻿const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const adShieldGuard = require('./middleware/adShieldGuard');
+const rateLimiter = require('./middleware/rateLimiter');
+const errorHandler = require('./middleware/errorHandler');
+
+// Route imports
+const authRoutes = require('./routes/authRoutes');
+const requestRoutes = require('./routes/requestRoutes');
+const documentRoutes = require('./routes/documentRoutes');
+const imageRoutes = require('./routes/imageRoutes');
+const conversionRoutes = require('./routes/conversionRoutes');
+const fileRoutes = require('./routes/fileRoutes');
+const billingRoutes = require('./routes/billingRoutes');
+const printRoutes = require('./routes/printRoutes');
+const websiteRoutes = require('./routes/websiteRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const proxyRoutes = require('./routes/proxyRoutes');
+
+const app = express();
+
+// Security & AdShield workspace protection headers
+app.use(adShieldGuard);
+
+// Global Middleware
+app.use(cors({ origin: '*', credentials: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(rateLimiter(300, 60 * 1000));
+
+// Serve processed & temp uploads securely
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+  setHeaders: (res) => {
+    res.set('X-Content-Type-Options', 'nosniff');
+    res.set('Content-Disposition', 'inline');
+  }
+}));
+
+// API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/requests', requestRoutes);
+app.use('/api/documents', documentRoutes);
+app.use('/api/images', imageRoutes);
+app.use('/api/conversions', conversionRoutes);
+app.use('/api/files', fileRoutes);
+app.use('/api/billing', billingRoutes);
+app.use('/api/print', printRoutes);
+app.use('/api/websites', websiteRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/proxy', proxyRoutes);
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    portal: 'Shree Online (Mahuli, S.K.N)',
+    timestamp: new Date().toISOString(),
+    engine: 'Node.js + Express + Sharp + PDF-Lib + Tesseract.js'
+  });
+});
+
+// Central Error Handler
+app.use(errorHandler);
+
+module.exports = app;
