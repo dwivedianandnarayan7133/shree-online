@@ -16,7 +16,7 @@ const ADMIN_INFO = {
 
 // Create Google / Gmail Transporter
 function createTransporter() {
-  const user = process.env.EMAIL_USER || process.env.GMAIL_USER || 'kdshree778@gmail.com';
+  const user = process.env.EMAIL_USER || process.env.GMAIL_USER || 'dwivedianandnarayan@gmail.com';
   const pass = (process.env.EMAIL_PASS || process.env.GMAIL_APP_PASSWORD || process.env.GMAIL_PASSWORD || '').replace(/\s+/g, '');
 
   if (pass) {
@@ -43,7 +43,7 @@ function createTransporter() {
 async function sendRegisterOtpEmail(toEmail, otp, userName = 'Citizen') {
   try {
     const transporter = createTransporter();
-    const fromUser = process.env.EMAIL_USER || process.env.GMAIL_USER || 'kdshree778@gmail.com';
+    const fromUser = process.env.EMAIL_USER || process.env.GMAIL_USER || 'dwivedianandnarayan@gmail.com';
     const mailOptions = {
       from: `"Shree Online Verification" <${fromUser}>`,
       to: toEmail,
@@ -98,7 +98,7 @@ async function sendRegisterOtpEmail(toEmail, otp, userName = 'Citizen') {
 async function sendLoginAlertEmail(toEmail, userName, role, ipAddress = '127.0.0.1', loginTime = new Date()) {
   try {
     const transporter = createTransporter();
-    const fromUser = process.env.EMAIL_USER || process.env.GMAIL_USER || 'kdshree778@gmail.com';
+    const fromUser = process.env.EMAIL_USER || process.env.GMAIL_USER || 'dwivedianandnarayan@gmail.com';
     const formattedTime = new Date(loginTime).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
 
     const mailOptions = {
@@ -153,7 +153,7 @@ async function sendLoginAlertEmail(toEmail, userName, role, ipAddress = '127.0.0
 async function sendWelcomeEmail(toEmail, userName = 'Valued Customer') {
   try {
     const transporter = createTransporter();
-    const fromUser = process.env.EMAIL_USER || process.env.GMAIL_USER || 'kdshree778@gmail.com';
+    const fromUser = process.env.EMAIL_USER || process.env.GMAIL_USER || 'dwivedianandnarayan@gmail.com';
     const mailOptions = {
       from: `"Shree Online (Mahuli, S.K.N)" <${fromUser}>`,
       to: toEmail,
