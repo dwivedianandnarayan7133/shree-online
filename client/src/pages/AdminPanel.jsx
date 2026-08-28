@@ -1,47 +1,71 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Settings, Users, Clock, ShieldCheck, 
-  Trash2, HardDrive, Edit3, CheckCircle2, RefreshCw 
+  Trash2, HardDrive, Edit3, CheckCircle2, RefreshCw,
+  PlusCircle, UserPlus, Save, Award, Layout, FileText,
+  IndianRupee, Lock, Eye, EyeOff, AlertCircle
 } from 'lucide-react';
 import { api } from '../services/api';
 
 export const AdminPanel = () => {
-  const [activeTab, setActiveTab] = useState('pricing'); // 'pricing', 'retention', 'logs', 'users'
+  const [activeTab, setActiveTab] = useState('static_pages');
+  const [loading, setLoading] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState('');
 
-  // Pricing Catalog State
+  const [config, setConfig] = useState({
+    portalName: 'Shree Online (Mahuli, S.K.N)',
+    tagline: 'One Window. Every Digital Service.',
+    establishedYear: '2013',
+    aboutUsText: '',
+    ownerName: 'Krishan Narayan Dwivedi',
+    ownerRole: 'Founder & Managing Owner',
+    ownerPhone: '9161400719',
+    ownerEmail: 'onlinebaba111111@gmail.com',
+    ownerQuote: '',
+    adminName: 'Kamal Narayan Dwivedi',
+    adminRole: 'Managing Director & Main Controller',
+    adminPhone: '8090794210',
+    adminEmail: 'kdshree778@gmail.com',
+    adminQuote: '',
+    cyberCafeAddress: 'Main Market, Mahuli, Sant Kabir Nagar (S.K.N), Uttar Pradesh - 272172',
+    footerTimings: 'Monday – Sunday (08:00 AM – 09:00 PM)',
+    footerCopyright: '© 2013 – 2026 Shree Online Sewa Kendra • Mahuli, Sant Kabir Nagar (S.K.N), U.P. All rights reserved.',
+    retentionHours: 24,
+    adShieldEnabled: true
+  });
+
+  const [users, setUsers] = useState([]);
+  const [showAddOpModal, setShowAddOpModal] = useState(false);
+  const [newOp, setNewOp] = useState({ name: '', email: '', phone: '', password: '', role: 'operator' });
+
   const [services, setServices] = useState([]);
+  const [newService, setNewService] = useState({ name: '', category: 'online_form', price: '', description: '' });
   const [editingPriceId, setEditingPriceId] = useState(null);
   const [newPrice, setNewPrice] = useState(0);
 
-  // Retention Config State
-  const [config, setConfig] = useState(null);
-  const [retentionHours, setRetentionHours] = useState(24);
-  const [adShieldEnabled, setAdShieldEnabled] = useState(true);
-
-  // Audit Logs State
   const [logs, setLogs] = useState([]);
-  const [users, setUsers] = useState([]);
   const [cleanupResult, setCleanupResult] = useState(null);
 
   const fetchAdminData = async () => {
+    setLoading(true);
     try {
       const [servRes, confRes, logRes, userRes] = await Promise.all([
         api.getPricing(),
         api.getSystemConfig(),
-        api.getAuditLogs('limit=25'),
+        api.getAuditLogs('limit=30'),
         api.getUsers()
       ]);
 
       if (servRes.success) setServices(servRes.services);
-      if (confRes.success) {
-        setConfig(confRes.config);
-        setRetentionHours(confRes.config.retentionHours || 24);
-        setAdShieldEnabled(confRes.config.adShieldEnabled ?? true);
+      if (confRes.success && confRes.config) {
+        setConfig(prev => ({ ...prev, ...confRes.config }));
       }
       if (logRes.success) setLogs(logRes.logs);
       if (userRes.success) setUsers(userRes.users);
     } catch (err) {
-      console.error(err);
+      console.error('Failed to load admin panel data:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -49,9 +73,74 @@ export const AdminPanel = () => {
     fetchAdminData();
   }, []);
 
+  const handleSaveStaticPages = async (e) => {
+    if (e) e.preventDefault();
+    try {
+      const res = await api.updateSystemConfig(config);
+      if (res.success) {
+        setSaveSuccess('Static pages, leadership profiles, and footer updated successfully.');
+        setTimeout(() => setSaveSuccess(''), 4000);
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to save settings');
+    }
+  };
+
+  const handleCreateOperator = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await api.createOperator(newOp);
+      if (res.success) {
+        setShowAddOpModal(false);
+        setNewOp({ name: '', email: '', phone: '', password: '', role: 'operator' });
+        fetchAdminData();
+        setSaveSuccess('New operator account created successfully.');
+        setTimeout(() => setSaveSuccess(''), 4000);
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to create operator');
+    }
+  };
+
+  const handleToggleOperatorStatus = async (user) => {
+    try {
+      const res = await api.updateOperator(user._id, { isActive: !user.isActive });
+      if (res.success) {
+        fetchAdminData();
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to update operator status');
+    }
+  };
+
+  const handleDeleteOperator = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to delete operator "${name}"?`)) return;
+    try {
+      const res = await api.deleteOperator(id);
+      if (res.success) {
+        fetchAdminData();
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to delete operator');
+    }
+  };
+
+  const handleAddService = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await api.createServiceItem(newService);
+      if (res.success) {
+        setNewService({ name: '', category: 'online_form', price: '', description: '' });
+        fetchAdminData();
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to add service');
+    }
+  };
+
   const handleUpdatePrice = async (serviceId) => {
     try {
-      const res = await api.updatePrice(serviceId, { basePrice: Number(newPrice) });
+      const res = await api.updatePrice(serviceId, { price: Number(newPrice) });
       if (res.success) {
         setEditingPriceId(null);
         fetchAdminData();
@@ -61,120 +150,349 @@ export const AdminPanel = () => {
     }
   };
 
-  const handleSaveConfig = async () => {
+  const handleDeleteService = async (id) => {
+    if (!window.confirm('Delete this service from catalog?')) return;
     try {
-      const res = await api.updateSystemConfig({
-        retentionHours: Number(retentionHours),
-        adShieldEnabled
-      });
+      const res = await api.deleteServiceItem(id);
       if (res.success) {
-        alert('System retention policy and security settings updated.');
+        fetchAdminData();
       }
     } catch (err) {
-      alert(err.message || 'Failed to update settings');
+      alert(err.message || 'Failed to delete service');
     }
   };
 
-  const handleTriggerManualCleanup = async () => {
-    if (!window.confirm('Trigger manual deletion of expired temporary processing files now?')) return;
+  const handleTriggerCleanup = async () => {
+    if (!window.confirm('Trigger manual storage cleanup now?')) return;
     try {
-      const res = await api.triggerCleanup({ retentionHours: Number(retentionHours) });
+      const res = await api.triggerCleanup({});
       if (res.success) {
         setCleanupResult(res.result);
         fetchAdminData();
       }
     } catch (err) {
-      alert(err.message || 'Cleanup error');
+      alert(err.message || 'Cleanup failed');
     }
   };
 
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <div className="page-header">
         <div>
-          <h1 className="page-title">
-            <Settings size={24} color="var(--primary-500)" />
-            <span>Shree Online Master Admin & Settings (Mahuli, S.K.N)</span>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(99, 102, 241, 0.15)', color: 'var(--primary-400)', padding: '3px 10px', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: '800', marginBottom: '8px' }}>
+            <Award size={13} color="#f59e0b" />
+            <span>Managing Director & Main Controller Desk</span>
+          </div>
+          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span>Admin Control Center</span>
+            <span className="badge badge-primary" style={{ fontSize: '0.75rem' }}>Kamal Narayan Dwivedi</span>
           </h1>
           <p className="page-subtitle">
-            Configure digital service pricing, automated file retention cleaner schedules, security shield, and audit logs.
+            Central controller for static content, operators, pricing catalog, storage retention, and audit logs.
           </p>
         </div>
-      </div>
-
-      <div className="tabs-container">
-        <button className={`tab-btn ${activeTab === 'pricing' ? 'active' : ''}`} onClick={() => setActiveTab('pricing')}>
-          <Edit3 size={16} /> Service Pricing Catalog
-        </button>
-        <button className={`tab-btn ${activeTab === 'retention' ? 'active' : ''}`} onClick={() => setActiveTab('retention')}>
-          <Clock size={16} /> File Retention & Auto-Cleaner
-        </button>
-        <button className={`tab-btn ${activeTab === 'logs' ? 'active' : ''}`} onClick={() => setActiveTab('logs')}>
-          <ShieldCheck size={16} /> Security Audit Logs
-        </button>
-        <button className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>
-          <Users size={16} /> Operators & Staff
+        <button className="btn btn-secondary btn-sm" onClick={fetchAdminData}>
+          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh Data
         </button>
       </div>
 
-      {/* 1. PRICING CATALOG */}
-      {activeTab === 'pricing' && (
+      {saveSuccess && (
+        <div style={{
+          background: 'rgba(37, 211, 102, 0.15)', color: '#25d366',
+          border: '1px solid rgba(37, 211, 102, 0.3)', padding: '12px 16px',
+          borderRadius: 'var(--radius-md)', fontSize: '0.85rem', fontWeight: '700',
+          display: 'flex', alignItems: 'center', gap: '8px'
+        }}>
+          <CheckCircle2 size={18} />
+          <span>{saveSuccess}</span>
+        </div>
+      )}
+
+      <div style={{
+        display: 'flex', gap: '6px', borderBottom: '1px solid var(--border-color)',
+        paddingBottom: '8px', overflowX: 'auto', flexWrap: 'wrap'
+      }}>
+        {[
+          { id: 'static_pages', label: 'Static Pages & Footer', icon: Layout },
+          { id: 'operators', label: 'Operators & Users', icon: Users },
+          { id: 'pricing', label: 'Service Pricing Catalog', icon: IndianRupee },
+          { id: 'retention', label: 'Storage & Retention', icon: HardDrive },
+          { id: 'logs', label: 'Security Audit Logs', icon: Clock },
+        ].map(t => {
+          const Icon = t.icon;
+          const isActive = activeTab === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab(t.id)}
+              className={`btn btn-sm ${isActive ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <Icon size={14} />
+              <span>{t.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {activeTab === 'static_pages' && (
+        <form onSubmit={handleSaveStaticPages} className="card">
+          <div className="card-header">
+            <div className="card-title">
+              <Layout size={18} color="var(--primary-500)" />
+              <span>Manage About Us, Leadership Profiles & Footer Content</span>
+            </div>
+            <button type="submit" className="btn btn-primary btn-sm">
+              <Save size={14} /> Save Changes
+            </button>
+          </div>
+          <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: '800', color: 'var(--primary-400)', marginBottom: '12px' }}>
+                🏢 Center Identity & Branding
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
+                <div className="form-group">
+                  <label className="form-label">Portal Name</label>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    value={config.portalName} 
+                    onChange={e => setConfig({ ...config, portalName: e.target.value })} 
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Tagline</label>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    value={config.tagline} 
+                    onChange={e => setConfig({ ...config, tagline: e.target.value })} 
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Established Year</label>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    value={config.establishedYear} 
+                    onChange={e => setConfig({ ...config, establishedYear: e.target.value })} 
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">About Us Narrative (History & Service Trust)</label>
+              <textarea 
+                className="form-input" 
+                rows="3" 
+                value={config.aboutUsText} 
+                onChange={e => setConfig({ ...config, aboutUsText: e.target.value })} 
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+              <div style={{ background: 'var(--bg-surface-alt)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                <h4 style={{ fontSize: '0.9rem', fontWeight: '800', color: '#f59e0b', marginBottom: '12px' }}>
+                  👑 Founder & Managing Owner Profile
+                </h4>
+                <div className="form-group">
+                  <label className="form-label">Owner Name</label>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    value={config.ownerName} 
+                    onChange={e => setConfig({ ...config, ownerName: e.target.value })} 
+                  />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div className="form-group">
+                    <label className="form-label">Mobile</label>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      value={config.ownerPhone} 
+                      onChange={e => setConfig({ ...config, ownerPhone: e.target.value })} 
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Email</label>
+                    <input 
+                      type="email" 
+                      className="form-input" 
+                      value={config.ownerEmail} 
+                      onChange={e => setConfig({ ...config, ownerEmail: e.target.value })} 
+                    />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Owner Inspirational Quote</label>
+                  <textarea 
+                    className="form-input" 
+                    rows="3" 
+                    value={config.ownerQuote} 
+                    onChange={e => setConfig({ ...config, ownerQuote: e.target.value })} 
+                  />
+                </div>
+              </div>
+
+              <div style={{ background: 'var(--bg-surface-alt)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                <h4 style={{ fontSize: '0.9rem', fontWeight: '800', color: '#10b981', marginBottom: '12px' }}>
+                  🛡️ Managing Director & Main Controller Profile
+                </h4>
+                <div className="form-group">
+                  <label className="form-label">Admin Name</label>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    value={config.adminName} 
+                    onChange={e => setConfig({ ...config, adminName: e.target.value })} 
+                  />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div className="form-group">
+                    <label className="form-label">Mobile</label>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      value={config.adminPhone} 
+                      onChange={e => setConfig({ ...config, adminPhone: e.target.value })} 
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Email</label>
+                    <input 
+                      type="email" 
+                      className="form-input" 
+                      value={config.adminEmail} 
+                      onChange={e => setConfig({ ...config, adminEmail: e.target.value })} 
+                    />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Admin System Message</label>
+                  <textarea 
+                    className="form-input" 
+                    rows="3" 
+                    value={config.adminQuote} 
+                    onChange={e => setConfig({ ...config, adminQuote: e.target.value })} 
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: '800', color: 'var(--primary-400)', marginBottom: '12px' }}>
+                📌 Global Footer Settings
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
+                <div className="form-group">
+                  <label className="form-label">Center Address</label>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    value={config.cyberCafeAddress} 
+                    onChange={e => setConfig({ ...config, cyberCafeAddress: e.target.value })} 
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Operating Hours</label>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    value={config.footerTimings} 
+                    onChange={e => setConfig({ ...config, footerTimings: e.target.value })} 
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Copyright Notice</label>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    value={config.footerCopyright} 
+                    onChange={e => setConfig({ ...config, footerCopyright: e.target.value })} 
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div style={{ textAlign: 'right' }}>
+              <button type="submit" className="btn btn-primary btn-lg">
+                <Save size={16} /> Save All Page & Footer Changes
+              </button>
+            </div>
+          </div>
+        </form>
+      )}
+
+      {activeTab === 'operators' && (
         <div className="card">
           <div className="card-header">
-            <div className="card-title"><span>Configurable Service Rates</span></div>
+            <div className="card-title">
+              <Users size={18} color="var(--primary-500)" />
+              <span>Desk Operators & System User Accounts</span>
+            </div>
+            <button 
+              className="btn btn-primary btn-sm"
+              onClick={() => setShowAddOpModal(true)}
+            >
+              <UserPlus size={14} /> Add New Operator
+            </button>
           </div>
           <div className="card-body" style={{ padding: 0 }}>
             <div className="table-wrapper" style={{ border: 'none', borderRadius: 0 }}>
               <table className="custom-table">
                 <thead>
                   <tr>
-                    <th>Service Name</th>
-                    <th>Category</th>
-                    <th>Rate / Unit</th>
-                    <th>Est. Time</th>
-                    <th>Action</th>
+                    <th>User / Operator</th>
+                    <th>Role</th>
+                    <th>Mobile</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {services.map(s => (
-                    <tr key={s._id}>
-                      <td style={{ fontWeight: '700' }}>{s.name}</td>
+                  {users.map(u => (
+                    <tr key={u._id}>
                       <td>
-                        <span className="badge badge-primary" style={{ fontSize: '0.7rem' }}>{s.category}</span>
+                        <div style={{ fontWeight: '700' }}>{u.name}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{u.email}</div>
                       </td>
                       <td>
-                        {editingPriceId === s._id ? (
-                          <input 
-                            type="number"
-                            className="form-input"
-                            style={{ width: '90px', padding: '4px 8px' }}
-                            value={newPrice}
-                            onChange={e => setNewPrice(e.target.value)}
-                          />
-                        ) : (
-                          <span style={{ fontWeight: '800', color: 'var(--accent-emerald)' }}>
-                            ₹{s.basePrice} <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>({s.unit})</span>
-                          </span>
-                        )}
+                        <span className={`role-tag ${u.role}`}>
+                          {u.role.toUpperCase()}
+                        </span>
                       </td>
-                      <td>{s.estimatedMinutes} mins</td>
+                      <td>{u.phone || '—'}</td>
                       <td>
-                        {editingPriceId === s._id ? (
-                          <div className="flex gap-1">
-                            <button className="btn btn-success btn-sm" onClick={() => handleUpdatePrice(s._id)}>Save</button>
-                            <button className="btn btn-secondary btn-sm" onClick={() => setEditingPriceId(null)}>Cancel</button>
-                          </div>
-                        ) : (
-                          <button 
+                        <span className={`badge ${u.isActive !== false ? 'badge-completed' : 'badge-cancelled'}`}>
+                          {u.isActive !== false ? 'Active' : 'Disabled'}
+                        </span>
+                      </td>
+                      <td style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                        {new Date(u.createdAt).toLocaleDateString('en-IN')}
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button
                             className="btn btn-secondary btn-sm"
-                            onClick={() => {
-                              setEditingPriceId(s._id);
-                              setNewPrice(s.basePrice);
-                            }}
+                            style={{ padding: '3px 8px', fontSize: '0.72rem' }}
+                            onClick={() => handleToggleOperatorStatus(u)}
                           >
-                            Edit Price
+                            {u.isActive !== false ? 'Disable' : 'Enable'}
                           </button>
-                        )}
+                          {u.email !== 'kdshree778@gmail.com' && u.email !== 'onlinebaba111111@gmail.com' && (
+                            <button
+                              className="btn btn-danger btn-sm"
+                              style={{ padding: '3px 8px' }}
+                              onClick={() => handleDeleteOperator(u._id, u.name)}
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -182,64 +500,294 @@ export const AdminPanel = () => {
               </table>
             </div>
           </div>
+
+          {showAddOpModal && (
+            <div className="modal-overlay" onClick={() => setShowAddOpModal(false)}>
+              <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+                <div className="modal-header">
+                  <div style={{ fontWeight: '800', fontSize: '1rem' }}>Create New Operator Account</div>
+                  <button className="icon-btn" onClick={() => setShowAddOpModal(false)}>✕</button>
+                </div>
+                <form onSubmit={handleCreateOperator} className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div className="form-group">
+                    <label className="form-label">Full Name</label>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      placeholder="e.g. Ramesh Chandra" 
+                      value={newOp.name} 
+                      onChange={e => setNewOp({ ...newOp, name: e.target.value })} 
+                      required 
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Email Address</label>
+                    <input 
+                      type="email" 
+                      className="form-input" 
+                      placeholder="operator@shreeonline.local" 
+                      value={newOp.email} 
+                      onChange={e => setNewOp({ ...newOp, email: e.target.value })} 
+                      required 
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Mobile Number</label>
+                    <input 
+                      type="tel" 
+                      className="form-input" 
+                      placeholder="98765 43210" 
+                      value={newOp.phone} 
+                      onChange={e => setNewOp({ ...newOp, phone: e.target.value })} 
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Login Password</label>
+                    <input 
+                      type="password" 
+                      className="form-input" 
+                      placeholder="••••••••" 
+                      value={newOp.password} 
+                      onChange={e => setNewOp({ ...newOp, password: e.target.value })} 
+                      required 
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Account Role</label>
+                    <select 
+                      className="form-select"
+                      value={newOp.role}
+                      onChange={e => setNewOp({ ...newOp, role: e.target.value })}
+                    >
+                      <option value="operator">Desk Operator</option>
+                      <option value="admin">System Admin</option>
+                    </select>
+                  </div>
+                  <div className="modal-footer" style={{ padding: '12px 0 0 0' }}>
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowAddOpModal(false)}>Cancel</button>
+                    <button type="submit" className="btn btn-primary">Create Operator</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* 2. FILE RETENTION SCHEDULER */}
-      {activeTab === 'retention' && (
-        <div style={{ maxWidth: '780px', margin: '0 auto' }}>
+      {activeTab === 'pricing' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div className="card">
             <div className="card-header">
               <div className="card-title">
-                <Clock size={18} color="var(--primary-500)" />
-                <span>Automatic File Retention & Privacy Cleanup</span>
+                <PlusCircle size={18} color="var(--primary-500)" />
+                <span>Add New Service to Catalog</span>
               </div>
             </div>
-            <div className="card-body">
-              <div className="notice-banner notice-warning" style={{ marginBottom: '20px' }}>
-                <div>
-                  <b>Privacy & Confidentiality Standard:</b> Cyber cafes handle sensitive government IDs, marksheets, and financial documents. Setting a short retention schedule ensures temporary conversion files are permanently cleaned up while permanent customer request records remain intact.
-                </div>
+            <form onSubmit={handleAddService} className="card-body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr)) 120px 120px', gap: '12px', alignItems: 'flex-end' }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Service Title</label>
+                <input 
+                  type="text" 
+                  className="form-input" 
+                  placeholder="e.g. Police Bharti Registration" 
+                  value={newService.name} 
+                  onChange={e => setNewService({ ...newService, name: e.target.value })} 
+                  required 
+                />
               </div>
-
-              <div className="form-group">
-                <label className="form-label">Auto-Delete Temporary Processing Files After:</label>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Category</label>
                 <select 
                   className="form-select"
-                  value={retentionHours}
-                  onChange={e => setRetentionHours(Number(e.target.value))}
+                  value={newService.category}
+                  onChange={e => setNewService({ ...newService, category: e.target.value })}
                 >
-                  <option value={1}>1 Hour (Strict Privacy Mode)</option>
-                  <option value={6}>6 Hours (Daily Desk Mode)</option>
-                  <option value={24}>24 Hours (Standard 1 Day Retention - Recommended)</option>
-                  <option value={168}>7 Days (Weekly Extended Retention)</option>
+                  <option value="online_form">Govt & Online Form</option>
+                  <option value="photo">Passport Photo</option>
+                  <option value="printing">Laser & Color Print</option>
+                  <option value="scan_doc">Scan & Document Restore</option>
+                  <option value="lamination">Lamination</option>
+                </select>
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Base Price (₹)</label>
+                <input 
+                  type="number" 
+                  className="form-input" 
+                  placeholder="50" 
+                  value={newService.price} 
+                  onChange={e => setNewService({ ...newService, price: e.target.value })} 
+                  required 
+                />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Short Description</label>
+                <input 
+                  type="text" 
+                  className="form-input" 
+                  placeholder="Standard fee" 
+                  value={newService.description} 
+                  onChange={e => setNewService({ ...newService, description: e.target.value })} 
+                />
+              </div>
+              <button type="submit" className="btn btn-primary w-full">
+                Add Service
+              </button>
+            </form>
+          </div>
+
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title">
+                <IndianRupee size={18} color="var(--accent-emerald)" />
+                <span>Service Price Catalog & Rate Card</span>
+              </div>
+            </div>
+            <div className="card-body" style={{ padding: 0 }}>
+              <div className="table-wrapper" style={{ border: 'none', borderRadius: 0 }}>
+                <table className="custom-table">
+                  <thead>
+                    <tr>
+                      <th>Service Name</th>
+                      <th>Category</th>
+                      <th>Price (₹)</th>
+                      <th>Description</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {services.map(s => (
+                      <tr key={s._id}>
+                        <td style={{ fontWeight: '700' }}>{s.name}</td>
+                        <td>
+                          <span className="badge badge-primary" style={{ fontSize: '0.72rem' }}>
+                            {s.category.toUpperCase()}
+                          </span>
+                        </td>
+                        <td>
+                          {editingPriceId === s._id ? (
+                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                              <input 
+                                type="number" 
+                                className="form-input" 
+                                style={{ width: '80px', height: '30px' }} 
+                                value={newPrice} 
+                                onChange={e => setNewPrice(e.target.value)} 
+                              />
+                              <button 
+                                className="btn btn-primary btn-sm" 
+                                style={{ padding: '2px 8px' }} 
+                                onClick={() => handleUpdatePrice(s._id)}
+                              >
+                                Save
+                              </button>
+                            </div>
+                          ) : (
+                            <span style={{ fontWeight: '800', color: 'var(--accent-emerald)' }}>₹{s.price}</span>
+                          )}
+                        </td>
+                        <td style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{s.description || '—'}</td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button 
+                              className="btn btn-secondary btn-sm" 
+                              style={{ padding: '3px 8px' }}
+                              onClick={() => { setEditingPriceId(s._id); setNewPrice(s.price); }}
+                            >
+                              <Edit3 size={12} /> Edit Price
+                            </button>
+                            <button 
+                              className="btn btn-danger btn-sm" 
+                              style={{ padding: '3px 8px' }}
+                              onClick={() => handleDeleteService(s._id)}
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'retention' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title">
+                <Clock size={18} color="var(--accent-amber)" />
+                <span>Temporary File Auto-Cleanup Policy</span>
+              </div>
+            </div>
+            <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div className="form-group">
+                <label className="form-label">Auto-Retention Duration</label>
+                <select 
+                  className="form-select"
+                  value={config.retentionHours}
+                  onChange={e => setConfig({ ...config, retentionHours: Number(e.target.value) })}
+                >
+                  <option value={1}>1 Hour (Aggressive Disk Save)</option>
+                  <option value={6}>6 Hours (Daily Standard)</option>
+                  <option value={12}>12 Hours (Half Day)</option>
+                  <option value={24}>24 Hours (Standard Safe Window)</option>
+                  <option value={48}>48 Hours (2 Days)</option>
+                  <option value={168}>7 Days (1 Week Retention)</option>
                 </select>
               </div>
 
-              <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '10px', marginTop: '14px' }}>
+              <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <input 
-                  type="checkbox"
-                  id="adShieldToggle"
-                  checked={adShieldEnabled}
-                  onChange={e => setAdShieldEnabled(e.target.checked)}
+                  type="checkbox" 
+                  id="adshield_toggle" 
+                  checked={config.adShieldEnabled} 
+                  onChange={e => setConfig({ ...config, adShieldEnabled: e.target.checked })} 
                 />
-                <label htmlFor="adShieldToggle" style={{ fontSize: '0.9rem', fontWeight: '600', cursor: 'pointer' }}>
-                  Enable AdShield workspace distraction and malicious popup protection
+                <label htmlFor="adshield_toggle" className="form-label" style={{ marginBottom: 0, cursor: 'pointer' }}>
+                  Enable AdShield™ Deep Ad & Tracker Blocker by Default
                 </label>
               </div>
 
-              <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
-                <button className="btn btn-primary" onClick={handleSaveConfig}>
-                  Save Retention & Security Settings
-                </button>
-                <button className="btn btn-danger" onClick={handleTriggerManualCleanup}>
-                  <Trash2 size={16} /> Run Manual Cleanup Now
-                </button>
+              <button 
+                type="button" 
+                className="btn btn-primary"
+                onClick={handleSaveStaticPages}
+              >
+                <Save size={14} /> Update Retention Policy
+              </button>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title">
+                <Trash2 size={18} color="var(--accent-rose)" />
+                <span>Manual Storage Purge</span>
               </div>
+            </div>
+            <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                Immediately scans and deletes all temporary session files that have exceeded the retention threshold.
+              </p>
+
+              <button 
+                type="button"
+                className="btn btn-danger btn-lg"
+                onClick={handleTriggerCleanup}
+              >
+                <Trash2 size={16} /> Execute Storage Cleanup Now
+              </button>
 
               {cleanupResult && (
-                <div style={{ marginTop: '16px', padding: '12px', background: 'var(--status-comp-bg)', color: 'var(--status-comp-text)', borderRadius: 'var(--radius-md)', fontSize: '0.85rem' }}>
-                  ✅ Cleaned {cleanupResult.cleanedFilesCount} temporary files ({cleanupResult.freedKb} KB freed).
+                <div style={{ background: 'var(--bg-surface-alt)', padding: '12px', borderRadius: 'var(--radius-md)', fontSize: '0.8rem' }}>
+                  <div style={{ fontWeight: '700', color: 'var(--accent-emerald)' }}>Cleanup Completed:</div>
+                  <div>Deleted Files: <b>{cleanupResult.deletedFiles ?? 0}</b></div>
+                  <div>Space Reclaimed: <b>{cleanupResult.reclaimedMb ?? '0.00'} MB</b></div>
                 </div>
               )}
             </div>
@@ -247,13 +795,12 @@ export const AdminPanel = () => {
         </div>
       )}
 
-      {/* 3. AUDIT LOGS */}
       {activeTab === 'logs' && (
         <div className="card">
           <div className="card-header">
             <div className="card-title">
-              <ShieldCheck size={18} color="var(--accent-emerald)" />
-              <span>System & Document Access Audit Trail</span>
+              <ShieldCheck size={18} color="var(--primary-500)" />
+              <span>System Security & Audit Activity Logs</span>
             </div>
           </div>
           <div className="card-body" style={{ padding: 0 }}>
@@ -269,50 +816,35 @@ export const AdminPanel = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {logs.map((l, i) => (
-                    <tr key={i}>
-                      <td style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{new Date(l.timestamp).toLocaleString()}</td>
-                      <td style={{ fontFamily: 'var(--font-mono)', fontWeight: '700' }}>{l.action}</td>
-                      <td>{l.user}</td>
-                      <td><span className="badge badge-primary" style={{ fontSize: '0.68rem' }}>{l.role}</span></td>
-                      <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>{l.ipAddress || '127.0.0.1'}</td>
+                  {logs.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+                        No audit logs recorded yet.
+                      </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 4. USERS & OPERATORS */}
-      {activeTab === 'users' && (
-        <div className="card">
-          <div className="card-header">
-            <div className="card-title"><span>Operators & Staff Accounts</span></div>
-          </div>
-          <div className="card-body" style={{ padding: 0 }}>
-            <div className="table-wrapper" style={{ border: 'none', borderRadius: 0 }}>
-              <table className="custom-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Phone</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map(u => (
-                    <tr key={u._id}>
-                      <td style={{ fontWeight: '700' }}>{u.name}</td>
-                      <td>{u.email}</td>
-                      <td><span className={`role-tag ${u.role}`}>{u.role}</span></td>
-                      <td>{u.phone || '—'}</td>
-                      <td><span className="badge badge-completed">Active</span></td>
-                    </tr>
-                  ))}
+                  ) : (
+                    logs.map(l => (
+                      <tr key={l._id}>
+                        <td style={{ fontSize: '0.75rem', fontFamily: 'monospace' }}>
+                          {new Date(l.createdAt).toLocaleString('en-IN')}
+                        </td>
+                        <td>
+                          <span className="badge badge-primary" style={{ fontSize: '0.72rem' }}>
+                            {l.action}
+                          </span>
+                        </td>
+                        <td style={{ fontWeight: '600' }}>{l.user}</td>
+                        <td>
+                          <span className={`role-tag ${l.role}`}>
+                            {l.role}
+                          </span>
+                        </td>
+                        <td style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          {l.ipAddress || '127.0.0.1'}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

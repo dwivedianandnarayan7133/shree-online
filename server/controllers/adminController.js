@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Request = require('../models/Request');
 const Invoice = require('../models/Invoice');
 const PrintJob = require('../models/PrintJob');
+const ServiceItem = require('../models/ServiceItem');
 const AuditLog = require('../models/AuditLog');
 const SystemConfig = require('../models/SystemConfig');
 const { performManualCleanup } = require('../services/cleanupCronService');
@@ -75,9 +76,8 @@ const getDashboardStats = async (req, res) => {
         activePrintJobs,
         totalRevenue,
         todayRevenue,
-        fileCount,
         storageMb,
-        storageBytes: totalStorageBytes
+        fileCount
       }
     });
   } catch (err) {
@@ -88,25 +88,24 @@ const getDashboardStats = async (req, res) => {
 // Get Audit Logs
 const getAuditLogs = async (req, res) => {
   try {
-    const { limit = 50, page = 1 } = req.query;
-    const total = await AuditLog.countDocuments();
-    const logs = await AuditLog.find()
-      .sort({ timestamp: -1 })
-      .skip((Number(page) - 1) * Number(limit))
-      .limit(Number(limit));
-
-    res.json({ success: true, total, logs });
+    const limit = parseInt(req.query.limit) || 50;
+    const logs = await AuditLog.find().sort({ createdAt: -1 }).limit(limit);
+    res.json({ success: true, logs });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// Get System Configuration
+// Get System Configuration & Static Page Content
 const getSystemConfig = async (req, res) => {
   try {
     let config = await SystemConfig.findOne();
     if (!config) {
-      config = await SystemConfig.create({});
+      config = await SystemConfig.create({
+        portalName: 'Shree Online (Mahuli, S.K.N)',
+        tagline: 'One Window. Every Digital Service.',
+        establishedYear: '2013'
+      });
     }
     res.json({ success: true, config });
   } catch (err) {
@@ -114,82 +113,166 @@ const getSystemConfig = async (req, res) => {
   }
 };
 
-// Update System Configuration
+// Update System Configuration, Static Pages (About Us) & Footer Content
 const updateSystemConfig = async (req, res) => {
   try {
     let config = await SystemConfig.findOne();
     if (!config) {
-      config = new SystemConfig();
+      config = new SystemConfig(req.body);
+    } else {
+      Object.assign(config, req.body);
+      config.updatedBy = req.user ? req.user.name : 'Kamal Narayan Dwivedi (Admin MD)';
     }
 
-    const {
-      portalName,
-      tagline,
-      retentionHours,
-      adShieldEnabled,
-      blockMaliciousPopups,
-      preventRedirects,
-      cyberCafeName,
-      cyberCafePhone,
-      cyberCafeEmail,
-      taxPercent
-    } = req.body;
-
-    if (portalName !== undefined) config.portalName = portalName;
-    if (tagline !== undefined) config.tagline = tagline;
-    if (retentionHours !== undefined) config.retentionHours = Number(retentionHours);
-    if (adShieldEnabled !== undefined) config.adShieldEnabled = adShieldEnabled;
-    if (blockMaliciousPopups !== undefined) config.blockMaliciousPopups = blockMaliciousPopups;
-    if (preventRedirects !== undefined) config.preventRedirects = preventRedirects;
-    if (cyberCafeName !== undefined) config.cyberCafeName = cyberCafeName;
-    if (cyberCafePhone !== undefined) config.cyberCafePhone = cyberCafePhone;
-    if (cyberCafeEmail !== undefined) config.cyberCafeEmail = cyberCafeEmail;
-    if (taxPercent !== undefined) config.taxPercent = Number(taxPercent);
-
-    config.updatedBy = req.user ? req.user.name : 'Admin';
     await config.save();
 
     await logAudit({
       action: 'SYSTEM_CONFIG_UPDATED',
       user: req.user ? req.user.name : 'Admin',
       role: 'admin',
-      details: req.body
+      details: { updatedFields: Object.keys(req.body) },
+      ipAddress: req.ip
     });
 
-    res.json({ success: true, message: 'Configuration saved.', config });
+    res.json({ success: true, message: 'System settings, static pages and footer updated successfully.', config });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// Trigger Manual Cleanup
+// Trigger Manual Storage Cleanup
 const triggerCleanup = async (req, res) => {
   try {
-    const { retentionHours = 1 } = req.body;
-    const result = await performManualCleanup(Number(retentionHours));
-
+    const result = await performManualCleanup();
     await logAudit({
-      action: 'MANUAL_CLEANUP_TRIGGERED',
+      action: 'MANUAL_STORAGE_CLEANUP',
       user: req.user ? req.user.name : 'Admin',
       role: 'admin',
-      details: result
+      details: result,
+      ipAddress: req.ip
     });
 
-    res.json({
-      success: true,
-      message: `Cleaned ${result.cleanedFilesCount} temporary files (${result.freedKb} KB freed).`,
-      result
-    });
+    res.json({ success: true, message: 'Storage cleanup completed.', result });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// Manage Users / Operators
+// Get All Users (Operators & Customers)
 const getAllUsers = async (req, res) => {
   try {
     const users = await User.find().select('-password').sort({ createdAt: -1 });
     res.json({ success: true, users });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// Operator Management: Create Operator
+const createOperator = async (req, res) => {
+  try {
+    const { name, email, password, phone, role = 'operator' } = req.body;
+
+    const existing = await User.findOne({ email: email.toLowerCase() });
+    if (existing) {
+      return res.status(400).json({ success: false, message: 'User with this email already exists.' });
+    }
+
+    const user = await User.create({
+      name,
+      email: email.toLowerCase(),
+      password,
+      phone: phone || '',
+      role: ['admin', 'operator'].includes(role) ? role : 'operator'
+    });
+
+    await logAudit({
+      action: 'OPERATOR_CREATED',
+      user: req.user ? req.user.name : 'Admin',
+      role: 'admin',
+      details: { operator: user.name, email: user.email, role: user.role }
+    });
+
+    res.status(201).json({ success: true, message: 'Operator account created successfully.', user });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// Operator Management: Update Operator
+const updateOperator = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, email, phone, role, isActive, password } = req.body;
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Operator not found.' });
+    }
+
+    if (name) user.name = name;
+    if (email) user.email = email.toLowerCase();
+    if (phone !== undefined) user.phone = phone;
+    if (role && ['admin', 'operator', 'customer'].includes(role)) user.role = role;
+    if (isActive !== undefined) user.isActive = isActive;
+    if (password) user.password = password;
+
+    await user.save();
+
+    await logAudit({
+      action: 'OPERATOR_UPDATED',
+      user: req.user ? req.user.name : 'Admin',
+      role: 'admin',
+      details: { operatorId: id, updatedName: user.name }
+    });
+
+    res.json({ success: true, message: 'Operator updated successfully.', user });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// Operator Management: Delete Operator
+const deleteOperator = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await User.findByIdAndDelete(id);
+
+    await logAudit({
+      action: 'OPERATOR_DELETED',
+      user: req.user ? req.user.name : 'Admin',
+      role: 'admin',
+      details: { operatorId: id }
+    });
+
+    res.json({ success: true, message: 'Operator account deleted successfully.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// Create Service Item
+const createServiceItem = async (req, res) => {
+  try {
+    const { name, category, price, description } = req.body;
+    const service = await ServiceItem.create({
+      name,
+      category: category || 'online_form',
+      price: Number(price),
+      description: description || ''
+    });
+    res.status(201).json({ success: true, message: 'Service added to catalog.', service });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// Delete Service Item
+const deleteServiceItem = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await ServiceItem.findByIdAndDelete(id);
+    res.json({ success: true, message: 'Service removed from catalog.' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -201,5 +284,10 @@ module.exports = {
   getSystemConfig,
   updateSystemConfig,
   triggerCleanup,
-  getAllUsers
+  getAllUsers,
+  createOperator,
+  updateOperator,
+  deleteOperator,
+  createServiceItem,
+  deleteServiceItem
 };

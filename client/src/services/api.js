@@ -42,8 +42,9 @@ export const api = {
   getRequests: (params = '') => request(`/requests?${params}`),
   getRequestById: (id) => request(`/requests/${id}`),
   updateRequestStatus: (id, body) => request(`/requests/${id}/status`, { method: 'PATCH', body }),
-  addProcessedFile: (id, formData) => request(`/requests/${id}/process-file`, { method: 'POST', body: formData }),
-  assignOperator: (id, body) => request(`/requests/${id}/assign`, { method: 'PATCH', body }),
+  addRequestNote: (id, note) => request(`/requests/${id}/notes`, { method: 'POST', body: { note } }),
+  uploadDeliverable: (id, formData) => request(`/requests/${id}/deliverable`, { method: 'POST', body: formData }),
+  trackRequest: (identifier) => request(`/requests/track/${identifier}`),
 
   // Document Tools
   imagesToPdf: (formData) => request('/documents/images-to-pdf', { method: 'POST', body: formData }),
@@ -80,15 +81,23 @@ export const api = {
   getPrintJobs: (params = '') => request(`/print?${params}`),
   updatePrintStatus: (id, body) => request(`/print/${id}/status`, { method: 'PATCH', body }),
 
-  // Shortcuts & Admin
+  // Shortcuts & Websites
   getShortcuts: (params = '') => request(`/websites?${params}`),
   createShortcut: (body) => request('/websites', { method: 'POST', body }),
   deleteShortcut: (id) => request(`/websites/${id}`, { method: 'DELETE' }),
 
+  // Admin & Managing Director Controller
   getDashboardStats: () => request('/admin/stats'),
   getAuditLogs: (params = '') => request(`/admin/logs?${params}`),
   getSystemConfig: () => request('/admin/config'),
   updateSystemConfig: (body) => request('/admin/config', { method: 'PUT', body }),
   triggerCleanup: (body) => request('/admin/cleanup', { method: 'POST', body }),
-  getUsers: () => request('/admin/users')
+  getUsers: () => request('/admin/users'),
+
+  // Operator & Service Management
+  createOperator: (body) => request('/admin/operators', { method: 'POST', body }),
+  updateOperator: (id, body) => request(`/admin/operators/${id}`, { method: 'PUT', body }),
+  deleteOperator: (id) => request(`/admin/operators/${id}`, { method: 'DELETE' }),
+  createServiceItem: (body) => request('/admin/services', { method: 'POST', body }),
+  deleteServiceItem: (id) => request(`/admin/services/${id}`, { method: 'DELETE' })
 };

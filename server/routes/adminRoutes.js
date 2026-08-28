@@ -10,4 +10,13 @@ router.put('/config', verifyToken, requireRole('admin'), adminController.updateS
 router.post('/cleanup', verifyToken, requireRole('admin'), adminController.triggerCleanup);
 router.get('/users', verifyToken, requireRole('admin'), adminController.getAllUsers);
 
+// Operator Management Routes
+router.post('/operators', verifyToken, requireRole('admin'), adminController.createOperator);
+router.put('/operators/:id', verifyToken, requireRole('admin'), adminController.updateOperator);
+router.delete('/operators/:id', verifyToken, requireRole('admin'), adminController.deleteOperator);
+
+// Service Catalog Management
+router.post('/services', verifyToken, requireRole('admin'), adminController.createServiceItem);
+router.delete('/services/:id', verifyToken, requireRole('admin'), adminController.deleteServiceItem);
+
 module.exports = router;

@@ -1,7 +1,6 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from './context/AuthContext';
-import { Navbar } from './components/Navbar';
-import { Sidebar } from './components/Sidebar';
+import { NavigationBar } from './components/NavigationBar';
 import { Footer } from './components/Footer';
 import { WhatsAppChatWidget } from './components/WhatsAppChatWidget';
 import { Dashboard } from './pages/Dashboard';
@@ -79,20 +78,18 @@ export default function App() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Navbar onOpenCustomerSubmit={() => setActivePage('customer-portal')} onOpenAboutUs={() => setActivePage('about-us')} />
-      <div className="app-container" style={{ flex: 1 }}>
-        <Sidebar activePage={activePage} setActivePage={setActivePage} />
-        <main className="main-content" style={{ display: 'flex', flexDirection: 'column', flex: 1, paddingBottom: activePage === 'website-launcher' ? 0 : '16px' }}>
-          <div style={{ flex: 1 }}>
-            {renderActivePage()}
-          </div>
+      {/* Universal Responsive Top Navigation Bar & Ribbon (Desktop, Tablet, Mobile) */}
+      <NavigationBar activePage={activePage} setActivePage={setActivePage} />
 
-          {/* Global Footer on ALL pages except the in-portal custom browser */}
-          {activePage !== 'website-launcher' && (
-            <Footer setActivePage={setActivePage} />
-          )}
-        </main>
-      </div>
+      {/* Main Full-Width Responsive Workspace */}
+      <main className="full-width-workspace" style={{ paddingBottom: activePage === 'website-launcher' ? 0 : '24px' }}>
+        {renderActivePage()}
+      </main>
+
+      {/* Global Responsive Footer on all pages except In-Portal Browser */}
+      {activePage !== 'website-launcher' && (
+        <Footer setActivePage={setActivePage} />
+      )}
 
       {/* Floating WhatsApp Quick Conversation & Helpline Widget */}
       <WhatsAppChatWidget currentUser={user} />

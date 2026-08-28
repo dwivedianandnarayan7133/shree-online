@@ -115,6 +115,18 @@ export const CyberBrowser = ({ initialUrl = 'https://www.sarkariresult.com' }) =
   };
 
   // Navigate to URL / Search query
+    const handleOpenInMainBrowser = (customTarget) => {
+    let target = (customTarget || urlInput || (activeTab && activeTab.url) || 'https://www.google.com').trim();
+    if (!target.startsWith('http://') && !target.startsWith('https://')) {
+      if (target.includes('.') && !target.includes(' ')) {
+        target = `https://${target}`;
+      } else {
+        target = `https://www.google.com/search?q=${encodeURIComponent(target)}`;
+      }
+    }
+    window.open(target, '_blank');
+  };
+
   const handleNavigate = (e) => {
     if (e) e.preventDefault();
     let target = urlInput.trim();
@@ -315,8 +327,18 @@ export const CyberBrowser = ({ initialUrl = 'https://www.sarkariresult.com' }) =
             onChange={e => setUrlInput(e.target.value)}
             placeholder="Type any website address or search term (runs directly inside this window)..."
           />
-          <button type="submit" className="btn btn-primary btn-sm" style={{ padding: '4px 12px', fontSize: '0.75rem' }}>
-            Go
+          <button type="submit" className="btn btn-primary btn-sm" style={{ padding: '4px 12px', fontSize: '0.75rem' }} title="Browse inside in-app window with AdShield protection">
+            Go (In-Portal)
+          </button>
+          <button 
+            type="button" 
+            className="btn btn-secondary btn-sm" 
+            style={{ padding: '4px 10px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(99, 102, 241, 0.15)', color: 'var(--primary-400)', borderColor: 'rgba(99, 102, 241, 0.3)' }}
+            onClick={() => handleOpenInMainBrowser()}
+            title="Run this search query or website in your Main Browser (Chrome / Edge / Safari)"
+          >
+            <ExternalLink size={13} />
+            <span>Open in Main Browser</span>
           </button>
         </form>
 
