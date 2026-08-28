@@ -1,10 +1,10 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Users, Inbox, Printer, Sparkles, IndianRupee, HardDrive, 
   Clock, CheckCircle, PlusCircle, ArrowRight, Eye, RefreshCw,
   Award, HeartHandshake, ShieldCheck, MessageCircle, Phone
 } from 'lucide-react';
-import { api } from '../services/api';
+import { api, getFullUrl } from '../services/api';
 import { StatusBadge } from '../components/StatusBadge';
 import { QuickActionCards } from '../components/QuickActionCards';
 import { AdShieldBanner } from '../components/AdShieldBanner';
@@ -12,6 +12,7 @@ import { DocPreviewModal } from '../components/DocPreviewModal';
 
 export const Dashboard = ({ setActivePage }) => {
   const [stats, setStats] = useState(null);
+  const [config, setConfig] = useState(null);
   const [recentRequests, setRecentRequests] = useState([]);
   const [printJobs, setPrintJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,13 +21,15 @@ export const Dashboard = ({ setActivePage }) => {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      const [statsRes, reqsRes, printRes] = await Promise.all([
+      const [statsRes, configRes, reqsRes, printRes] = await Promise.all([
         api.getDashboardStats(),
+        api.getSystemConfig(),
         api.getRequests('limit=6'),
         api.getPrintJobs('status=pending')
       ]);
 
       if (statsRes.success) setStats(statsRes.stats);
+      if (configRes.success && configRes.config) setConfig(configRes.config);
       if (reqsRes.success) setRecentRequests(reqsRes.requests);
       if (printRes.success) setPrintJobs(printRes.printJobs);
     } catch (err) {
@@ -39,6 +42,9 @@ export const Dashboard = ({ setActivePage }) => {
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  const adminPhotoUrl = config?.adminPhoto ? getFullUrl(config.adminPhoto) : '/admin-photo.jpg';
+  const ownerPhotoUrl = config?.ownerPhoto ? getFullUrl(config.ownerPhoto) : null;
 
   return (
     <div>
@@ -63,33 +69,33 @@ export const Dashboard = ({ setActivePage }) => {
         </div>
       </div>
 
-      {/* FEATURED: ABOUT SHREE ONLINE SEWA KENDRA (EST. 2013) & LEADERSHIP SHOWCASE */}
+      {/* FEATURED: LEADERSHIP SHOWCASE — ADMIN MD FIRST, THEN OWNER */}
       <div className="card" style={{
         marginBottom: '24px',
-        background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(16, 185, 129, 0.06) 50%, rgba(99, 102, 241, 0.1) 100%)',
-        borderColor: 'rgba(99, 102, 241, 0.3)',
+        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(37, 99, 235, 0.06) 50%, rgba(245, 158, 11, 0.08) 100%)',
+        borderColor: 'rgba(16, 185, 129, 0.35)',
         overflow: 'hidden'
       }}>
         <div className="card-body" style={{ padding: '22px 24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', marginBottom: '18px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div style={{
                 width: '46px', height: '46px', borderRadius: 'var(--radius-md)',
-                background: 'linear-gradient(135deg, #f59e0b, #3b82f6)', color: '#ffffff',
+                background: 'linear-gradient(135deg, #10b981, #f59e0b)', color: '#ffffff',
                 display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}>
                 <Award size={26} />
               </div>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <h2 style={{ fontSize: '1.2rem', fontWeight: '900', color: 'var(--text-main)' }}>
-                    Shree Online Sewa Kendra
+                  <h2 style={{ fontSize: '1.25rem', fontWeight: '900', color: 'var(--text-main)' }}>
+                    {config?.portalName || 'Shree Online Sewa Kendra'}
                   </h2>
-                  <span className="badge badge-completed" style={{ fontSize: '0.72rem', padding: '2px 8px' }}>
-                    Est. 2013 • 13+ Years Trust
+                  <span className="badge badge-completed" style={{ fontSize: '0.74rem', padding: '2px 10px' }}>
+                    Est. {config?.establishedYear || '2013'} • 13+ Years Trust
                   </span>
                 </div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
                   Main Market, Mahuli, Sant Kabir Nagar (S.K.N), U.P. • Pioneer in Online Operations & Digital Seva
                 </div>
               </div>
@@ -100,70 +106,133 @@ export const Dashboard = ({ setActivePage }) => {
               onClick={() => setActivePage('about-us')}
               style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
             >
-              <span>View Full History & Leadership Messages</span>
+              <span>View Full Leadership Messages & History</span>
               <ArrowRight size={14} />
             </button>
           </div>
 
-          {/* Mini Leadership Avatars & Quote Previews */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
-            {/* Owner Quote Snapshot */}
+          {/* Leadership Avatars & Quote Snapshots — MANAGING DIRECTOR FIRST, OWNER SECOND */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '18px' }}>
+            
+            {/* 1. MANAGING DIRECTOR & ADMIN (FIRST) */}
             <div style={{
-              background: 'var(--bg-surface)', border: '1px solid var(--border-color)',
-              borderRadius: 'var(--radius-md)', padding: '14px 16px', display: 'flex', gap: '14px', alignItems: 'center'
+              background: 'var(--bg-surface)', border: '1px solid rgba(16, 185, 129, 0.3)',
+              borderRadius: 'var(--radius-lg)', padding: '16px 18px', display: 'flex', gap: '16px', alignItems: 'center',
+              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.05)'
             }}>
-              <div style={{
-                width: '56px', height: '56px', borderRadius: '50%', flexShrink: 0,
-                background: 'linear-gradient(135deg, #f59e0b, #ef4444)', padding: '2px',
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}>
+              {/* Circular Photo */}
+              <div style={{ position: 'relative', flexShrink: 0 }}>
+                <img 
+                  src={adminPhotoUrl} 
+                  alt="Kamal Narayan Dwivedi" 
+                  style={{
+                    width: '72px', height: '72px', borderRadius: '50%',
+                    objectFit: 'cover', border: '3px solid #10b981',
+                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+                    aspectRatio: '1/1'
+                  }}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = '/admin-photo.jpg';
+                  }}
+                />
                 <div style={{
-                  width: '100%', height: '100%', borderRadius: '50%', background: '#1e293b',
-                  color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontWeight: '900', fontSize: '1rem', border: '1.5px solid #fff'
+                  position: 'absolute', bottom: 0, right: 0,
+                  background: '#10b981', color: '#fff', borderRadius: '50%',
+                  width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '0.75rem', fontWeight: '900', border: '2px solid #fff'
                 }}>
-                  AD
+                  🛡️
                 </div>
               </div>
+
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ fontWeight: '800', fontSize: '0.86rem', color: 'var(--text-main)' }}>Krishan Narayan Dwivedi</div>
-                  <span style={{ fontSize: '0.68rem', color: '#f59e0b', fontWeight: '800' }}>Founder & Owner</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px' }}>
+                  <div style={{ fontWeight: '900', fontSize: '0.95rem', color: 'var(--text-main)' }}>
+                    {config?.adminName || 'Kamal Narayan Dwivedi'}
+                  </div>
+                  <span className="badge badge-completed" style={{ fontSize: '0.7rem', padding: '2px 8px' }}>
+                    Managing Director & Controller
+                  </span>
                 </div>
-                <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '2px', lineHeight: '1.4' }}>
-                  "Serving Mahuli, S.K.N since 2013 with 100% reliable government applications and customer trust."
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '4px', lineHeight: '1.4' }}>
+                  "Engineered with AdShield protection, Google OTP & AI document studios for 100% operational excellence."
+                </div>
+                <div style={{ display: 'flex', gap: '12px', marginTop: '6px', fontSize: '0.75rem' }}>
+                  <a href={`https://wa.me/91${config?.adminPhone || '8090794210'}`} target="_blank" rel="noreferrer" style={{ color: '#25d366', fontWeight: '700', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    <MessageCircle size={12} /> {config?.adminPhone || '8090794210'}
+                  </a>
+                  <a href={`mailto:${config?.adminEmail || 'kdshree778@gmail.com'}`} style={{ color: 'var(--primary-400)', textDecoration: 'none' }}>
+                    {config?.adminEmail || 'kdshree778@gmail.com'}
+                  </a>
                 </div>
               </div>
             </div>
 
-            {/* Admin Quote Snapshot */}
+            {/* 2. FOUNDER & MANAGING OWNER (SECOND) */}
             <div style={{
-              background: 'var(--bg-surface)', border: '1px solid var(--border-color)',
-              borderRadius: 'var(--radius-md)', padding: '14px 16px', display: 'flex', gap: '14px', alignItems: 'center'
+              background: 'var(--bg-surface)', border: '1px solid rgba(245, 158, 11, 0.3)',
+              borderRadius: 'var(--radius-lg)', padding: '16px 18px', display: 'flex', gap: '16px', alignItems: 'center',
+              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.05)'
             }}>
-              <div style={{
-                width: '56px', height: '56px', borderRadius: '50%', flexShrink: 0,
-                background: 'linear-gradient(135deg, #10b981, #06b6d4)', padding: '2px',
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}>
+              {/* Circular Photo */}
+              <div style={{ position: 'relative', flexShrink: 0 }}>
+                {ownerPhotoUrl ? (
+                  <img 
+                    src={ownerPhotoUrl} 
+                    alt="Krishan Narayan Dwivedi" 
+                    style={{
+                      width: '72px', height: '72px', borderRadius: '50%',
+                      objectFit: 'cover', border: '3px solid #f59e0b',
+                      boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)',
+                      aspectRatio: '1/1'
+                    }}
+                  />
+                ) : (
+                  <div style={{
+                    width: '72px', height: '72px', borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#fff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontWeight: '900', fontSize: '1.4rem', border: '3px solid #f59e0b',
+                    boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)',
+                    aspectRatio: '1/1'
+                  }}>
+                    KD
+                  </div>
+                )}
                 <div style={{
-                  width: '100%', height: '100%', borderRadius: '50%', background: '#0f172a',
-                  color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontWeight: '900', fontSize: '1rem', border: '1.5px solid #fff'
+                  position: 'absolute', bottom: 0, right: 0,
+                  background: '#f59e0b', color: '#000', borderRadius: '50%',
+                  width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '0.75rem', fontWeight: '900', border: '2px solid #fff'
                 }}>
-                  KV
+                  👑
                 </div>
               </div>
+
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ fontWeight: '800', fontSize: '0.86rem', color: 'var(--text-main)' }}>Kamal Narayan Dwivedi</div>
-                  <span style={{ fontSize: '0.68rem', color: '#10b981', fontWeight: '800' }}>Technical Admin</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px' }}>
+                  <div style={{ fontWeight: '900', fontSize: '0.95rem', color: 'var(--text-main)' }}>
+                    {config?.ownerName || 'Krishan Narayan Dwivedi'}
+                  </div>
+                  <span className="badge badge-warning" style={{ fontSize: '0.7rem', padding: '2px 8px' }}>
+                    Founder & Managing Owner
+                  </span>
                 </div>
-                <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '2px', lineHeight: '1.4' }}>
-                  "Engineered with AdShield protection, WhatsApp OTP & AI document studios for zero-error speed."
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '4px', lineHeight: '1.4' }}>
+                  "Serving Mahuli, S.K.N since 2013 with 100% reliable government applications and customer trust."
+                </div>
+                <div style={{ display: 'flex', gap: '12px', marginTop: '6px', fontSize: '0.75rem' }}>
+                  <a href={`https://wa.me/91${config?.ownerPhone || '9161400719'}`} target="_blank" rel="noreferrer" style={{ color: '#25d366', fontWeight: '700', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    <MessageCircle size={12} /> {config?.ownerPhone || '9161400719'}
+                  </a>
+                  <a href={`mailto:${config?.ownerEmail || 'onlinebaba111111@gmail.com'}`} style={{ color: 'var(--primary-400)', textDecoration: 'none' }}>
+                    {config?.ownerEmail || 'onlinebaba111111@gmail.com'}
+                  </a>
                 </div>
               </div>
             </div>
+
           </div>
         </div>
       </div>
@@ -175,182 +244,122 @@ export const Dashboard = ({ setActivePage }) => {
       <div className="stat-grid">
         <div className="stat-card">
           <div>
-            <div className="stat-val">{stats?.todayRequests ?? 3}</div>
+            <div className="stat-val">{stats?.todayRequests ?? 0}</div>
             <div className="stat-label">Today's Requests</div>
           </div>
-          <div className="stat-icon-wrapper" style={{ background: 'rgba(59, 130, 246, 0.15)', color: 'var(--primary-600)' }}>
-            <Inbox size={24} />
-          </div>
+          <div className="stat-icon-wrapper blue"><Inbox size={22} /></div>
         </div>
 
         <div className="stat-card">
           <div>
-            <div className="stat-val" style={{ color: 'var(--accent-amber)' }}>{stats?.pendingRequests ?? 2}</div>
-            <div className="stat-label">Pending Processing</div>
+            <div className="stat-val">{stats?.pendingRequests ?? 0}</div>
+            <div className="stat-label">In Pipeline</div>
           </div>
-          <div className="stat-icon-wrapper" style={{ background: 'rgba(245, 158, 11, 0.15)', color: 'var(--accent-amber)' }}>
-            <Clock size={24} />
-          </div>
+          <div className="stat-icon-wrapper amber"><Clock size={22} /></div>
         </div>
 
         <div className="stat-card">
           <div>
-            <div className="stat-val" style={{ color: 'var(--accent-emerald)' }}>{stats?.completedRequests ?? 1}</div>
-            <div className="stat-label">Completed Deliveries</div>
+            <div className="stat-val">{stats?.completedRequests ?? 0}</div>
+            <div className="stat-label">Completed Orders</div>
           </div>
-          <div className="stat-icon-wrapper" style={{ background: 'rgba(168, 85, 247, 0.15)', color: 'var(--accent-purple)' }}>
-            <CheckCircle size={24} />
-          </div>
+          <div className="stat-icon-wrapper emerald"><CheckCircle size={22} /></div>
         </div>
 
         <div className="stat-card">
           <div>
-            <div className="stat-val">₹{stats?.todayRevenue ?? 70}</div>
+            <div className="stat-val">₹{stats?.todayRevenue ?? 0}</div>
             <div className="stat-label">Today's Revenue</div>
           </div>
-          <div className="stat-icon-wrapper" style={{ background: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent-cyan)' }}>
-            <IndianRupee size={24} />
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div>
-            <div className="stat-val">{stats?.activePrintJobs ?? 1}</div>
-            <div className="stat-label">Print Jobs in Queue</div>
-          </div>
-          <div className="stat-icon-wrapper" style={{ background: 'rgba(99, 102, 241, 0.15)', color: 'var(--accent-indigo)' }}>
-            <Printer size={24} />
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div>
-            <div className="stat-val" style={{ fontSize: '1.4rem' }}>{stats?.storageMb ?? '0.00'} MB</div>
-            <div className="stat-label">Temp Storage (Auto-Clean)</div>
-          </div>
-          <div className="stat-icon-wrapper" style={{ background: 'rgba(16, 185, 129, 0.15)', color: 'var(--accent-emerald)' }}>
-            <HardDrive size={24} />
-          </div>
+          <div className="stat-icon-wrapper purple"><IndianRupee size={22} /></div>
         </div>
       </div>
 
-      {/* Quick Action Tools Hub */}
-      <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2 style={{ fontSize: '1.1rem', fontWeight: '800' }}>⚡ Single-Window Service Tools</h2>
-        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Launch any tool in 1-click</span>
+      {/* Quick Launch Studios */}
+      <div style={{ marginTop: '24px' }}>
+        <div style={{ fontWeight: '800', fontSize: '1rem', color: 'var(--text-main)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Sparkles size={18} color="var(--primary-500)" />
+          <span>Quick Launch Studios</span>
+        </div>
+        <QuickActionCards setActivePage={setActivePage} />
       </div>
-      <QuickActionCards onSelectTool={(toolId) => setActivePage(toolId)} />
 
-      {/* 2-Column Split: Active Requests & Print Queue */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '24px', marginTop: '28px' }}>
-        {/* Recent Service Requests */}
-        <div className="card">
-          <div className="card-header">
-            <div className="card-title">
-              <Inbox size={18} color="var(--primary-500)" />
-              <span>Recent Service Requests</span>
-            </div>
-            <button className="btn btn-secondary btn-sm" onClick={() => setActivePage('requests')}>
-              View All <ArrowRight size={14} />
-            </button>
+      {/* Recent Pipeline Requests */}
+      <div className="card" style={{ marginTop: '24px' }}>
+        <div className="card-header">
+          <div className="card-title">
+            <Inbox size={18} color="var(--primary-500)" />
+            <span>Recent Citizen Service Requests</span>
           </div>
-          <div className="card-body" style={{ padding: 0 }}>
-            <div className="table-wrapper" style={{ border: 'none', borderRadius: 0 }}>
-              <table className="custom-table">
-                <thead>
+          <button className="btn btn-secondary btn-sm" onClick={() => setActivePage('requests')}>
+            View All Pipeline ({stats?.totalRequests ?? 0})
+          </button>
+        </div>
+        <div className="card-body" style={{ padding: 0 }}>
+          <div className="table-wrapper" style={{ border: 'none', borderRadius: 0 }}>
+            <table className="custom-table">
+              <thead>
+                <tr>
+                  <th>Token ID</th>
+                  <th>Customer Name</th>
+                  <th>Service Type</th>
+                  <th>Status</th>
+                  <th>Assigned Desk</th>
+                  <th>Time</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentRequests.length === 0 ? (
                   <tr>
-                    <th>Request ID</th>
-                    <th>Customer</th>
-                    <th>Service</th>
-                    <th>Status</th>
-                    <th>Action</th>
+                    <td colSpan="7" style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+                      No active requests right now. Click "New Customer Request" to initiate.
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {recentRequests.length === 0 ? (
-                    <tr>
-                      <td colSpan="5" style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
-                        No active service requests today.
+                ) : (
+                  recentRequests.map(req => (
+                    <tr key={req._id}>
+                      <td style={{ fontWeight: '800', color: 'var(--primary-400)', fontFamily: 'monospace' }}>
+                        {req.trackingId || req._id.substring(req._id.length - 6).toUpperCase()}
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: '700' }}>{req.customerName}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{req.customerPhone || '—'}</div>
+                      </td>
+                      <td>
+                        <span className="badge badge-primary" style={{ fontSize: '0.74rem' }}>
+                          {req.serviceType.replace('_', ' ').toUpperCase()}
+                        </span>
+                      </td>
+                      <td><StatusBadge status={req.status} /></td>
+                      <td style={{ fontSize: '0.82rem' }}>{req.assignedTo?.name || 'Unassigned'}</td>
+                      <td style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+                        {new Date(req.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td>
+                        <button 
+                          className="btn btn-secondary btn-sm" 
+                          style={{ padding: '3px 8px', fontSize: '0.72rem' }}
+                          onClick={() => setActivePage('requests')}
+                        >
+                          <Eye size={12} /> Manage
+                        </button>
                       </td>
                     </tr>
-                  ) : (
-                    recentRequests.map(req => (
-                      <tr key={req._id}>
-                        <td><span className="font-mono font-bold text-primary">{req.requestId}</span></td>
-                        <td>
-                          <div style={{ fontWeight: '600' }}>{req.customerName}</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{req.customerPhone}</div>
-                        </td>
-                        <td>{req.serviceName}</td>
-                        <td><StatusBadge status={req.status} /></td>
-                        <td>
-                          <button 
-                            className="btn btn-secondary btn-sm"
-                            onClick={() => setActivePage('requests')}
-                          >
-                            <Eye size={12} /> Manage
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        {/* Live Print Queue */}
-        <div className="card">
-          <div className="card-header">
-            <div className="card-title">
-              <Printer size={18} color="var(--accent-cyan)" />
-              <span>Active Print Queue</span>
-            </div>
-            <button className="btn btn-secondary btn-sm" onClick={() => setActivePage('print-manager')}>
-              Queue <ArrowRight size={14} />
-            </button>
-          </div>
-          <div className="card-body" style={{ padding: 0 }}>
-            {printJobs.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
-                No print jobs pending.
-              </div>
-            ) : (
-              <div className="table-wrapper" style={{ border: 'none', borderRadius: 0 }}>
-                <table className="custom-table">
-                  <thead>
-                    <tr>
-                      <th>Title</th>
-                      <th>Copies</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {printJobs.map(job => (
-                      <tr key={job._id}>
-                        <td>
-                          <div style={{ fontWeight: '600' }}>{job.title}</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{job.paperSize} • {job.colorMode}</div>
-                        </td>
-                        <td>{job.copies}</td>
-                        <td><StatusBadge status={job.status} /></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
 
       {previewDoc && (
         <DocPreviewModal 
-          isOpen={Boolean(previewDoc)} 
+          isOpen={true} 
           onClose={() => setPreviewDoc(null)} 
-          fileUrl={previewDoc.url}
-          fileName={previewDoc.name}
+          fileUrl={previewDoc.url} 
+          fileName={previewDoc.name} 
         />
       )}
     </div>

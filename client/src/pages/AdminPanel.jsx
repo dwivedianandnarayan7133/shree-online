@@ -24,18 +24,18 @@ export const AdminPanel = () => {
     tagline: 'One Window. Every Digital Service.',
     establishedYear: '2013',
     aboutUsText: '',
-    ownerName: 'Krishan Narayan Dwivedi',
-    ownerRole: 'Founder & Managing Owner',
-    ownerPhone: '9161400719',
-    ownerEmail: 'onlinebaba111111@gmail.com',
-    ownerPhoto: '',
-    ownerQuote: '',
     adminName: 'Kamal Narayan Dwivedi',
     adminRole: 'Managing Director & Main Controller',
     adminPhone: '8090794210',
     adminEmail: 'kdshree778@gmail.com',
     adminPhoto: '',
     adminQuote: '',
+    ownerName: 'Krishan Narayan Dwivedi',
+    ownerRole: 'Founder & Managing Owner',
+    ownerPhone: '9161400719',
+    ownerEmail: 'onlinebaba111111@gmail.com',
+    ownerPhoto: '',
+    ownerQuote: '',
     cyberCafeAddress: 'Main Market, Mahuli, Sant Kabir Nagar (S.K.N), Uttar Pradesh - 272172',
     footerTimings: 'Monday – Sunday (08:00 AM – 09:00 PM)',
     footerCopyright: '© 2013 – 2026 Shree Online Sewa Kendra • Mahuli, Sant Kabir Nagar (S.K.N), U.P. All rights reserved.',
@@ -99,7 +99,7 @@ export const AdminPanel = () => {
     }
   };
 
-  // Photo Upload Handler (Owner, Admin, Operators)
+  // Photo Upload Handler (Admin, Owner, Operators)
   const handlePhotoUpload = async (e, target) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -112,13 +112,13 @@ export const AdminPanel = () => {
     try {
       const res = await api.uploadProfilePhoto(formData);
       if (res.success) {
-        if (target === 'owner') {
-          setConfig(prev => ({ ...prev, ownerPhoto: res.photoUrl }));
-        } else if (target === 'admin') {
+        if (target === 'admin') {
           setConfig(prev => ({ ...prev, adminPhoto: res.photoUrl }));
+        } else if (target === 'owner') {
+          setConfig(prev => ({ ...prev, ownerPhoto: res.photoUrl }));
         }
         fetchAdminData();
-        setSaveSuccess(`Profile photo uploaded successfully for ${target === 'owner' ? 'Owner' : target === 'admin' ? 'Admin MD' : 'Operator'}.`);
+        setSaveSuccess(`Profile photo uploaded successfully for ${target === 'admin' ? 'Admin MD' : target === 'owner' ? 'Owner' : 'Operator'}.`);
         setTimeout(() => setSaveSuccess(''), 4000);
       }
     } catch (err) {
@@ -221,8 +221,8 @@ export const AdminPanel = () => {
     }
   };
 
+  const adminPhotoUrl = config.adminPhoto ? getFullUrl(config.adminPhoto) : '/admin-photo.jpg';
   const ownerPhotoUrl = config.ownerPhoto ? getFullUrl(config.ownerPhoto) : null;
-  const adminPhotoUrl = config.adminPhoto ? getFullUrl(config.adminPhoto) : null;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -238,13 +238,13 @@ export const AdminPanel = () => {
       {/* Managing Director & Admin Header */}
       <div className="page-header">
         <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(99, 102, 241, 0.15)', color: 'var(--primary-400)', padding: '3px 10px', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: '800', marginBottom: '8px' }}>
-            <Award size={13} color="#f59e0b" />
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--accent-emerald)', padding: '3px 10px', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: '800', marginBottom: '8px' }}>
+            <Award size={13} color="#10b981" />
             <span>Managing Director & Main Controller Desk</span>
           </div>
           <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span>Admin Control Center</span>
-            <span className="badge badge-primary" style={{ fontSize: '0.75rem' }}>Kamal Narayan Dwivedi</span>
+            <span className="badge badge-completed" style={{ fontSize: '0.75rem' }}>Kamal Narayan Dwivedi</span>
           </h1>
           <p className="page-subtitle">
             Central controller for static content, large circular profile photos, operators, pricing catalog, and system logs.
@@ -355,10 +355,112 @@ export const AdminPanel = () => {
               />
             </div>
 
-            {/* Leadership Profiles & BIG Circular Photo Uploads */}
+            {/* Leadership Profiles & BIG Circular Photo Uploads — MANAGING DIRECTOR FIRST, OWNER SECOND */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '24px' }}>
               
-              {/* OWNER PROFILE & BIG CIRCULAR PHOTO UPLOADER */}
+              {/* 1. ADMIN PROFILE & BIG CIRCULAR PHOTO UPLOADER (FIRST) */}
+              <div style={{ background: 'var(--bg-surface-alt)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <h4 style={{ fontSize: '1rem', fontWeight: '800', color: '#10b981', margin: 0 }}>
+                    🛡️ Managing Director & Main Controller
+                  </h4>
+                  <span className="badge badge-completed" style={{ fontSize: '0.75rem' }}>Kamal Narayan</span>
+                </div>
+
+                {/* BIG Circular Photo Preview (130px) & Upload Control */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', padding: '12px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                  <div style={{ position: 'relative', flexShrink: 0 }}>
+                    <img 
+                      src={adminPhotoUrl} 
+                      alt="Admin MD" 
+                      style={{
+                        width: '130px', height: '130px', borderRadius: '50%',
+                        objectFit: 'cover', border: '5px solid #10b981',
+                        boxShadow: '0 6px 20px rgba(16, 185, 129, 0.35)',
+                        aspectRatio: '1/1'
+                      }} 
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = '/admin-photo.jpg';
+                      }}
+                    />
+                    <div style={{
+                      position: 'absolute', bottom: '2px', right: '2px',
+                      background: '#10b981', color: '#fff', borderRadius: '50%',
+                      width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '0.85rem', fontWeight: '900', border: '2px solid #fff'
+                    }}>
+                      🛡️
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <input 
+                      type="file" 
+                      ref={adminPhotoInputRef} 
+                      style={{ display: 'none' }} 
+                      accept="image/*"
+                      onChange={(e) => handlePhotoUpload(e, 'admin')} 
+                    />
+                    <button 
+                      type="button" 
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => adminPhotoInputRef.current?.click()}
+                      disabled={uploadingTarget === 'admin'}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                    >
+                      <Camera size={15} />
+                      <span>{uploadingTarget === 'admin' ? 'Uploading...' : 'Upload Admin Photo'}</span>
+                    </button>
+                    <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                      Large high-res circular photo<br />(Auto cropped to 1:1 circle)
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Full Name</label>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    value={config.adminName} 
+                    onChange={e => setConfig({ ...config, adminName: e.target.value })} 
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div className="form-group">
+                    <label className="form-label">Mobile</label>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      value={config.adminPhone} 
+                      onChange={e => setConfig({ ...config, adminPhone: e.target.value })} 
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Email</label>
+                    <input 
+                      type="email" 
+                      className="form-input" 
+                      value={config.adminEmail} 
+                      onChange={e => setConfig({ ...config, adminEmail: e.target.value })} 
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Admin MD Official Message (~500 Words Address)</label>
+                  <textarea 
+                    className="form-input" 
+                    rows="8" 
+                    value={config.adminQuote} 
+                    onChange={e => setConfig({ ...config, adminQuote: e.target.value })} 
+                  />
+                </div>
+              </div>
+
+              {/* 2. OWNER PROFILE & BIG CIRCULAR PHOTO UPLOADER (SECOND) */}
               <div style={{ background: 'var(--bg-surface-alt)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <h4 style={{ fontSize: '1rem', fontWeight: '800', color: '#f59e0b', margin: 0 }}>
@@ -469,116 +571,6 @@ export const AdminPanel = () => {
                 </div>
               </div>
 
-              {/* ADMIN PROFILE & BIG CIRCULAR PHOTO UPLOADER */}
-              <div style={{ background: 'var(--bg-surface-alt)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <h4 style={{ fontSize: '1rem', fontWeight: '800', color: '#10b981', margin: 0 }}>
-                    🛡️ Managing Director & Main Controller
-                  </h4>
-                  <span className="badge badge-completed" style={{ fontSize: '0.75rem' }}>Kamal Narayan</span>
-                </div>
-
-                {/* BIG Circular Photo Preview (130px) & Upload Control */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', padding: '12px 0', borderBottom: '1px solid var(--border-subtle)' }}>
-                  <div style={{ position: 'relative', flexShrink: 0 }}>
-                    {adminPhotoUrl ? (
-                      <img 
-                        src={adminPhotoUrl} 
-                        alt="Admin MD" 
-                        style={{
-                          width: '130px', height: '130px', borderRadius: '50%',
-                          objectFit: 'cover', border: '5px solid #10b981',
-                          boxShadow: '0 6px 20px rgba(16, 185, 129, 0.35)',
-                          aspectRatio: '1/1'
-                        }} 
-                      />
-                    ) : (
-                      <div style={{
-                        width: '130px', height: '130px', borderRadius: '50%',
-                        background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontWeight: '900', fontSize: '2.8rem', border: '5px solid #10b981',
-                        boxShadow: '0 6px 20px rgba(16, 185, 129, 0.35)',
-                        aspectRatio: '1/1'
-                      }}>
-                        KD
-                      </div>
-                    )}
-                    <div style={{
-                      position: 'absolute', bottom: '2px', right: '2px',
-                      background: '#10b981', color: '#fff', borderRadius: '50%',
-                      width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '0.85rem', fontWeight: '900', border: '2px solid #fff'
-                    }}>
-                      🛡️
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <input 
-                      type="file" 
-                      ref={adminPhotoInputRef} 
-                      style={{ display: 'none' }} 
-                      accept="image/*"
-                      onChange={(e) => handlePhotoUpload(e, 'admin')} 
-                    />
-                    <button 
-                      type="button" 
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => adminPhotoInputRef.current?.click()}
-                      disabled={uploadingTarget === 'admin'}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                    >
-                      <Camera size={15} />
-                      <span>{uploadingTarget === 'admin' ? 'Uploading...' : 'Upload Admin Photo'}</span>
-                    </button>
-                    <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
-                      Large high-res circular photo<br />(Auto cropped to 1:1 circle)
-                    </div>
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Full Name</label>
-                  <input 
-                    type="text" 
-                    className="form-input" 
-                    value={config.adminName} 
-                    onChange={e => setConfig({ ...config, adminName: e.target.value })} 
-                  />
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <div className="form-group">
-                    <label className="form-label">Mobile</label>
-                    <input 
-                      type="text" 
-                      className="form-input" 
-                      value={config.adminPhone} 
-                      onChange={e => setConfig({ ...config, adminPhone: e.target.value })} 
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Email</label>
-                    <input 
-                      type="email" 
-                      className="form-input" 
-                      value={config.adminEmail} 
-                      onChange={e => setConfig({ ...config, adminEmail: e.target.value })} 
-                    />
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Admin MD Official Message (~500 Words Address)</label>
-                  <textarea 
-                    className="form-input" 
-                    rows="8" 
-                    value={config.adminQuote} 
-                    onChange={e => setConfig({ ...config, adminQuote: e.target.value })} 
-                  />
-                </div>
-              </div>
             </div>
 
             {/* Footer Details */}
