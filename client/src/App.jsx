@@ -1,3 +1,4 @@
+import { MobileBottomNav } from './components/MobileBottomNav';
 import React, { useState } from 'react';
 import { useAuth } from './context/AuthContext';
 import { NavigationBar } from './components/NavigationBar';
@@ -96,6 +97,9 @@ export default function App() {
       {activePage !== 'website-launcher' && (
         <Footer setActivePage={setActivePage} />
       )}
+
+      {/* Native App-Like Mobile Bottom Navigation Bar */}
+      <MobileBottomNav activePage={activePage} setActivePage={setActivePage} />
 
       {/* Floating WhatsApp Quick Conversation & Helpline Widget */}
       <WhatsAppChatWidget currentUser={user} />
