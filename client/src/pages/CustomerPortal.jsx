@@ -1,19 +1,19 @@
-import { SERVER_BASE, getFullUrl } from '../services/config';
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Send, Search, Clock, CheckCircle2, Download, FileText, 
-  Sparkles, AlertCircle, Phone, Mail, User, Check, MessageCircle
+  Sparkles, AlertCircle, Phone, Mail, User, Check, MessageCircle,
+  KeyRound, RotateCw, X, ShieldCheck
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { api } from '../services/api';
+import { api, getFullUrl } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { FileUploadZone } from '../components/FileUploadZone';
 import { StatusBadge } from '../components/StatusBadge';
 import { DocPreviewModal } from '../components/DocPreviewModal';
 
-export const CustomerPortal = () => {
-  const { user } = useAuth();
+export const CustomerPortal = ({ setActivePage }) => {
+  const { user, login } = useAuth();
   const { latestRequestUpdate } = useSocket();
 
   const [activeTab, setActiveTab] = useState('submit'); // 'submit', 'track', 'my-requests'
@@ -29,6 +29,14 @@ export const CustomerPortal = () => {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [submissionResult, setSubmissionResult] = useState(null);
+
+  // Guest Gmail OTP Modal state
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [guestPassword, setGuestPassword] = useState('Citizen@123');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpError, setOtpError] = useState('');
 
   // Tracking tab state
   const [trackQuery, setTrackQuery] = useState('');
@@ -60,13 +68,20 @@ export const CustomerPortal = () => {
     }
   }, [latestRequestUpdate, trackedRequest]);
 
-  const handleFormSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.customerName || !formData.customerPhone || !formData.serviceName) {
-      alert('Please fill customer name, phone number, and service requested.');
-      return;
+  // Fetch logged in customer's requests
+  useEffect(() => {
+    if (activeTab === 'my-requests' && user) {
+      setLoadingMyReqs(true);
+      api.getRequests(`customerEmail=${user.email}`)
+        .then(res => {
+          if (res.success) setMyRequests(res.requests || []);
+        })
+        .catch(err => console.error(err))
+        .finally(() => setLoadingMyReqs(false));
     }
+  }, [activeTab, user]);
 
+  const executeSubmit = async () => {
     setSubmitting(true);
     try {
       const data = new FormData();
@@ -87,6 +102,7 @@ export const CustomerPortal = () => {
       const res = await api.createRequest(data);
       if (res.success) {
         setSubmissionResult(res.request);
+        setShowOtpModal(false);
         try {
           confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
         } catch (e) {}
@@ -98,129 +114,220 @@ export const CustomerPortal = () => {
     }
   };
 
-  const handleTrackRequest = async (e) => {
-    if (e) e.preventDefault();
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.customerName || !formData.customerPhone || !formData.serviceName) {
+      alert('Please fill customer name, phone number, and service requested.');
+      return;
+    }
+
+    // If user is already logged in, submit immediately
+    if (user) {
+      await executeSubmit();
+      return;
+    }
+
+    // If guest, trigger Gmail OTP verification modal before submitting
+    if (!formData.customerEmail) {
+      alert('Please provide a Gmail address so we can send your verification OTP and track your request.');
+      return;
+    }
+
+    setShowOtpModal(true);
+    await handleSendGuestOtp();
+  };
+
+  const handleSendGuestOtp = async () => {
+    setOtpError('');
+    setOtpLoading(true);
+    try {
+      const res = await api.sendRegisterOtp({
+        name: formData.customerName,
+        email: formData.customerEmail,
+        password: guestPassword,
+        phone: formData.customerPhone,
+        role: 'customer'
+      });
+      if (res.success) {
+        setOtpSent(true);
+      }
+    } catch (err) {
+      // If email already registered, ask user to log in or proceed
+      if (err.message && err.message.includes('already registered')) {
+        setOtpError('This email is already registered. If this is your account, you can submit directly.');
+        // Allow guest to submit directly if account already exists
+        await executeSubmit();
+      } else {
+        setOtpError(err.message || 'Failed to send OTP to Gmail');
+      }
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleVerifyGuestOtp = async (e) => {
+    e.preventDefault();
+    if (!otpCode || otpCode.trim().length !== 6) {
+      setOtpError('Please enter the 6-digit OTP code sent to your Gmail.');
+      return;
+    }
+
+    setOtpError('');
+    setOtpLoading(true);
+    try {
+      const res = await api.verifyRegisterOtp({
+        email: formData.customerEmail,
+        otp: otpCode.trim()
+      });
+      if (res.success) {
+        login(res.user, res.token);
+        await executeSubmit();
+      }
+    } catch (err) {
+      setOtpError(err.message || 'Invalid OTP code. Please check your Gmail.');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleTrackSubmit = async (e) => {
+    e.preventDefault();
     if (!trackQuery.trim()) return;
 
     setTrackLoading(true);
     setTrackError('');
+    setTrackedRequest(null);
+
     try {
-      const res = await api.getRequestById(trackQuery.trim());
-      if (res.success && res.request) {
-        setTrackedRequest(res.request);
+      const res = await api.getRequests(`search=${encodeURIComponent(trackQuery.trim())}`);
+      if (res.success && res.requests && res.requests.length > 0) {
+        setTrackedRequest(res.requests[0]);
       } else {
-        setTrackError('Request ID not found. Please check and try again.');
-        setTrackedRequest(null);
+        setTrackError('No request found matching your Token ID or Phone Number.');
       }
     } catch (err) {
-      setTrackError('No matching request found with that ID or phone number.');
-      setTrackedRequest(null);
+      setTrackError('Failed to search request. Please verify the Token ID.');
     } finally {
       setTrackLoading(false);
     }
   };
 
-  const loadMyRequests = async () => {
-    setLoadingMyReqs(true);
-    try {
-      const res = await api.getRequests('myRequestsOnly=true');
-      if (res.success) {
-        setMyRequests(res.requests);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoadingMyReqs(false);
-    }
+  const resetForm = () => {
+    setSubmissionResult(null);
+    setSelectedFiles([]);
+    setFormData({
+      customerName: user?.name || '',
+      customerPhone: user?.phone || '',
+      customerEmail: user?.email || '',
+      serviceCategory: 'Government Application',
+      serviceName: 'PAN Card New / Correction Assistance',
+      instructions: '',
+      priority: 'normal'
+    });
   };
 
-  useEffect(() => {
-    if (activeTab === 'my-requests') {
-      loadMyRequests();
-    }
-  }, [activeTab]);
-
   return (
-    <div>
+    <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      
+      {/* Portal Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title">
-            <span>Shree Online — Customer Digital Service Portal (Mahuli, S.K.N)</span>
-          </h1>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', padding: '3px 10px', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: '800', marginBottom: '8px' }}>
+            ⚡ Public Digital Seva Counter • Est. 2013
+          </div>
+          <h1 className="page-title">Citizen & Student Service Desk</h1>
           <p className="page-subtitle">
-            Submit document processing requests, upload files, and track real-time status.
+            Submit applications, exam registrations, document requests, and track real-time processing status online.
           </p>
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="tabs-container">
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
         <button 
-          className={`tab-btn ${activeTab === 'submit' ? 'active' : ''}`}
+          className={`btn btn-sm ${activeTab === 'submit' ? 'btn-primary' : 'btn-secondary'}`}
           onClick={() => setActiveTab('submit')}
+          style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
         >
-          <Send size={16} /> Submit New Request
+          <Send size={14} />
+          <span>New Application Request</span>
         </button>
+
         <button 
-          className={`tab-btn ${activeTab === 'track' ? 'active' : ''}`}
+          className={`btn btn-sm ${activeTab === 'track' ? 'btn-primary' : 'btn-secondary'}`}
           onClick={() => setActiveTab('track')}
+          style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
         >
-          <Search size={16} /> Track Request ID
+          <Search size={14} />
+          <span>Track Token Status</span>
         </button>
-        <button 
-          className={`tab-btn ${activeTab === 'my-requests' ? 'active' : ''}`}
-          onClick={() => setActiveTab('my-requests')}
-        >
-          <FileText size={16} /> My Requests & Downloads
-        </button>
+
+        {user && (
+          <button 
+            className={`btn btn-sm ${activeTab === 'my-requests' ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => setActiveTab('my-requests')}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <Clock size={14} />
+            <span>My Submitted Applications</span>
+          </button>
+        )}
       </div>
 
-      {/* 1. SUBMIT NEW REQUEST TAB */}
+      {/* 1. SUBMIT REQUEST TAB */}
       {activeTab === 'submit' && (
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+        <div>
           {submissionResult ? (
-            <div className="card" style={{ textAlign: 'center', padding: '36px 24px' }}>
+            <div className="card" style={{ textAlign: 'center', padding: '36px 20px' }}>
               <div style={{
-                width: '64px', height: '64px', borderRadius: '50%',
-                background: 'var(--status-comp-bg)', color: 'var(--status-comp-text)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto'
+                width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.15)',
+                color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto'
               }}>
                 <CheckCircle2 size={36} />
               </div>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: '800', marginBottom: '8px' }}>
-                Request Submitted Successfully!
+              <h2 style={{ fontSize: '1.4rem', fontWeight: '900', color: 'var(--text-main)' }}>
+                Application Successfully Received!
               </h2>
-              <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>
-                Your service request has been registered at Shree Online (Mahuli, S.K.N) queue. Keep this Request ID safe:
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: '500px', margin: '6px auto 20px auto' }}>
+                Your service request has been queued at Shree Online Sewa Kendra (Mahuli). Our operators are processing it.
               </p>
 
               <div style={{
-                background: 'var(--bg-surface-alt)', border: '2px dashed var(--primary-500)',
-                padding: '16px 24px', borderRadius: 'var(--radius-lg)', display: 'inline-block',
-                fontFamily: 'var(--font-mono)', fontSize: '1.6rem', fontWeight: '800',
-                color: 'var(--primary-600)', marginBottom: '24px'
+                background: 'var(--bg-surface-alt)', border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-lg)', padding: '16px', maxWidth: '400px', margin: '0 auto 24px auto', textAlign: 'left'
               }}>
-                {submissionResult.requestId}
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Token ID:</span>
+                  <span style={{ fontWeight: '800', color: 'var(--primary-400)', fontFamily: 'monospace' }}>
+                    {submissionResult.requestId}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Applicant Name:</span>
+                  <span style={{ fontWeight: '700' }}>{submissionResult.customerName}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Service:</span>
+                  <span style={{ fontWeight: '700' }}>{submissionResult.serviceName}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Status:</span>
+                  <StatusBadge status={submissionResult.status} />
+                </div>
               </div>
 
-              <div style={{ marginBottom: "16px", padding: "12px", background: "rgba(37, 211, 102, 0.08)", border: "1px solid rgba(37, 211, 102, 0.3)", borderRadius: "var(--radius-md)" }}><div style={{ fontSize: "0.8rem", fontWeight: "700", color: "#25d366", marginBottom: "8px" }}>💬 Need fast updates on WhatsApp?</div><div style={{ display: "flex", justifyContent: "center", gap: "10px", flexWrap: "wrap" }}><a href={`https://wa.me/919161400719?text=${encodeURIComponent("Hello Shree Online, I submitted request " + submissionResult.requestId + " for " + submissionResult.serviceName)}`} target="_blank" rel="noreferrer" className="btn btn-sm btn-success"><MessageCircle size={14} /> WhatsApp Desk 1 (9161400719)</a><a href={`https://wa.me/918090794210?text=${encodeURIComponent("Hello Shree Online, I submitted request " + submissionResult.requestId + " for " + submissionResult.serviceName)}`} target="_blank" rel="noreferrer" className="btn btn-sm btn-secondary"><MessageCircle size={14} /> Helpline (8090794210)</a></div></div><div style={{ display: "flex", justifyContent: "center", gap: "12px" }}>
-                <button 
-                  className="btn btn-primary"
-                  onClick={() => {
-                    setTrackQuery(submissionResult.requestId);
-                    setActiveTab('track');
-                    setTrackedRequest(submissionResult);
-                  }}
-                >
-                  <Search size={16} /> Track This Request Live
-                </button>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
                 <button 
                   className="btn btn-secondary"
                   onClick={() => {
+                    setTrackQuery(submissionResult.requestId);
+                    setActiveTab('track');
                     setSubmissionResult(null);
-                    setSelectedFiles([]);
                   }}
                 >
+                  <Search size={14} /> Track This Token
+                </button>
+                <button className="btn btn-primary" onClick={resetForm}>
                   Submit Another Request
                 </button>
               </div>
@@ -229,261 +336,237 @@ export const CustomerPortal = () => {
             <form onSubmit={handleFormSubmit} className="card">
               <div className="card-header">
                 <div className="card-title">
-                  <Send size={18} color="var(--primary-500)" />
-                  <span>Digital Service Request Form</span>
+                  <FileText size={18} color="var(--primary-500)" />
+                  <span>Citizen Service Request Form</span>
                 </div>
-                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Secure 256-bit Encrypted</span>
               </div>
-              <div className="card-body">
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                  <div className="form-group">
-                    <label className="form-label">Customer Name *</label>
-                    <input 
-                      type="text" 
-                      className="form-input" 
-                      placeholder="e.g. Ramesh Kumar"
-                      value={formData.customerName}
-                      onChange={e => setFormData({ ...formData, customerName: e.target.value })}
-                      required
+
+              <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                
+                {/* Personal Information */}
+                <div>
+                  <h3 style={{ fontSize: '0.9rem', fontWeight: '800', color: 'var(--primary-400)', marginBottom: '12px' }}>
+                    👤 Applicant Information
+                  </h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
+                    <div className="form-group">
+                      <label className="form-label">Full Name *</label>
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        placeholder="e.g. Anand Narayan Dwivedi"
+                        value={formData.customerName}
+                        onChange={e => setFormData({ ...formData, customerName: e.target.value })}
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Mobile Number *</label>
+                      <input 
+                        type="tel" 
+                        className="form-input" 
+                        placeholder="91614 00719"
+                        value={formData.customerPhone}
+                        onChange={e => setFormData({ ...formData, customerPhone: e.target.value })}
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Gmail Address (For OTP & Status Receipts) *</label>
+                      <input 
+                        type="email" 
+                        className="form-input" 
+                        placeholder="applicant@gmail.com"
+                        value={formData.customerEmail}
+                        onChange={e => setFormData({ ...formData, customerEmail: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Service Details */}
+                <div>
+                  <h3 style={{ fontSize: '0.9rem', fontWeight: '800', color: 'var(--primary-400)', marginBottom: '12px' }}>
+                    📝 Service & Application Details
+                  </h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
+                    <div className="form-group">
+                      <label className="form-label">Category</label>
+                      <select 
+                        className="form-select"
+                        value={formData.serviceCategory}
+                        onChange={e => setFormData({ ...formData, serviceCategory: e.target.value })}
+                      >
+                        <option value="Government Application">Government Application & Scheme</option>
+                        <option value="Form Filling & Exam">Recruitment & Exam Form (UP Police, SSC, PET)</option>
+                        <option value="Photo & ID">Passport Size Photos & ID Card</option>
+                        <option value="Document & Printing">Color / Laser Printing & Lamination</option>
+                        <option value="Conversion & OCR">Old Doc Restore & OCR Conversion</option>
+                      </select>
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Service Title *</label>
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        placeholder="e.g. UP Police Constable Online Form"
+                        value={formData.serviceName}
+                        onChange={e => setFormData({ ...formData, serviceName: e.target.value })}
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Urgency Priority</label>
+                      <select 
+                        className="form-select"
+                        value={formData.priority}
+                        onChange={e => setFormData({ ...formData, priority: e.target.value })}
+                      >
+                        <option value="normal">Normal Processing (Standard)</option>
+                        <option value="urgent">⚡ Urgent / Same Day Priority</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="form-group" style={{ marginTop: '12px' }}>
+                    <label className="form-label">Specific Instructions or Application Notes</label>
+                    <textarea 
+                      className="form-input"
+                      rows="3"
+                      placeholder="e.g. Please use blue background passport photo, fill category as OBC, print 2 fee receipt copies."
+                      value={formData.instructions}
+                      onChange={e => setFormData({ ...formData, instructions: e.target.value })}
                     />
                   </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Phone Number *</label>
-                    <input 
-                      type="tel" 
-                      className="form-input" 
-                      placeholder="e.g. +91 98765 43210"
-                      value={formData.customerPhone}
-                      onChange={e => setFormData({ ...formData, customerPhone: e.target.value })}
-                      required
-                    />
-                  </div>
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">Email Address (Optional for delivery)</label>
-                  <input 
-                    type="email" 
-                    className="form-input" 
-                    placeholder="e.g. ramesh@gmail.com"
-                    value={formData.customerEmail}
-                    onChange={e => setFormData({ ...formData, customerEmail: e.target.value })}
-                  />
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '16px' }}>
-                  <div className="form-group">
-                    <label className="form-label">Service Category</label>
-                    <select 
-                      className="form-select"
-                      value={formData.serviceCategory}
-                      onChange={e => setFormData({ ...formData, serviceCategory: e.target.value })}
-                    >
-                      <option>Government Application</option>
-                      <option>Photo & ID</option>
-                      <option>Document & Printing</option>
-                      <option>Conversion & OCR</option>
-                      <option>Form Filling & Exam</option>
-                      <option>General Digital Service</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Service Required *</label>
-                    <input 
-                      type="text" 
-                      className="form-input" 
-                      placeholder="e.g. Passport Photo Print / Pan Card Form / Doc Compression"
-                      value={formData.serviceName}
-                      onChange={e => setFormData({ ...formData, serviceName: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Special Instructions / Requirements</label>
-                  <textarea 
-                    className="form-textarea" 
-                    placeholder="Specify number of copies, target file size (e.g. < 100KB), background color for photos, or specific details..."
-                    value={formData.instructions}
-                    onChange={e => setFormData({ ...formData, instructions: e.target.value })}
-                  />
-                </div>
-
-                {/* Drag-and-Drop File Upload */}
-                <div className="form-group">
-                  <label className="form-label">Upload Documents / Photos</label>
+                {/* Attach Documents */}
+                <div>
+                  <h3 style={{ fontSize: '0.9rem', fontWeight: '800', color: 'var(--primary-400)', marginBottom: '12px' }}>
+                    📎 Attach Documents / Photos (Optional)
+                  </h3>
                   <FileUploadZone 
+                    files={selectedFiles}
+                    setFiles={setSelectedFiles}
                     multiple={true}
-                    onFilesSelected={(files) => setSelectedFiles(files || [])}
-                    title="Upload required files & ID proofs"
-                    subtitle="PDF, Scans, JPG photos, signature images up to 50MB"
+                    maxFiles={8}
+                    title="Drag & drop Aadhaar, marksheets, photo or certificates here"
                   />
                 </div>
 
-                <div className="notice-banner notice-info" style={{ marginTop: '16px' }}>
-                  <AlertCircle size={18} style={{ flexShrink: 0 }} />
-                  <div>
-                    <b>Privacy Guarantee:</b> All customer documents are stored securely with strict role-based access. Temporary processing files are automatically cleared per retention policy.
-                  </div>
+                <div style={{ textAlign: 'right', marginTop: '12px' }}>
+                  <button 
+                    type="submit" 
+                    className="btn btn-primary btn-lg"
+                    disabled={submitting}
+                  >
+                    {submitting ? (
+                      <><RotateCw size={16} className="animate-spin" /> Submitting Application...</>
+                    ) : (
+                      <><Send size={16} /> Submit Service Request</>
+                    )}
+                  </button>
                 </div>
-              </div>
 
-              <div className="card-header" style={{ justifyContent: 'flex-end', background: 'var(--bg-surface-alt)' }}>
-                <button type="submit" className="btn btn-primary btn-lg" disabled={submitting}>
-                  {submitting ? 'Submitting...' : 'Submit Request & Get Request ID'}
-                </button>
               </div>
             </form>
           )}
         </div>
       )}
 
-      {/* 2. TRACK REQUEST ID TAB */}
+      {/* 2. TRACK TOKEN TAB */}
       {activeTab === 'track' && (
-        <div style={{ maxWidth: '850px', margin: '0 auto' }}>
-          <div className="card" style={{ marginBottom: '24px' }}>
-            <div className="card-body">
-              <form onSubmit={handleTrackRequest} style={{ display: 'flex', gap: '12px' }}>
-                <input 
-                  type="text" 
-                  className="form-input" 
-                  placeholder="Enter Request ID (e.g. CA-2026-104821)"
-                  value={trackQuery}
-                  onChange={e => setTrackQuery(e.target.value)}
-                  style={{ fontSize: '1rem', padding: '12px 16px' }}
-                />
-                <button type="submit" className="btn btn-primary" style={{ padding: '0 24px' }} disabled={trackLoading}>
-                  <Search size={16} /> {trackLoading ? 'Searching...' : 'Track'}
-                </button>
-              </form>
-              {trackError && (
-                <div style={{ color: 'var(--accent-rose)', fontSize: '0.85rem', marginTop: '10px' }}>
-                  {trackError}
-                </div>
-              )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <form onSubmit={handleTrackSubmit} className="card">
+            <div className="card-header">
+              <div className="card-title">
+                <Search size={18} color="var(--primary-500)" />
+                <span>Track Live Application Status</span>
+              </div>
             </div>
-          </div>
+            <div className="card-body" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <input 
+                type="text" 
+                className="form-input" 
+                placeholder="Enter Token ID (e.g. CA-2026-769201) or Mobile Number"
+                value={trackQuery}
+                onChange={e => setTrackQuery(e.target.value)}
+                style={{ height: '44px' }}
+                required
+              />
+              <button 
+                type="submit" 
+                className="btn btn-primary btn-lg" 
+                disabled={trackLoading}
+                style={{ flexShrink: 0 }}
+              >
+                {trackLoading ? <RotateCw size={16} className="animate-spin" /> : <Search size={16} />} Search
+              </button>
+            </div>
+          </form>
+
+          {trackError && (
+            <div style={{
+              background: 'var(--status-canc-bg)', color: 'var(--status-canc-text)',
+              border: '1px solid var(--status-canc-border)', padding: '14px',
+              borderRadius: 'var(--radius-md)', fontSize: '0.86rem', textAlign: 'center'
+            }}>
+              {trackError}
+            </div>
+          )}
 
           {trackedRequest && (
             <div className="card">
               <div className="card-header">
-                <div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>REQUEST STATUS</div>
-                  <div style={{ fontSize: '1.2rem', fontWeight: '800', fontFamily: 'var(--font-mono)', color: 'var(--primary-600)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontWeight: '900', fontSize: '1.1rem', color: 'var(--primary-400)', fontFamily: 'monospace' }}>
                     {trackedRequest.requestId}
-                  </div>
+                  </span>
+                  <StatusBadge status={trackedRequest.status} />
                 </div>
-                <StatusBadge status={trackedRequest.status} />
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  Submitted: {new Date(trackedRequest.createdAt).toLocaleString('en-IN')}
+                </div>
               </div>
 
-              <div className="card-body">
-                {/* Visual Step Timeline */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', margin: '20px 0 32px 0', position: 'relative' }}>
-                  <div style={{ position: 'absolute', top: '16px', left: '10%', right: '10%', height: '3px', background: 'var(--border-color)', zIndex: 1 }}></div>
-                  
-                  {[
-                    { key: 'new', label: 'Received' },
-                    { key: 'processing', label: 'In Progress' },
-                    { key: 'waiting_customer', label: 'Action Needed' },
-                    { key: 'completed', label: 'Ready for Download' }
-                  ].map((step, idx) => {
-                    const isPassed = ['completed', 'waiting_customer', 'processing'].includes(trackedRequest.status) && (
-                      step.key === 'new' || 
-                      (trackedRequest.status === 'processing' && step.key === 'processing') ||
-                      (trackedRequest.status === 'completed')
-                    );
-                    const isCurrent = trackedRequest.status === step.key;
+              <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
+                  <div>
+                    <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Applicant:</div>
+                    <div style={{ fontWeight: '800' }}>{trackedRequest.customerName}</div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{trackedRequest.customerPhone}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Service Requested:</div>
+                    <div style={{ fontWeight: '800' }}>{trackedRequest.serviceName}</div>
+                    <div style={{ fontSize: '0.74rem', color: 'var(--primary-400)' }}>{trackedRequest.serviceCategory}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Assigned Desk:</div>
+                    <div style={{ fontWeight: '700' }}>{trackedRequest.assignedTo?.name || 'Mahuli Service Counter'}</div>
+                  </div>
+                </div>
 
-                    return (
-                      <div key={step.key} style={{ zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                        <div style={{
-                          width: '34px', height: '34px', borderRadius: '50%',
-                          background: isCurrent ? 'var(--primary-600)' : isPassed ? 'var(--accent-emerald)' : 'var(--bg-surface-alt)',
-                          color: isCurrent || isPassed ? '#fff' : 'var(--text-muted)',
-                          border: '2px solid var(--border-color)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.85rem'
-                        }}>
-                          {isPassed ? <Check size={16} /> : idx + 1}
-                        </div>
-                        <span style={{ fontSize: '0.78rem', fontWeight: isCurrent ? '700' : '500', color: isCurrent ? 'var(--primary-600)' : 'var(--text-secondary)' }}>
-                          {step.label}
-                        </span>
+                {/* Status Timeline */}
+                <div>
+                  <div style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>
+                    Processing Timeline
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {(trackedRequest.statusHistory || []).map((h, i) => (
+                      <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'center', fontSize: '0.8rem' }}>
+                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-emerald)' }}></div>
+                        <span style={{ fontWeight: '700', textTransform: 'capitalize' }}>{h.status}</span>
+                        <span style={{ color: 'var(--text-muted)' }}>• {new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span style={{ color: 'var(--text-secondary)' }}>- {h.note || 'Updated'}</span>
                       </div>
-                    );
-                  })}
-                </div>
-
-                {/* Details Breakdown */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', background: 'var(--bg-surface-alt)', padding: '16px', borderRadius: 'var(--radius-md)' }}>
-                  <div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Customer</div>
-                    <div style={{ fontWeight: '700' }}>{trackedRequest.customerName}</div>
+                    ))}
                   </div>
-                  <div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Service Requested</div>
-                    <div style={{ fontWeight: '700' }}>{trackedRequest.serviceName}</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Assigned Operator</div>
-                    <div>{trackedRequest.assignedOperatorName || 'Desk Operator'}</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Submitted Date</div>
-                    <div>{new Date(trackedRequest.createdAt).toLocaleString()}</div>
-                  </div>
-                </div>
-
-                {/* Operator Notes if any */}
-                {trackedRequest.operatorNotes && (
-                  <div className="notice-banner notice-warning" style={{ marginTop: '16px' }}>
-                    <div>
-                      <b>Operator Note:</b> {trackedRequest.operatorNotes}
-                    </div>
-                  </div>
-                )}
-
-                {/* Deliverables / Processed Files Section */}
-                <div style={{ marginTop: '24px' }}>
-                  <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '12px' }}>
-                    📁 Deliverables & Processed Files
-                  </h3>
-                  {(!trackedRequest.processedFiles || trackedRequest.processedFiles.length === 0) ? (
-                    <div style={{ padding: '20px', textAlign: 'center', background: 'var(--bg-surface-alt)', borderRadius: 'var(--radius-md)', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                      Files are currently being processed. Once completed, your download buttons will appear here.
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {trackedRequest.processedFiles.map(file => (
-                        <div key={file.fileId} className="file-preview-item">
-                          <div className="flex items-center gap-2">
-                            <FileText size={18} color="var(--primary-500)" />
-                            <div>
-                              <div style={{ fontWeight: '700' }}>{file.originalName || file.fileName}</div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{Math.round(file.size / 1024)} KB</div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button 
-                              className="btn btn-secondary btn-sm"
-                              onClick={() => setPreviewDoc({ url: `/uploads/processed/${file.fileName}`, name: file.fileName })}
-                            >
-                              Preview
-                            </button>
-                            <a 
-                              href={`${SERVER_BASE}/uploads/processed/${file.fileName}`}
-                              download
-                              className="btn btn-primary btn-sm"
-                            >
-                              <Download size={14} /> Download
-                            </a>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -491,82 +574,79 @@ export const CustomerPortal = () => {
         </div>
       )}
 
-      {/* 3. MY REQUESTS TAB */}
-      {activeTab === 'my-requests' && (
-        <div>
-          <div className="card">
-            <div className="card-header">
-              <div className="card-title">
-                <FileText size={18} color="var(--primary-500)" />
-                <span>My Submitted Requests & Deliverables</span>
+      {/* GUEST GMAIL OTP VERIFICATION MODAL */}
+      {showOtpModal && (
+        <div className="modal-overlay" onClick={() => setShowOtpModal(false)}>
+          <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+            <div className="modal-header">
+              <div style={{ fontWeight: '800', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <ShieldCheck size={18} color="#10b981" />
+                <span>Verify with Gmail OTP</span>
               </div>
-              <button className="btn btn-secondary btn-sm" onClick={loadMyRequests}>
-                Refresh
+              <button className="icon-btn" onClick={() => setShowOtpModal(false)}>✕</button>
+            </div>
+
+            <form onSubmit={handleVerifyGuestOtp} className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ background: 'var(--bg-surface-alt)', padding: '12px', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>6-digit OTP code sent via Gmail to:</div>
+                <div style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--primary-400)', marginTop: '2px' }}>
+                  {formData.customerEmail}
+                </div>
+              </div>
+
+              {otpError && (
+                <div style={{ background: 'var(--status-canc-bg)', color: 'var(--status-canc-text)', padding: '8px 12px', borderRadius: 'var(--radius-md)', fontSize: '0.8rem' }}>
+                  {otpError}
+                </div>
+              )}
+
+              <div className="form-group">
+                <label className="form-label">Enter 6-Digit OTP</label>
+                <input 
+                  type="text" 
+                  maxLength="6"
+                  className="form-input"
+                  placeholder="••••••"
+                  value={otpCode}
+                  onChange={e => setOtpCode(e.target.value.replace(/[^0-9]/g, ''))}
+                  style={{ textAlign: 'center', fontSize: '1.4rem', letterSpacing: '6px', fontWeight: '900', height: '48px' }}
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.78rem' }}>
+                <button 
+                  type="button" 
+                  onClick={handleSendGuestOtp}
+                  disabled={otpLoading}
+                  style={{ background: 'none', border: 'none', color: 'var(--primary-400)', cursor: 'pointer', fontWeight: '700' }}
+                >
+                  Resend OTP
+                </button>
+                <span style={{ color: 'var(--text-muted)' }}>Valid for 10 minutes</span>
+              </div>
+
+              <button 
+                type="submit" 
+                className="btn btn-primary btn-lg w-full"
+                disabled={otpLoading || submitting}
+              >
+                {otpLoading || submitting ? 'Verifying & Submitting...' : 'Verify OTP & Submit Application'}
               </button>
-            </div>
-            <div className="card-body" style={{ padding: 0 }}>
-              <div className="table-wrapper" style={{ border: 'none', borderRadius: 0 }}>
-                <table className="custom-table">
-                  <thead>
-                    <tr>
-                      <th>Request ID</th>
-                      <th>Service</th>
-                      <th>Submitted Date</th>
-                      <th>Status</th>
-                      <th>Downloads</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {myRequests.length === 0 ? (
-                      <tr>
-                        <td colSpan="6" style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
-                          No requests found. Click "Submit New Request" to create one.
-                        </td>
-                      </tr>
-                    ) : (
-                      myRequests.map(req => (
-                        <tr key={req._id}>
-                          <td style={{ fontFamily: 'var(--font-mono)', fontWeight: '700' }}>{req.requestId}</td>
-                          <td>{req.serviceName}</td>
-                          <td>{new Date(req.createdAt).toLocaleDateString()}</td>
-                          <td><StatusBadge status={req.status} /></td>
-                          <td>
-                            {req.processedFiles?.length > 0 ? (
-                              <span className="badge badge-completed">{req.processedFiles.length} Ready</span>
-                            ) : (
-                              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>In progress</span>
-                            )}
-                          </td>
-                          <td>
-                            <button 
-                              className="btn btn-secondary btn-sm"
-                              onClick={() => {
-                                setTrackQuery(req.requestId);
-                                setTrackedRequest(req);
-                                setActiveTab('track');
-                              }}
-                            >
-                              View Details
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            </form>
           </div>
         </div>
       )}
 
-      <DocPreviewModal 
-        isOpen={Boolean(previewDoc)}
-        onClose={() => setPreviewDoc(null)}
-        fileUrl={previewDoc?.url}
-        fileName={previewDoc?.name}
-      />
+      {previewDoc && (
+        <DocPreviewModal 
+          isOpen={true} 
+          onClose={() => setPreviewDoc(null)} 
+          fileUrl={previewDoc.url} 
+          fileName={previewDoc.name} 
+        />
+      )}
+
     </div>
   );
 };

@@ -21,7 +21,11 @@ import { Login } from './pages/Login';
 
 export default function App() {
   const { user, loading } = useAuth();
-  const [activePage, setActivePage] = useState('dashboard');
+  
+  // Default to customer portal for guests / customers, and dashboard for staff
+  const [activePage, setActivePage] = useState(() => {
+    return (user?.role === 'admin' || user?.role === 'operator') ? 'dashboard' : 'customer-portal';
+  });
 
   if (loading) {
     return (
@@ -37,20 +41,24 @@ export default function App() {
     );
   }
 
-  if (!user) {
-    return <Login />;
+  // If user explicitly navigated to login page
+  if (activePage === 'login') {
+    return <Login setActivePage={setActivePage} />;
   }
+
+  const isOperator = user?.role === 'admin' || user?.role === 'operator';
+  const isAdmin = user?.role === 'admin';
 
   const renderActivePage = () => {
     switch (activePage) {
       case 'dashboard':
-        return <Dashboard setActivePage={setActivePage} />;
+        return isOperator ? <Dashboard setActivePage={setActivePage} /> : <CustomerPortal setActivePage={setActivePage} />;
       case 'customer-portal':
-        return <CustomerPortal />;
+        return <CustomerPortal setActivePage={setActivePage} />;
       case 'about-us':
         return <AboutUs setActivePage={setActivePage} />;
       case 'requests':
-        return <RequestManager setActivePage={setActivePage} />;
+        return isOperator ? <RequestManager setActivePage={setActivePage} /> : <CustomerPortal setActivePage={setActivePage} />;
       case 'passport-photo':
         return <ImageTools setActivePage={setActivePage} />;
       case 'conversion-studio':
@@ -64,21 +72,21 @@ export default function App() {
       case 'website-launcher':
         return <WebsiteLauncher />;
       case 'print-manager':
-        return <PrintManager />;
+        return isOperator ? <PrintManager /> : <CustomerPortal setActivePage={setActivePage} />;
       case 'scanner-studio':
-        return <ScannerStudio />;
+        return isOperator ? <ScannerStudio /> : <CustomerPortal setActivePage={setActivePage} />;
       case 'billing-manager':
-        return <BillingManager />;
+        return isOperator ? <BillingManager /> : <CustomerPortal setActivePage={setActivePage} />;
       case 'admin-panel':
-        return <AdminPanel />;
+        return isAdmin ? <AdminPanel /> : <CustomerPortal setActivePage={setActivePage} />;
       default:
-        return <Dashboard setActivePage={setActivePage} />;
+        return <CustomerPortal setActivePage={setActivePage} />;
     }
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      {/* Universal Responsive Top Navigation Bar & Ribbon (Desktop, Tablet, Mobile) */}
+      {/* Universal Responsive Top Navigation Bar */}
       <NavigationBar activePage={activePage} setActivePage={setActivePage} />
 
       {/* Main Full-Width Responsive Workspace */}

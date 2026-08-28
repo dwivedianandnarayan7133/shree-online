@@ -1,13 +1,15 @@
-﻿const express = require('express');
+const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
 const { verifyToken } = require('../middleware/authMiddleware');
 
+// Gmail Registration OTP flow
+router.post('/register-otp', authController.sendRegisterOtp);
+router.post('/verify-register-otp', authController.verifyRegisterOtp);
+
+// Standard auth routes
 router.post('/register', authController.register);
 router.post('/login', authController.login);
-router.post('/send-whatsapp-otp', authController.sendWhatsAppOtp);
-router.post('/verify-whatsapp-otp', authController.verifyWhatsAppOtp);
 router.get('/me', verifyToken, authController.getMe);
-router.get('/operators', verifyToken, authController.getOperators);
 
 module.exports = router;

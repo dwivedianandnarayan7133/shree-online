@@ -4,7 +4,7 @@ import {
   Archive, QrCode, Globe, Printer, Scan, Receipt, Settings, 
   UserCheck, ShieldCheck, HeartHandshake, Award, Menu, X,
   ChevronDown, Sun, Moon, Bell, LogOut, Phone, MessageCircle, MapPin,
-  ExternalLink, Layers, CheckCircle2, UserPlus, IndianRupee, HardDrive
+  ExternalLink, Layers, CheckCircle2, UserPlus, IndianRupee, HardDrive, LogIn, User
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -21,6 +21,8 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
 
   const isAdmin = user?.role === 'admin';
   const isOperator = user?.role === 'admin' || user?.role === 'operator';
+  const isCustomer = user?.role === 'customer';
+  const isGuest = !user;
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -34,55 +36,64 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Main Categories with Dropdown Menus
-  const navCategories = [
-    {
-      id: 'workspace',
-      label: 'Workspace',
-      icon: LayoutDashboard,
-      role: 'all',
-      items: [
-        { id: 'dashboard', label: 'Command Center Dashboard', desc: 'Real-time KPIs, live queue & quick tools', icon: LayoutDashboard, role: 'operator' },
-        { id: 'requests', label: 'Request Pipeline', desc: 'Manage customer submissions & orders', icon: Inbox, role: 'operator' },
-        { id: 'customer-portal', label: 'Customer Portal', desc: 'Submit form & live tracking status', icon: UserCheck, role: 'all' },
-        { id: 'about-us', label: 'About Us & Leadership', desc: 'Est. 2013 history & owner/admin messages', icon: Award, role: 'all' },
-      ]
-    },
-    {
-      id: 'studios',
-      label: 'Digital Studios',
-      icon: Sparkles,
-      role: 'all',
-      items: [
-        { id: 'passport-photo', label: 'Passport Photo Studio', desc: '6/line A4 sheet & exam sky-blue BG', icon: Camera, role: 'all' },
-        { id: 'conversion-studio', label: 'Old Doc Restore & OCR', desc: 'Extract scans to Word (.docx) & Excel', icon: Sparkles, role: 'all' },
-        { id: 'document-tools', label: 'Document & PDF Studio', desc: 'Images to PDF, Merge, Split & Compress', icon: FileText, role: 'all' },
-        { id: 'file-tools', label: 'Compressor & ZIP Studio', desc: 'Batch compression & extraction', icon: Archive, role: 'all' },
-        { id: 'utility-hub', label: 'Utilities (QR & Barcode)', desc: 'Instant QR code & barcode generator', icon: QrCode, role: 'all' },
-      ]
-    },
-    {
-      id: 'operations',
-      label: 'Operations & POS',
-      icon: Printer,
-      role: 'all',
-      items: [
-        { id: 'website-launcher', label: 'Custom Browser & Gateway', desc: 'In-portal ad-blocked govt browser', icon: Globe, role: 'all' },
-        { id: 'print-manager', label: 'Print Job Manager', desc: 'A4/Color queue & printer telemetry', icon: Printer, role: 'operator' },
-        { id: 'scanner-studio', label: 'Scanner Studio', desc: 'Device presets, de-skew & scan to PDF', icon: Scan, role: 'operator' },
-        { id: 'billing-manager', label: 'Billing & POS Invoices', desc: 'Thermal receipts & GST calculations', icon: Receipt, role: 'operator' },
-      ]
-    }
-  ];
+  // Define Navigation Categories dynamically based on user role
+  const navCategories = [];
 
+  // Workspace Category
+  const workspaceItems = [];
+  if (isOperator) {
+    workspaceItems.push({ id: 'dashboard', label: 'Command Center Dashboard', desc: 'Real-time KPIs, live queue & quick tools', icon: LayoutDashboard });
+    workspaceItems.push({ id: 'requests', label: 'Request Pipeline Manager', desc: 'Manage customer submissions & orders', icon: Inbox });
+  }
+  workspaceItems.push({ id: 'customer-portal', label: 'Citizen Service Desk', desc: 'Submit application & track token status', icon: UserCheck });
+  workspaceItems.push({ id: 'about-us', label: 'About Us & Leadership', desc: 'Est. 2013 history & owner/admin messages', icon: Award });
+
+  navCategories.push({
+    id: 'workspace',
+    label: isOperator ? 'Staff Workspace' : 'Home & Services',
+    icon: isOperator ? LayoutDashboard : UserCheck,
+    items: workspaceItems
+  });
+
+  // Digital Studios (Available for ALL visitors and staff)
+  navCategories.push({
+    id: 'studios',
+    label: 'Digital Studios',
+    icon: Sparkles,
+    items: [
+      { id: 'passport-photo', label: 'Passport Photo Studio', desc: '6/line A4 sheet & exam sky-blue BG', icon: Camera },
+      { id: 'conversion-studio', label: 'Old Doc Restore & OCR', desc: 'Extract scans to Word (.docx) & Excel', icon: Sparkles },
+      { id: 'document-tools', label: 'Document & PDF Studio', desc: 'Images to PDF, Merge, Split & Compress', icon: FileText },
+      { id: 'file-tools', label: 'Compressor & ZIP Studio', desc: 'Batch compression & extraction', icon: Archive },
+      { id: 'utility-hub', label: 'Utilities (QR & Barcode)', desc: 'Instant QR code & barcode generator', icon: QrCode },
+    ]
+  });
+
+  // Operations Category
+  const operationItems = [
+    { id: 'website-launcher', label: 'Custom Browser & Gateway', desc: 'In-portal ad-blocked govt browser', icon: Globe }
+  ];
+  if (isOperator) {
+    operationItems.push({ id: 'print-manager', label: 'Print Job Manager', desc: 'A4/Color queue & printer telemetry', icon: Printer });
+    operationItems.push({ id: 'scanner-studio', label: 'Scanner Studio', desc: 'Device presets, de-skew & scan to PDF', icon: Scan });
+    operationItems.push({ id: 'billing-manager', label: 'Billing & POS Invoices', desc: 'Thermal receipts & GST calculations', icon: Receipt });
+  }
+
+  navCategories.push({
+    id: 'operations',
+    label: isOperator ? 'Operations & POS' : 'Online Gateway',
+    icon: Globe,
+    items: operationItems
+  });
+
+  // MD Controller (Only for Admin)
   if (isAdmin) {
     navCategories.push({
       id: 'admin',
       label: 'MD Controller',
       icon: Settings,
-      role: 'admin',
       items: [
-        { id: 'admin-panel', label: 'Admin Control Center', desc: 'Static pages, operators, catalog & retention', icon: Settings, role: 'admin' }
+        { id: 'admin-panel', label: 'Admin Control Center', desc: 'Static pages, operators, catalog & retention', icon: Settings }
       ]
     });
   }
@@ -100,79 +111,77 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
         return cat.id;
       }
     }
-    return 'workspace';
+    return null;
   };
 
-  const activeCatId = getActiveCategory();
+  const activeCategoryId = getActiveCategory();
 
   return (
-    <header className="universal-nav-header" ref={navRef}>
-      <div className="universal-nav-top">
-        {/* Brand */}
-        <div className="brand-logo" onClick={() => handleItemClick('dashboard')} style={{ cursor: 'pointer' }}>
+    <header className="compact-navbar-wrapper" ref={navRef}>
+      <div className="compact-navbar-inner">
+        
+        {/* 1. Left Brand Identity */}
+        <div 
+          className="navbar-brand" 
+          onClick={() => handleItemClick(isOperator ? 'dashboard' : 'customer-portal')}
+          title="Shree Online Sewa Kendra (Mahuli, S.K.N)"
+        >
           <div className="brand-icon-wrapper">
             ⚡
           </div>
           <div>
-            <div className="brand-text-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="brand-name">
               <span>Shree Online</span>
-              <span className="badge badge-primary" style={{ fontSize: '0.68rem', padding: '2px 8px' }}>
-                Mahuli, S.K.N
-              </span>
+              <span className="brand-est-badge">Est. 2013</span>
             </div>
-            <div className="brand-tagline">Sewa Kendra • Est. 2013 • One Window. Every Digital Service.</div>
+            <div className="brand-location">
+              Main Market, Mahuli, S.K.N (U.P.)
+            </div>
           </div>
         </div>
 
-        {/* Compact Dropdown Menus (Desktop / Laptop / Tablet) */}
-        <nav className="desktop-dropdown-nav">
+        {/* 2. Desktop Dropdown Navigation Categories */}
+        <nav className="navbar-dropdown-nav">
           {navCategories.map(cat => {
-            const isCatActive = activeCatId === cat.id;
+            const Icon = cat.icon;
             const isOpen = openDropdown === cat.id;
-            const CatIcon = cat.icon;
-
-            const visibleItems = cat.items.filter(item => {
-              if (item.role === 'all') return true;
-              if (item.role === 'operator' && isOperator) return true;
-              if (item.role === 'admin' && isAdmin) return true;
-              return false;
-            });
-
-            if (visibleItems.length === 0) return null;
+            const isCategoryActive = activeCategoryId === cat.id;
 
             return (
-              <div key={cat.id} className="nav-dropdown-wrapper">
+              <div key={cat.id} className="dropdown-category-wrapper">
                 <button
                   type="button"
                   onClick={() => setOpenDropdown(isOpen ? null : cat.id)}
-                  className={`nav-dropdown-btn ${isCatActive ? 'active' : ''} ${isOpen ? 'open' : ''}`}
+                  className={`dropdown-trigger-btn ${isOpen ? 'active-dropdown' : ''} ${isCategoryActive ? 'active-category' : ''}`}
                 >
-                  <CatIcon size={16} />
+                  <Icon size={15} />
                   <span>{cat.label}</span>
-                  <ChevronDown size={14} className={`caret ${isOpen ? 'rotate' : ''}`} />
+                  <ChevronDown size={13} className={`chevron-icon ${isOpen ? 'rotate-180' : ''}`} />
                 </button>
 
+                {/* Dropdown Floating Menu */}
                 {isOpen && (
-                  <div className="nav-dropdown-menu">
-                    <div className="dropdown-menu-header">
-                      <span>{cat.label} Services</span>
-                    </div>
-                    <div className="dropdown-menu-items">
-                      {visibleItems.map(item => {
+                  <div className="dropdown-menu-card">
+                    <div className="dropdown-items-grid">
+                      {cat.items.map(item => {
                         const ItemIcon = item.icon;
                         const isCurrent = activePage === item.id;
+
                         return (
                           <div
                             key={item.id}
                             onClick={() => handleItemClick(item.id)}
-                            className={`dropdown-menu-item ${isCurrent ? 'active' : ''}`}
+                            className={`dropdown-menu-item ${isCurrent ? 'selected-item' : ''}`}
                           >
-                            <div className="dropdown-item-icon">
+                            <div className="item-icon-box">
                               <ItemIcon size={18} />
                             </div>
-                            <div className="dropdown-item-info">
-                              <div className="dropdown-item-title">{item.label}</div>
-                              <div className="dropdown-item-desc">{item.desc}</div>
+                            <div className="item-text-box">
+                              <div className="item-title">
+                                <span>{item.label}</span>
+                                {isCurrent && <span className="active-dot">•</span>}
+                              </div>
+                              <div className="item-desc">{item.desc}</div>
                             </div>
                           </div>
                         );
@@ -185,160 +194,138 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
           })}
         </nav>
 
-        {/* Right Controls */}
-        <div className="nav-actions">
-          {/* Direct WhatsApp Quick Helplines */}
-          <div className="nav-quick-helplines">
-            <a 
-              href="https://wa.me/919161400719" 
-              target="_blank" 
-              rel="noreferrer" 
-              className="desk-pill"
-              style={{ color: '#25d366', textDecoration: 'none', fontSize: '0.74rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '5px' }}
-              title="Chat with Owner Krishan Narayan Dwivedi"
-            >
-              <MessageCircle size={13} />
-              <span>Owner: 9161400719</span>
-            </a>
-          </div>
+        {/* 3. Right Action Tools (Theme, Quick Help, Auth Controls) */}
+        <div className="navbar-right-tools">
+          
+          {/* Direct WhatsApp Call & Helpline */}
+          <a
+            href="https://wa.me/918090794210"
+            target="_blank"
+            rel="noreferrer"
+            className="navbar-tool-btn wa-badge-btn"
+            title="Helpline: Kamal Narayan (+91 8090794210)"
+          >
+            <MessageCircle size={15} color="#25d366" />
+            <span className="hide-mobile">Helpline</span>
+          </a>
 
-          {/* Theme Toggle */}
+          {/* Dark / Light Mode Toggle */}
           <button 
-            className="theme-toggle-btn" 
             onClick={toggleTheme} 
+            className="navbar-tool-btn icon-only" 
             title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
           >
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
 
-          {/* User Profile */}
-          <div style={{ position: 'relative' }}>
-            <div 
-              className="user-role-pill" 
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              style={{ cursor: 'pointer', userSelect: 'none' }}
-            >
-              <div style={{
-                width: '26px', height: '26px', borderRadius: '50%',
-                background: 'var(--primary-600)', color: '#fff',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: '700'
-              }}>
-                {user?.name ? user.name[0].toUpperCase() : 'K'}
-              </div>
-              <span style={{ fontWeight: '700', fontSize: '0.82rem' }}>
-                {user?.name?.split(' ')[0] || 'Kamal'}
-              </span>
-              <ChevronDown size={14} color="var(--text-muted)" />
-            </div>
-
-            {showUserMenu && (
-              <div style={{
-                position: 'absolute', right: 0, top: '48px',
-                width: '250px', background: 'var(--card-bg)',
-                border: '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-xl)',
-                zIndex: 100, padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px'
-              }}>
-                <div style={{ paddingBottom: '8px', borderBottom: '1px solid var(--border-color)' }}>
-                  <div style={{ fontWeight: '700', fontSize: '0.88rem' }}>{user?.name}</div>
-                  <div style={{ color: 'var(--text-muted)', fontSize: '0.76rem' }}>{user?.email}</div>
-                  <div style={{ color: 'var(--primary-400)', fontSize: '0.74rem', marginTop: '2px' }}>📍 Mahuli, S.K.N Central Branch</div>
+          {/* User Account / Staff Login Button */}
+          {user ? (
+            <div style={{ position: 'relative' }}>
+              <button
+                type="button"
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="user-profile-pill"
+              >
+                <div className={`user-avatar-dot ${user.role || 'customer'}`}>
+                  {user.role === 'admin' ? '🛡️' : user.role === 'operator' ? '🖥️' : '👤'}
                 </div>
-
-                <div style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                  Quick Role Switch
+                <div className="user-info-text hide-mobile">
+                  <span className="user-name">{user.name?.split(' ')[0] || 'Account'}</span>
+                  <span className="user-role-badge">{(user.role || 'customer').toUpperCase()}</span>
                 </div>
+                <ChevronDown size={12} />
+              </button>
 
-                <button 
-                  onClick={() => { loginWithDemo('admin'); setShowUserMenu(false); }}
-                  className="btn btn-outline btn-sm" style={{ justifyContent: 'flex-start' }}
-                >
-                  🛡️ Admin MD (Kamal Narayan)
-                </button>
-                <button 
-                  onClick={() => { loginWithDemo('operator'); setShowUserMenu(false); }}
-                  className="btn btn-outline btn-sm" style={{ justifyContent: 'flex-start' }}
-                >
-                  🖥️ Desk Operator
-                </button>
-                <button 
-                  onClick={() => { loginWithDemo('customer'); setShowUserMenu(false); }}
-                  className="btn btn-outline btn-sm" style={{ justifyContent: 'flex-start' }}
-                >
-                  👤 Customer / Student
-                </button>
+              {/* User Dropdown Menu */}
+              {showUserMenu && (
+                <div className="user-dropdown-popover">
+                  <div className="user-dropdown-header">
+                    <div style={{ fontWeight: '800', fontSize: '0.88rem' }}>{user.name}</div>
+                    <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>{user.email}</div>
+                    <span className={`role-tag ${user.role}`} style={{ marginTop: '6px', display: 'inline-block' }}>
+                      {user.role?.toUpperCase()}
+                    </span>
+                  </div>
 
-                <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '6px' }}>
+                  {isAdmin && (
+                    <button 
+                      onClick={() => handleItemClick('admin-panel')}
+                      className="user-menu-action"
+                    >
+                      <Settings size={14} /> MD Admin Panel
+                    </button>
+                  )}
+
                   <button 
-                    onClick={() => { logout(); setShowUserMenu(false); }}
-                    className="btn btn-danger btn-sm w-full"
+                    onClick={() => { logout(); setShowUserMenu(false); setActivePage('customer-portal'); }}
+                    className="user-menu-action text-danger"
                   >
-                    <LogOut size={14} /> Logout
+                    <LogOut size={14} /> Sign Out
                   </button>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setActivePage('login')}
+              className="btn btn-primary btn-sm"
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '800' }}
+            >
+              <LogIn size={14} />
+              <span>Sign In / Staff</span>
+            </button>
+          )}
 
-          {/* Mobile Drawer Hamburger Button */}
-          <button
-            className="mobile-hamburger-btn"
+          {/* Mobile Menu Toggle Button */}
+          <button 
+            className="navbar-tool-btn mobile-menu-toggle"
             onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)}
-            title="Toggle Navigation Menu"
           >
-            {mobileDrawerOpen ? <X size={22} /> : <Menu size={22} />}
+            {mobileDrawerOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
+
       </div>
 
-      {/* Mobile Touch Navigation Drawer */}
+      {/* 4. Mobile Sliding Drawer */}
       {mobileDrawerOpen && (
-        <div className="mobile-nav-drawer-overlay" onClick={() => setMobileDrawerOpen(false)}>
-          <div className="mobile-nav-drawer" onClick={e => e.stopPropagation()}>
-            <div className="drawer-header">
-              <div style={{ fontWeight: '800', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span>Shree Online Menu</span>
-                <span className="badge badge-primary" style={{ fontSize: '0.7rem' }}>Est. 2013</span>
+        <div className="mobile-nav-drawer">
+          <div className="mobile-drawer-content">
+            {navCategories.map(cat => (
+              <div key={cat.id} className="mobile-nav-section">
+                <div className="mobile-section-title">
+                  <span>{cat.label}</span>
+                </div>
+                <div className="mobile-section-items">
+                  {cat.items.map(item => {
+                    const ItemIcon = item.icon;
+                    const isCurrent = activePage === item.id;
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() => handleItemClick(item.id)}
+                        className={`mobile-nav-item ${isCurrent ? 'active' : ''}`}
+                      >
+                        <ItemIcon size={16} />
+                        <span>{item.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-              <button className="icon-btn" onClick={() => setMobileDrawerOpen(false)}>
-                <X size={20} />
-              </button>
-            </div>
+            ))}
 
-            <div className="drawer-content">
-              {navCategories.map(cat => {
-                const visibleItems = cat.items.filter(item => {
-                  if (item.role === 'all') return true;
-                  if (item.role === 'operator' && isOperator) return true;
-                  if (item.role === 'admin' && isAdmin) return true;
-                  return false;
-                });
-
-                if (visibleItems.length === 0) return null;
-
-                return (
-                  <div key={cat.id} className="drawer-section">
-                    <div className="drawer-section-title">{cat.label}</div>
-                    <div className="drawer-section-items">
-                      {visibleItems.map(item => {
-                        const Icon = item.icon;
-                        const isActive = activePage === item.id;
-                        return (
-                          <button
-                            key={item.id}
-                            onClick={() => handleItemClick(item.id)}
-                            className={`drawer-item ${isActive ? 'active' : ''}`}
-                          >
-                            <Icon size={18} />
-                            <span>{item.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            {!user && (
+              <div style={{ padding: '16px', borderTop: '1px solid var(--border-color)' }}>
+                <button
+                  className="btn btn-primary w-full"
+                  onClick={() => handleItemClick('login')}
+                >
+                  <LogIn size={15} /> Sign In / Staff Login
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

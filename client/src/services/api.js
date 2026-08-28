@@ -31,8 +31,8 @@ async function request(endpoint, options = {}) {
 export const api = {
   // Auth
   login: (creds) => request('/auth/login', { method: 'POST', body: creds }),
-  sendWhatsAppOtp: (data) => request('/auth/send-whatsapp-otp', { method: 'POST', body: data }),
-  verifyWhatsAppOtp: (data) => request('/auth/verify-whatsapp-otp', { method: 'POST', body: data }),
+  sendRegisterOtp: (data) => request('/auth/register-otp', { method: 'POST', body: data }),
+  verifyRegisterOtp: (data) => request('/auth/verify-register-otp', { method: 'POST', body: data }),
   register: (data) => request('/auth/register', { method: 'POST', body: data }),
   getMe: () => request('/auth/me'),
   getOperators: () => request('/auth/operators'),
