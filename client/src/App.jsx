@@ -70,11 +70,11 @@ export default function App() {
       case 'website-launcher':
         return <WebsiteLauncher />;
       case 'print-manager':
-        return isOperator ? <PrintManager /> : <CustomerPortal setActivePage={setActivePage} />;
+        return <PrintManager />;
       case 'scanner-studio':
-        return isOperator ? <ScannerStudio /> : <CustomerPortal setActivePage={setActivePage} />;
+        return <ScannerStudio />;
       case 'billing-manager':
-        return isOperator ? <BillingManager /> : <CustomerPortal setActivePage={setActivePage} />;
+        return <BillingManager />;
       case 'admin-panel':
         return isAdmin ? <AdminPanel /> : <CustomerPortal setActivePage={setActivePage} />;
       default:

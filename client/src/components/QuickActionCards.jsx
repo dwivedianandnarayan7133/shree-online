@@ -1,10 +1,10 @@
-﻿import React from 'react';
+import React from 'react';
 import { 
   Camera, Sparkles, FileText, Minimize2, 
   Printer, UserPlus, Globe, Receipt, Scan, QrCode
 } from 'lucide-react';
 
-export const QuickActionCards = ({ onSelectTool }) => {
+export const QuickActionCards = ({ onSelectTool, setActivePage }) => {
   const actions = [
     { id: 'passport-photo', title: 'Passport Photo', desc: '4/6/8 Sheet generator', icon: Camera, color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.12)' },
     { id: 'conversion-studio', title: 'Old Doc & OCR', desc: 'Restore & Word/Excel export', icon: Sparkles, color: '#a855f7', bg: 'rgba(168, 85, 247, 0.12)' },
@@ -16,6 +16,15 @@ export const QuickActionCards = ({ onSelectTool }) => {
     { id: 'website-launcher', title: 'Gov Portals', desc: 'Aadhaar, PAN, CSC shortcuts', icon: Globe, color: '#ec4899', bg: 'rgba(236, 72, 153, 0.12)' }
   ];
 
+  const handleClick = (id) => {
+    if (typeof setActivePage === 'function') {
+      setActivePage(id);
+    } else if (typeof onSelectTool === 'function') {
+      onSelectTool(id);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <div className="quick-action-grid">
       {actions.map(act => {
@@ -24,7 +33,8 @@ export const QuickActionCards = ({ onSelectTool }) => {
           <div 
             key={act.id} 
             className="quick-action-card"
-            onClick={() => onSelectTool(act.id)}
+            onClick={() => handleClick(act.id)}
+            style={{ cursor: 'pointer' }}
           >
             <div className="quick-action-icon" style={{ background: act.bg, color: act.color }}>
               <Icon size={22} />
