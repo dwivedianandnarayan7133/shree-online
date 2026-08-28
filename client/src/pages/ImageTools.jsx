@@ -1,3 +1,4 @@
+import { generatePassportSheetClient, processSignatureClient } from '../services/clientImageEngine';
 import { SERVER_BASE, getFullUrl } from '../services/config';
 ﻿import React, { useState } from 'react';
 import { 
@@ -61,22 +62,37 @@ export const ImageTools = ({ setActivePage }) => {
 
     setGenerating(true);
     try {
-      const data = new FormData();
-      data.append('photo', passportFile);
-      data.append('spec', spec);
-      data.append('quantity', quantity);
-      data.append('paperType', paperType);
-      data.append('paddingGutter', paddingGutter);
-      data.append('bgColor', bgColor);
-      data.append('zoom', zoom);
-      data.append('includeCutLines', 'true');
+      // 1. Instant 50ms High-Res Client Canvas Engine
+      const clientRes = await generatePassportSheetClient(passportFile, {
+        spec,
+        quantity,
+        paperType,
+        paddingGutter,
+        bgColor,
+        zoom,
+        includeCutLines: true
+      });
+      setPassportResult(clientRes);
+    } catch (clientErr) {
+      console.warn('Client engine notice, trying API fallback:', clientErr.message);
+      try {
+        const data = new FormData();
+        data.append('photo', passportFile);
+        data.append('spec', spec);
+        data.append('quantity', quantity);
+        data.append('paperType', paperType);
+        data.append('paddingGutter', paddingGutter);
+        data.append('bgColor', bgColor);
+        data.append('zoom', zoom);
+        data.append('includeCutLines', 'true');
 
-      const res = await api.generatePassportSheet(data);
-      if (res.success) {
-        setPassportResult(res);
+        const res = await api.generatePassportSheet(data);
+        if (res.success) {
+          setPassportResult(res);
+        }
+      } catch (err) {
+        alert(err.message || 'Passport generation failed');
       }
-    } catch (err) {
-      alert(err.message || 'Passport generation failed');
     } finally {
       setGenerating(false);
     }
@@ -91,17 +107,23 @@ export const ImageTools = ({ setActivePage }) => {
 
     setSigLoading(true);
     try {
-      const data = new FormData();
-      data.append('image', sigFile);
-      data.append('contrastBoost', contrastBoost);
-      data.append('invert', invertSig);
+      const clientRes = await processSignatureClient(sigFile, { contrastBoost, invert: invertSig });
+      setSigResult(clientRes);
+    } catch (clientErr) {
+      console.warn('Client engine notice, trying API fallback:', clientErr.message);
+      try {
+        const data = new FormData();
+        data.append('image', sigFile);
+        data.append('contrastBoost', contrastBoost);
+        data.append('invert', invertSig);
 
-      const res = await api.processSignature(data);
-      if (res.success) {
-        setSigResult(res);
+        const res = await api.processSignature(data);
+        if (res.success) {
+          setSigResult(res);
+        }
+      } catch (err) {
+        alert(err.message || 'Signature processing failed');
       }
-    } catch (err) {
-      alert(err.message || 'Signature processing failed');
     } finally {
       setSigLoading(false);
     }
