@@ -1,3 +1,4 @@
+import { SERVER_BASE, getFullUrl } from '../services/config';
 ﻿import React, { useState } from 'react';
 import { 
   Sparkles, FileText, Table, Download, Printer, RefreshCw, 
@@ -107,7 +108,7 @@ export const ConversionStudio = () => {
         tableData: tableData.length > 0 ? tableData : null
       });
       if (res.success) {
-        window.open(`http://localhost:5000${res.downloadUrl}`, '_blank');
+        window.open(`${SERVER_BASE}${res.downloadUrl}`, '_blank');
       }
     } catch (err) {
       alert(err.message || 'Word export failed');
@@ -129,7 +130,7 @@ export const ConversionStudio = () => {
         sheetName: 'Extracted Document Data'
       });
       if (res.success) {
-        window.open(`http://localhost:5000${res.downloadUrl}`, '_blank');
+        window.open(`${SERVER_BASE}${res.downloadUrl}`, '_blank');
       }
     } catch (err) {
       alert(err.message || 'Excel export failed');
@@ -285,14 +286,14 @@ export const ConversionStudio = () => {
                   <div>
                     <div className="preview-box" style={{ background: '#fff' }}>
                       <img 
-                        src={`http://localhost:5000${restoreResult.downloadUrl}`} 
+                        src={`${SERVER_BASE}${restoreResult.downloadUrl}`} 
                         alt="Restored Document"
                         className="preview-img"
                       />
                     </div>
                     <div style={{ marginTop: '16px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                       <a 
-                        href={`http://localhost:5000${restoreResult.downloadUrl}`}
+                        href={`${SERVER_BASE}${restoreResult.downloadUrl}`}
                         download={restoreResult.result.fileName}
                         className="btn btn-primary flex-1"
                       >

@@ -6,7 +6,7 @@ export const DocPreviewModal = ({ isOpen, onClose, fileUrl, fileName, title = 'D
 
   const isPdf = fileUrl.toLowerCase().endsWith('.pdf');
   const isImage = /\.(jpg|jpeg|png|webp|gif|bmp)$/i.test(fileUrl);
-  const fullUrl = fileUrl.startsWith('http') ? fileUrl : `http://localhost:5000${fileUrl}`;
+  const fullUrl = fileUrl.startsWith('http') ? fileUrl : getFullUrl(fileUrl);
 
   return (
     <div className="modal-overlay" onClick={onClose}>

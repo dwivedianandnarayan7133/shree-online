@@ -6,6 +6,7 @@ import {
   History, CheckCircle2, AlertCircle, RefreshCcw
 } from 'lucide-react';
 import { api } from '../services/api';
+import { SERVER_BASE } from '../services/config';
 
 const DEFAULT_BOOKMARKS = [
   { title: 'Sarkari Result', url: 'https://www.sarkariresult.com', icon: '🎯' },
@@ -175,7 +176,7 @@ export const CyberBrowser = ({ initialUrl = 'https://www.sarkariresult.com' }) =
 
   const getProxyUrl = (target) => {
     if (!target) return '';
-    return `http://localhost:5000/api/proxy/browse?url=${encodeURIComponent(target)}&adshield=${adshieldEnabled}`;
+    return `${SERVER_BASE}/api/proxy/browse?url=${encodeURIComponent(target)}&adshield=${adshieldEnabled}`;
   };
 
   // Clear Browser Cache & History

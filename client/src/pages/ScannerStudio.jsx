@@ -1,3 +1,4 @@
+import { SERVER_BASE, getFullUrl } from '../services/config';
 ﻿import React, { useState, useRef } from 'react';
 import { 
   Scan, Camera, Download, Printer, RefreshCw, 
@@ -159,14 +160,14 @@ export const ScannerStudio = () => {
                 <div>
                   <div className="preview-box" style={{ background: '#fff' }}>
                     <img 
-                      src={`http://localhost:5000${scanResult.downloadUrl}`} 
+                      src={`${SERVER_BASE}${scanResult.downloadUrl}`} 
                       alt="Scanned Doc" 
                       className="preview-img"
                     />
                   </div>
                   <div style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
                     <a 
-                      href={`http://localhost:5000${scanResult.downloadUrl}`} 
+                      href={`${SERVER_BASE}${scanResult.downloadUrl}`} 
                       download={scanResult.result.fileName}
                       className="btn btn-primary flex-1"
                     >

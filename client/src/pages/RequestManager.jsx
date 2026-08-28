@@ -1,3 +1,4 @@
+import { SERVER_BASE, getFullUrl } from '../services/config';
 ﻿import React, { useState, useEffect } from 'react';
 import { 
   Inbox, Search, Filter, CheckCircle2, Clock, 
@@ -302,7 +303,7 @@ export const RequestManager = ({ setActivePage }) => {
                             <Eye size={12} /> Preview
                           </button>
                           <a 
-                            href={`http://localhost:5000/uploads/customer_records/${file.fileName}`}
+                            href={`${SERVER_BASE}/uploads/customer_records/${file.fileName}`}
                             download
                             className="btn btn-primary btn-sm"
                           >
@@ -388,7 +389,7 @@ export const RequestManager = ({ setActivePage }) => {
                       <div key={pf.fileId} className="file-preview-item" style={{ background: 'var(--status-comp-bg)', borderColor: 'var(--status-comp-border)' }}>
                         <span style={{ fontWeight: '600', color: 'var(--status-comp-text)' }}>✅ {pf.originalName || pf.fileName}</span>
                         <a 
-                          href={`http://localhost:5000/uploads/processed/${pf.fileName}`}
+                          href={`${SERVER_BASE}/uploads/processed/${pf.fileName}`}
                           download
                           className="btn btn-success btn-sm"
                         >

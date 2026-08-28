@@ -1,4 +1,5 @@
-﻿const API_BASE = 'http://localhost:5000/api';
+﻿import { API_BASE, SERVER_BASE, getFullUrl } from './config';
+export { API_BASE, SERVER_BASE, getFullUrl };
 
 async function request(endpoint, options = {}) {
   const token = localStorage.getItem('cybercafe_token');

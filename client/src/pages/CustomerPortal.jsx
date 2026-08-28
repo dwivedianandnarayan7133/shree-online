@@ -1,3 +1,4 @@
+import { SERVER_BASE, getFullUrl } from '../services/config';
 ﻿import React, { useState, useEffect } from 'react';
 import { 
   Send, Search, Clock, CheckCircle2, Download, FileText, 
@@ -472,7 +473,7 @@ export const CustomerPortal = () => {
                               Preview
                             </button>
                             <a 
-                              href={`http://localhost:5000/uploads/processed/${file.fileName}`}
+                              href={`${SERVER_BASE}/uploads/processed/${file.fileName}`}
                               download
                               className="btn btn-primary btn-sm"
                             >

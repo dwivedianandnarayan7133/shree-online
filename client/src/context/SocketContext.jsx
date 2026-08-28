@@ -10,7 +10,7 @@ export const SocketProvider = ({ children }) => {
   const [latestPrintUpdate, setLatestPrintUpdate] = useState(null);
 
   useEffect(() => {
-    const newSocket = io('http://localhost:5000', {
+    const newSocket = io(SERVER_BASE || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000'), {
       transports: ['websocket', 'polling']
     });
 

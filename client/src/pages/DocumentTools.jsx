@@ -1,3 +1,4 @@
+import { SERVER_BASE, getFullUrl } from '../services/config';
 ﻿import React, { useState } from 'react';
 import { 
   FileText, Layers, Scissors, RotateCw, Minimize2, 
@@ -221,7 +222,7 @@ export const DocumentTools = () => {
                     <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>
                       {img2PdfResult.result.pageCount} Pages • {Math.round(img2PdfResult.result.size / 1024)} KB
                     </p>
-                    <a href={`http://localhost:5000${img2PdfResult.downloadUrl}`} download={img2PdfResult.result.fileName} className="btn btn-primary btn-lg">
+                    <a href={`${SERVER_BASE}${img2PdfResult.downloadUrl}`} download={img2PdfResult.result.fileName} className="btn btn-primary btn-lg">
                       <Download size={16} /> Download Converted PDF
                     </a>
                   </div>
@@ -268,7 +269,7 @@ export const DocumentTools = () => {
                     <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>
                       Total Pages: {mergeResult.result.pageCount} • {Math.round(mergeResult.result.size / 1024)} KB
                     </p>
-                    <a href={`http://localhost:5000${mergeResult.downloadUrl}`} download={mergeResult.result.fileName} className="btn btn-primary btn-lg">
+                    <a href={`${SERVER_BASE}${mergeResult.downloadUrl}`} download={mergeResult.result.fileName} className="btn btn-primary btn-lg">
                       <Download size={16} /> Download Merged PDF
                     </a>
                   </div>
@@ -327,7 +328,7 @@ export const DocumentTools = () => {
                     <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>
                       Extracted {splitResult.result.extractedCount} Pages
                     </p>
-                    <a href={`http://localhost:5000${splitResult.downloadUrl}`} download={splitResult.result.fileName} className="btn btn-primary btn-lg">
+                    <a href={`${SERVER_BASE}${splitResult.downloadUrl}`} download={splitResult.result.fileName} className="btn btn-primary btn-lg">
                       <Download size={16} /> Download Extracted PDF
                     </a>
                   </div>
@@ -373,7 +374,7 @@ export const DocumentTools = () => {
                   <div style={{ textAlign: 'center', padding: '24px' }}>
                     <CheckCircle2 size={48} color="var(--accent-emerald)" style={{ margin: '0 auto 12px auto' }} />
                     <h3 style={{ fontSize: '1.2rem', fontWeight: '800' }}>Rotated Successfully!</h3>
-                    <a href={`http://localhost:5000${rotateResult.downloadUrl}`} download={rotateResult.result.fileName} className="btn btn-primary btn-lg" style={{ marginTop: '16px' }}>
+                    <a href={`${SERVER_BASE}${rotateResult.downloadUrl}`} download={rotateResult.result.fileName} className="btn btn-primary btn-lg" style={{ marginTop: '16px' }}>
                       <Download size={16} /> Download Rotated PDF
                     </a>
                   </div>
@@ -415,7 +416,7 @@ export const DocumentTools = () => {
                     <div style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
                       {Math.round(compResult.result.originalSize / 1024)} KB ➔ <b>{Math.round(compResult.result.compressedSize / 1024)} KB</b>
                     </div>
-                    <a href={`http://localhost:5000${compResult.downloadUrl}`} download={compResult.result.fileName} className="btn btn-primary btn-lg">
+                    <a href={`${SERVER_BASE}${compResult.downloadUrl}`} download={compResult.result.fileName} className="btn btn-primary btn-lg">
                       <Download size={16} /> Download Compressed PDF
                     </a>
                   </div>

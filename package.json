@@ -1,11 +1,14 @@
 {
-  "name": "cybercafe-portal",
+  "name": "shree-online",
   "version": "1.0.0",
-  "description": "Cyber Cafe Management & Digital Service Portal - One Window. Every Digital Service.",
+  "private": true,
   "scripts": {
-    "server": "cd server && npm start",
-    "client": "cd client && npm run dev",
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "build": "cd client && npm run build"
+    "dev": "concurrently \"npm run dev --prefix client\" \"node server/server.js\"",
+    "build": "cd client && npm install && npm run build",
+    "vercel-build": "cd client && npm install && npm run build",
+    "start": "node server/server.js"
+  },
+  "dependencies": {
+    "concurrently": "^8.2.2"
   }
 }

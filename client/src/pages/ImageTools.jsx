@@ -1,3 +1,4 @@
+import { SERVER_BASE, getFullUrl } from '../services/config';
 ﻿import React, { useState } from 'react';
 import { 
   Camera, Download, Printer, RefreshCw, Scissors, 
@@ -393,7 +394,7 @@ export const ImageTools = ({ setActivePage }) => {
                   <div>
                     <div className="preview-box" style={{ background: '#ffffff', padding: '16px' }}>
                       <img 
-                        src={`http://localhost:5000${passportResult.downloadUrlJpg || passportResult.sheetJpgUrl || passportResult.downloadUrl || `/uploads/processed/${passportResult.result?.jpgName}`}`} 
+                        src={`${SERVER_BASE}${passportResult.downloadUrlJpg || passportResult.sheetJpgUrl || passportResult.downloadUrl || `/uploads/processed/${passportResult.result?.jpgName}`}`} 
                         alt="Passport Sheet Preview" 
                         className="preview-img"
                       />
@@ -401,14 +402,14 @@ export const ImageTools = ({ setActivePage }) => {
 
                     <div style={{ marginTop: '16px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                       <a 
-                        href={`http://localhost:5000${passportResult.downloadUrlJpg || passportResult.sheetJpgUrl || passportResult.downloadUrl || `/uploads/processed/${passportResult.result?.jpgName}`}`} 
+                        href={`${SERVER_BASE}${passportResult.downloadUrlJpg || passportResult.sheetJpgUrl || passportResult.downloadUrl || `/uploads/processed/${passportResult.result?.jpgName}`}`} 
                         download={passportResult.result?.jpgName || 'passport-sheet.jpg'}
                         className="btn btn-primary flex-1"
                       >
                         <Download size={14} /> Download JPG (300 DPI)
                       </a>
                       <a 
-                        href={`http://localhost:5000${passportResult.downloadUrlPdf || passportResult.sheetPdfUrl || `/uploads/processed/${passportResult.result?.pdfName}`}`} 
+                        href={`${SERVER_BASE}${passportResult.downloadUrlPdf || passportResult.sheetPdfUrl || `/uploads/processed/${passportResult.result?.pdfName}`}`} 
                         download={passportResult.result?.pdfName || 'passport-sheet.pdf'}
                         className="btn btn-secondary flex-1"
                       >
@@ -500,10 +501,10 @@ export const ImageTools = ({ setActivePage }) => {
                 ) : (
                   <div>
                     <div className="preview-box" style={{ background: '#fff' }}>
-                      <img src={`http://localhost:5000${sigResult.downloadUrl}`} alt="Clean Signature" className="preview-img" />
+                      <img src={`${SERVER_BASE}${sigResult.downloadUrl}`} alt="Clean Signature" className="preview-img" />
                     </div>
                     <div style={{ marginTop: '16px' }}>
-                      <a href={`http://localhost:5000${sigResult.downloadUrl}`} download={sigResult.result.fileName} className="btn btn-primary w-full">
+                      <a href={`${SERVER_BASE}${sigResult.downloadUrl}`} download={sigResult.result.fileName} className="btn btn-primary w-full">
                         <Download size={14} /> Download Clean Signature (PNG)
                       </a>
                     </div>
@@ -596,13 +597,13 @@ export const ImageTools = ({ setActivePage }) => {
                 ) : (
                   <div>
                     <div className="preview-box">
-                      <img src={`http://localhost:5000${transResult.downloadUrl}`} alt="Transformed Result" className="preview-img" />
+                      <img src={`${SERVER_BASE}${transResult.downloadUrl}`} alt="Transformed Result" className="preview-img" />
                     </div>
                     <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                         {transResult.result.width} x {transResult.result.height} px • {Math.round(transResult.result.size / 1024)} KB
                       </span>
-                      <a href={`http://localhost:5000${transResult.downloadUrl}`} download={transResult.result.fileName} className="btn btn-primary btn-sm">
+                      <a href={`${SERVER_BASE}${transResult.downloadUrl}`} download={transResult.result.fileName} className="btn btn-primary btn-sm">
                         <Download size={14} /> Download File
                       </a>
                     </div>

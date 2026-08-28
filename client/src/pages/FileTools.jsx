@@ -1,3 +1,4 @@
+import { SERVER_BASE, getFullUrl } from '../services/config';
 ﻿import React, { useState } from 'react';
 import { 
   Archive, Minimize2, FolderArchive, Download, 
@@ -208,7 +209,7 @@ export const FileTools = () => {
                           </td>
                           <td>
                             <a 
-                              href={`http://localhost:5000${r.downloadUrl}`} 
+                              href={`${SERVER_BASE}${r.downloadUrl}`} 
                               download={r.fileName}
                               className="btn btn-primary btn-sm"
                             >
@@ -275,7 +276,7 @@ export const FileTools = () => {
                     <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>
                       {zipResult.result.fileCount} Files • {Math.round(zipResult.result.size / 1024)} KB
                     </p>
-                    <a href={`http://localhost:5000${zipResult.downloadUrl}`} download={zipResult.result.fileName} className="btn btn-primary btn-lg">
+                    <a href={`${SERVER_BASE}${zipResult.downloadUrl}`} download={zipResult.result.fileName} className="btn btn-primary btn-lg">
                       <Download size={16} /> Download ZIP Archive
                     </a>
                   </div>
