@@ -127,7 +127,7 @@ export const Dashboard = ({ setActivePage }) => {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ fontWeight: '800', fontSize: '0.86rem', color: 'var(--text-main)' }}>Anand Narayan Dwivedi</div>
+                  <div style={{ fontWeight: '800', fontSize: '0.86rem', color: 'var(--text-main)' }}>Krishan Narayan Dwivedi</div>
                   <span style={{ fontSize: '0.68rem', color: '#f59e0b', fontWeight: '800' }}>Founder & Owner</span>
                 </div>
                 <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '2px', lineHeight: '1.4' }}>
@@ -156,7 +156,7 @@ export const Dashboard = ({ setActivePage }) => {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ fontWeight: '800', fontSize: '0.86rem', color: 'var(--text-main)' }}>Krish Verma</div>
+                  <div style={{ fontWeight: '800', fontSize: '0.86rem', color: 'var(--text-main)' }}>Kamal Narayan Dwivedi</div>
                   <span style={{ fontSize: '0.68rem', color: '#10b981', fontWeight: '800' }}>Technical Admin</span>
                 </div>
                 <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '2px', lineHeight: '1.4' }}>

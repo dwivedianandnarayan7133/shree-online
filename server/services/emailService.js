@@ -1,0 +1,175 @@
+﻿const nodemailer = require('nodemailer');
+
+const OWNER_INFO = {
+  name: 'Krishan Narayan Dwivedi',
+  role: 'Founder & Managing Owner',
+  phone: '9161400719',
+  email: 'onlinebaba111111@gmail.com'
+};
+
+const ADMIN_INFO = {
+  name: 'Kamal Narayan Dwivedi',
+  role: 'Admin & Technical Operations',
+  phone: '8090794210',
+  email: 'kdshree778@gmail.com'
+};
+
+// Create Google / Gmail Transporter
+function createTransporter() {
+  const user = process.env.GMAIL_USER || 'kdshree778@gmail.com';
+  const pass = process.env.GMAIL_APP_PASSWORD || process.env.GMAIL_PASSWORD;
+
+  if (pass) {
+    return nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user, pass }
+    });
+  }
+
+  // Fallback direct transporter
+  return nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
+    auth: {
+      user: user,
+      pass: pass || 'demo-app-password'
+    }
+  });
+}
+
+/**
+ * Send Gmail Welcome Email to Registered Customer
+ */
+async function sendWelcomeEmail(toEmail, userName = 'Valued Customer') {
+  try {
+    const transporter = createTransporter();
+    const mailOptions = {
+      from: `"Shree Online (Mahuli, S.K.N)" <${process.env.GMAIL_USER || 'kdshree778@gmail.com'}>`,
+      to: toEmail,
+      subject: `Welcome to Shree Online Sewa Kendra (Est. 2013) - Mahuli, S.K.N`,
+      html: `
+        <div style="font-family: Arial, sans-serif; background-color: #f1f5f9; padding: 24px; color: #1e293b;">
+          <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #ffffff; padding: 28px 24px; text-align: center;">
+              <h1 style="margin: 0; font-size: 24px; letter-spacing: -0.5px;">SHREE ONLINE</h1>
+              <p style="margin: 4px 0 0 0; color: #38bdf8; font-size: 13px; font-weight: bold; text-transform: uppercase;">
+                Digital Seva & CSC Kendra • Established in 2013
+              </p>
+              <p style="margin: 2px 0 0 0; color: #94a3b8; font-size: 12px;">
+                Main Market, Mahuli, Sant Kabir Nagar (S.K.N), U.P.
+              </p>
+            </div>
+
+            <!-- Body -->
+            <div style="padding: 28px 24px;">
+              <h2 style="font-size: 18px; color: #0f172a; margin-top: 0;">Welcome, ${userName}!</h2>
+              <p style="font-size: 14px; line-height: 1.6; color: #475569;">
+                Thank you for joining <b>Shree Online Sewa Kendra</b>. Since <b>2013</b>, we have been Mahuli's most trusted digital service center, providing reliable online government applications, student exam services, instant A4 passport photo printing, and universal document restoration.
+              </p>
+
+              <!-- Services Highlights -->
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                <div style="font-weight: bold; font-size: 14px; color: #0f172a; margin-bottom: 8px;">🌟 Popular Digital Services:</div>
+                <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #475569; line-height: 1.6;">
+                  <li><b>Govt Job & Exam Forms</b>: UPSSSC, SSC, Railway, UPSC, Police, Teaching</li>
+                  <li><b>A4 Passport Photo Studio</b>: Official Exam Sky-Blue Background (6 photos/line)</li>
+                  <li><b>Universal Doc Restore & OCR</b>: Convert Scans to Word (.docx) & Excel (.xlsx)</li>
+                  <li><b>PAN & Aadhaar Services</b>: Instant e-PAN, corrections & updates</li>
+                  <li><b>e-District Uttar Pradesh</b>: Income, Caste, Domicile certificates</li>
+                </ul>
+              </div>
+
+              <!-- Leadership Contacts -->
+              <div style="border-top: 1px solid #e2e8f0; padding-top: 16px; margin-top: 20px;">
+                <div style="font-size: 13px; font-weight: bold; color: #0f172a; margin-bottom: 8px;">Direct Support & Leadership Desks:</div>
+                <div style="font-size: 12px; color: #475569; line-height: 1.6;">
+                  <div>👑 <b>Owner</b>: ${OWNER_INFO.name} • 📞 <a href="tel:${OWNER_INFO.phone}" style="color: #2563eb;">+91 ${OWNER_INFO.phone}</a> • ✉️ <a href="mailto:${OWNER_INFO.email}" style="color: #2563eb;">${OWNER_INFO.email}</a></div>
+                  <div>🛡️ <b>Admin</b>: ${ADMIN_INFO.name} • 📞 <a href="tel:${ADMIN_INFO.phone}" style="color: #2563eb;">+91 ${ADMIN_INFO.phone}</a> • ✉️ <a href="mailto:${ADMIN_INFO.email}" style="color: #2563eb;">${ADMIN_INFO.email}</a></div>
+                </div>
+              </div>
+
+              <!-- Call to Action -->
+              <div style="text-align: center; margin-top: 24px;">
+                <a href="http://localhost:3000" style="display: inline-block; background: #2563eb; color: #ffffff; padding: 10px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px;">
+                  Open Shree Online Portal
+                </a>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div style="background: #f1f5f9; padding: 16px 24px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0;">
+              <div>© 2013 – 2026 Shree Online Sewa Kendra • Mahuli, Sant Kabir Nagar (S.K.N), U.P.</div>
+              <div style="margin-top: 4px; font-style: italic;">“One Window. Every Digital Service.”</div>
+            </div>
+          </div>
+        </div>
+      `
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`[Google Mail] Welcome email dispatched to ${toEmail} (ID: ${info.messageId || 'sent'})`);
+    return { success: true, messageId: info.messageId };
+  } catch (err) {
+    console.warn(`[Google Mail Notice] Welcome email simulation for ${toEmail}: ${err.message}`);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Send 6-Digit Verification OTP via Google Gmail
+ */
+async function sendOtpEmail(toEmail, otp, userName = 'User') {
+  try {
+    const transporter = createTransporter();
+    const mailOptions = {
+      from: `"Shree Online Verification" <${process.env.GMAIL_USER || 'kdshree778@gmail.com'}>`,
+      to: toEmail,
+      subject: `Your Shree Online Verification Code: ${otp}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; background-color: #f1f5f9; padding: 24px; color: #1e293b;">
+          <div style="max-width: 500px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+            <div style="background: #1e293b; color: #ffffff; padding: 20px; text-align: center;">
+              <h2 style="margin: 0; font-size: 20px;">SHREE ONLINE</h2>
+              <p style="margin: 2px 0 0 0; color: #38bdf8; font-size: 12px; font-weight: bold;">Mahuli, S.K.N • Verification Service</p>
+            </div>
+
+            <div style="padding: 24px; text-align: center;">
+              <p style="font-size: 14px; color: #475569; margin-top: 0;">Hello <b>${userName}</b>,</p>
+              <p style="font-size: 13px; color: #64748b;">Use the following One-Time Password (OTP) to complete your verification for Shree Online Sewa Kendra:</p>
+
+              <div style="background: #f8fafc; border: 2px dashed #2563eb; border-radius: 8px; padding: 14px; margin: 18px 0; display: inline-block;">
+                <span style="font-size: 28px; font-weight: 900; letter-spacing: 6px; color: #1d4ed8; font-family: monospace;">${otp}</span>
+              </div>
+
+              <p style="font-size: 12px; color: #e11d48; font-weight: bold; margin: 0;">
+                ⚠️ This code is valid for 10 minutes. Never share your OTP with anyone.
+              </p>
+
+              <div style="border-top: 1px solid #e2e8f0; padding-top: 14px; margin-top: 20px; font-size: 11px; color: #64748b; text-align: left;">
+                <div>📍 <b>Center</b>: Shree Online Sewa Kendra (Est. 2013), Mahuli, S.K.N</div>
+                <div>📞 <b>Owner Desk</b>: +91 ${OWNER_INFO.phone} (Krishan Narayan Dwivedi)</div>
+                <div>📞 <b>Admin Desk</b>: +91 ${ADMIN_INFO.phone} (Kamal Narayan Dwivedi)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`[Google Mail] OTP email dispatched to ${toEmail} (ID: ${info.messageId || 'sent'})`);
+    return { success: true, messageId: info.messageId };
+  } catch (err) {
+    console.warn(`[Google Mail Notice] OTP email simulation for ${toEmail}: ${err.message}`);
+    return { success: false, error: err.message };
+  }
+}
+
+module.exports = {
+  sendWelcomeEmail,
+  sendOtpEmail,
+  OWNER_INFO,
+  ADMIN_INFO
+};

@@ -117,7 +117,7 @@ export const Footer = ({ setActivePage }) => {
                 style={{ color: '#25d366', fontWeight: '800', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '5px', marginTop: '2px' }}
               >
                 <MessageCircle size={14} />
-                <span>+91 9161400719 (Anand Narayan Dwivedi)</span>
+                <span>+91 9161400719 (Krishan Narayan Dwivedi (onlinebaba111111@gmail.com))</span>
               </a>
             </div>
 
@@ -130,7 +130,7 @@ export const Footer = ({ setActivePage }) => {
                 style={{ color: '#25d366', fontWeight: '800', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '5px', marginTop: '2px' }}
               >
                 <MessageCircle size={14} />
-                <span>+91 8090794210 (Krish Verma)</span>
+                <span>+91 8090794210 (Kamal Narayan Dwivedi (kdshree778@gmail.com))</span>
               </a>
             </div>
 

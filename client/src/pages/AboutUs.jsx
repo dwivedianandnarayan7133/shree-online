@@ -2,7 +2,7 @@
 import { 
   Award, ShieldCheck, Clock, MapPin, Phone, MessageCircle, 
   Sparkles, CheckCircle2, Users, FileCheck, Layers, ArrowRight,
-  HeartHandshake, Landmark, Star, Compass
+  HeartHandshake, Landmark, Star, Compass, Mail
 } from 'lucide-react';
 
 export const AboutUs = ({ setActivePage }) => {
@@ -17,20 +17,20 @@ export const AboutUs = ({ setActivePage }) => {
         position: 'relative',
         overflow: 'hidden'
       }}>
-        <div style={{ maxWidth: '780px' }}>
+        <div style={{ maxWidth: '820px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(99, 102, 241, 0.15)', color: 'var(--primary-400)', padding: '4px 12px', borderRadius: 'var(--radius-full)', fontSize: '0.78rem', fontWeight: '800', marginBottom: '14px' }}>
             <Award size={14} color="#f59e0b" />
-            <span>Serving Citizens & Students Since 2013 (13+ Years of Trust)</span>
+            <span>Serving Citizens & Students Since 2013 (13+ Years of Excellence)</span>
           </div>
 
           <h1 style={{ fontSize: '2.2rem', fontWeight: '900', color: 'var(--text-main)', letterSpacing: '-0.03em', lineHeight: '1.2' }}>
             Shree Online Sewa Kendra
           </h1>
           <p style={{ fontSize: '1.05rem', fontWeight: '700', color: 'var(--primary-400)', marginTop: '4px' }}>
-            Mahuli, Sant Kabir Nagar (S.K.N), Uttar Pradesh
+            Main Market, Mahuli, Sant Kabir Nagar (S.K.N), Uttar Pradesh - 272172
           </p>
           <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', marginTop: '12px', lineHeight: '1.6' }}>
-            Established in <b>2013</b>, Shree Online Sewa Kendra has been the most trusted and reliable digital services landmark in Mahuli and surrounding regions of Sant Kabir Nagar. We deliver error-free government applications, student exam services, instant passport photo creation, universal document restoration, and citizen welfare assistance under one unified window.
+            Established in <b>2013</b>, Shree Online Sewa Kendra has been the most trusted, continuous digital services landmark in Mahuli and across Sant Kabir Nagar. We deliver error-free government applications, student exam services, instant passport photo creation, universal document restoration, and citizen welfare assistance under one unified window.
           </p>
 
           <div style={{ display: 'flex', gap: '16px', marginTop: '20px', flexWrap: 'wrap' }}>
@@ -40,11 +40,11 @@ export const AboutUs = ({ setActivePage }) => {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-surface)', padding: '8px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', fontSize: '0.82rem', fontWeight: '700' }}>
               <Users size={16} color="var(--accent-cyan)" />
-              <span>50,000+ Happy Customers</span>
+              <span>50,000+ Happy Citizens</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-surface)', padding: '8px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', fontSize: '0.82rem', fontWeight: '700' }}>
               <ShieldCheck size={16} color="var(--primary-400)" />
-              <span>100% Reliable & Secure</span>
+              <span>100% Reliable & Google Mail Verified</span>
             </div>
           </div>
         </div>
@@ -58,7 +58,7 @@ export const AboutUs = ({ setActivePage }) => {
             <span>Leadership & Operational Messages</span>
           </h2>
           <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)' }}>
-            Meet the visionaries behind Shree Online Sewa Kendra, Mahuli, S.K.N
+            Meet the leadership behind Shree Online Sewa Kendra (Est. 2013), Mahuli, S.K.N
           </p>
         </div>
 
@@ -95,7 +95,7 @@ export const AboutUs = ({ setActivePage }) => {
                     fontSize: '1.7rem',
                     border: '2px solid #ffffff'
                   }}>
-                    <span>AD</span>
+                    <span>KD</span>
                   </div>
                 </div>
                 <div style={{
@@ -114,10 +114,14 @@ export const AboutUs = ({ setActivePage }) => {
                   Founder & Managing Owner
                 </div>
                 <h3 style={{ fontSize: '1.3rem', fontWeight: '900', color: 'var(--text-main)', marginTop: '2px' }}>
-                  Anand Narayan Dwivedi
+                  Krishan Narayan Dwivedi
                 </h3>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
                   Shree Online Sewa Kendra • Est. 2013
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                  <Mail size={12} color="var(--primary-400)" />
+                  <span>onlinebaba111111@gmail.com</span>
                 </div>
               </div>
             </div>
@@ -132,7 +136,7 @@ export const AboutUs = ({ setActivePage }) => {
             }}>
               <div style={{ fontSize: '1.8rem', color: '#f59e0b', position: 'absolute', top: '8px', left: '12px', opacity: 0.3, fontFamily: 'serif' }}>“</div>
               <p style={{ fontSize: '0.86rem', color: 'var(--text-main)', lineHeight: '1.6', fontStyle: 'italic', position: 'relative', zIndex: 1, paddingLeft: '14px' }}>
-                "Since founding Shree Online Sewa Kendra in <b>2013</b> here in Mahuli, our single goal has been to provide every student, youth, and family in Sant Kabir Nagar with reliable, honest, and high-speed digital services. Over these 13+ years, thousands of candidates have filled exam forms and received certificates through our center. We remain dedicated to your success and trust."
+                "Since establishing Shree Online Sewa Kendra in <b>2013</b> here in Mahuli, our sole commitment has been to provide every student, youth, and family across Sant Kabir Nagar with reliable, honest, and high-speed digital services. Over these 13+ years, thousands of candidates have filled exam forms and received verified certificates through our center. We remain dedicated to your success and trust."
               </p>
             </div>
 
@@ -143,7 +147,7 @@ export const AboutUs = ({ setActivePage }) => {
                 <span>+91 9161400719</span>
               </div>
               <a
-                href="https://wa.me/919161400719?text=Hello%20Shree%20Online%20Owner%20Desk,%20I%20have%20an%20inquiry"
+                href="https://wa.me/919161400719?text=Hello%20Krishan%20Narayan%20Dwivedi%20(Shree%20Online%20Owner),%20I%20have%20an%20inquiry"
                 target="_blank"
                 rel="noreferrer"
                 className="btn btn-sm btn-success"
@@ -186,7 +190,7 @@ export const AboutUs = ({ setActivePage }) => {
                     fontSize: '1.7rem',
                     border: '2px solid #ffffff'
                   }}>
-                    <span>KV</span>
+                    <span>KD</span>
                   </div>
                 </div>
                 <div style={{
@@ -202,13 +206,17 @@ export const AboutUs = ({ setActivePage }) => {
 
               <div>
                 <div style={{ fontSize: '0.74rem', color: '#10b981', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Technical Admin & Systems Architect
+                  Admin & Technical Operations
                 </div>
                 <h3 style={{ fontSize: '1.3rem', fontWeight: '900', color: 'var(--text-main)', marginTop: '2px' }}>
-                  Krish Verma
+                  Kamal Narayan Dwivedi
                 </h3>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
                   Cyber Infrastructure & Digital Operations
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                  <Mail size={12} color="var(--primary-400)" />
+                  <span>kdshree778@gmail.com</span>
                 </div>
               </div>
             </div>
@@ -223,7 +231,7 @@ export const AboutUs = ({ setActivePage }) => {
             }}>
               <div style={{ fontSize: '1.8rem', color: '#10b981', position: 'absolute', top: '8px', left: '12px', opacity: 0.3, fontFamily: 'serif' }}>“</div>
               <p style={{ fontSize: '0.86rem', color: 'var(--text-main)', lineHeight: '1.6', fontStyle: 'italic', position: 'relative', zIndex: 1, paddingLeft: '14px' }}>
-                "We have engineered this portal with modern AdShield cyber protection, automatic NIC protocol fallbacks, and AI document studios to ensure 100% smooth operations. Whether generating A4 passport photo sheets with scissor guides or converting scanned papers to Word and Excel, our systems are built for supreme reliability."
+                "We have integrated Google Mail notifications, OTP verification, modern AdShield protection, and AI document studios to ensure 100% smooth operations for our community. Whether generating A4 passport sheets or filling recruitment forms, Shree Online delivers supreme reliability."
               </p>
             </div>
 
@@ -234,13 +242,13 @@ export const AboutUs = ({ setActivePage }) => {
                 <span>+91 8090794210</span>
               </div>
               <a
-                href="https://wa.me/918090794210?text=Hello%20Shree%20Online%20Admin,%20I%20need%20assistance"
+                href="https://wa.me/918090794210?text=Hello%20Kamal%20Narayan%20Dwivedi%20(Shree%20Online%20Admin),%20I%20need%20assistance"
                 target="_blank"
                 rel="noreferrer"
                 className="btn btn-sm btn-secondary"
                 style={{ fontSize: '0.75rem', padding: '4px 12px' }}
               >
-                <MessageCircle size={14} /> WhatsApp Helpline
+                <MessageCircle size={14} /> WhatsApp Admin
               </a>
             </div>
           </div>
@@ -262,7 +270,7 @@ export const AboutUs = ({ setActivePage }) => {
               { year: '2016', title: 'CSC Digital India', desc: 'Authorized Common Service Center integration for Aadhaar, PAN, and citizen welfare schemes.' },
               { year: '2019', title: '25,000+ Citizens Served', desc: 'Achieved milestone of 25,000+ verified government exam applications and certificate issuances.' },
               { year: '2023', title: 'Studio Modernization', desc: 'Integrated high-speed laser printing, biometric verification, and digital photo studios.' },
-              { year: '2026', title: 'Portal & AI Studio Launch', desc: 'Launched full-stack Cyber Cafe Management Portal with in-app browser, AdShield, and WhatsApp OTP.' }
+              { year: '2026', title: 'Full Portal & Google Mail Launch', desc: 'Launched full-stack Cyber Cafe Management Portal with Google Mail notifications and WhatsApp OTP.' }
             ].map((m, idx) => (
               <div key={idx} style={{
                 background: 'var(--bg-surface-alt)',

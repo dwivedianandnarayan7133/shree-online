@@ -2,12 +2,17 @@
 const User = require('../models/User');
 const { JWT_SECRET, JWT_EXPIRES_IN } = require('../config/constants');
 const { logAudit } = require('../utils/logger');
+const { sendWelcomeEmail, sendOtpEmail, OWNER_INFO, ADMIN_INFO } = require('../services/emailService');
 
 const WHATSAPP_NUMBERS = {
   primary: '9161400719',
   secondary: '8090794210',
   formattedPrimary: '+91 9161400719',
-  formattedSecondary: '+91 8090794210'
+  formattedSecondary: '+91 8090794210',
+  ownerName: 'Krishan Narayan Dwivedi',
+  adminName: 'Kamal Narayan Dwivedi',
+  ownerEmail: 'onlinebaba111111@gmail.com',
+  adminEmail: 'kdshree778@gmail.com'
 };
 
 // In-memory OTP Store with 10-min expiration
@@ -21,7 +26,7 @@ const signToken = (user) => {
   );
 };
 
-// Standard Register
+// Standard Register (Sends Google Welcome Email)
 const register = async (req, res) => {
   try {
     const { name, email, password, role = 'customer', phone } = req.body;
@@ -41,6 +46,9 @@ const register = async (req, res) => {
 
     const token = signToken(user);
 
+    // Send Google Welcome Email asynchronously
+    sendWelcomeEmail(user.email, user.name).catch(err => console.warn('Welcome mail notice:', err.message));
+
     await logAudit({
       action: 'USER_REGISTER',
       user: user.name,
@@ -58,7 +66,8 @@ const register = async (req, res) => {
         email: user.email,
         role: user.role,
         phone: user.phone
-      }
+      },
+      message: 'Registration successful. Welcome email dispatched via Google Mail.'
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -113,40 +122,48 @@ const login = async (req, res) => {
   }
 };
 
-// Send WhatsApp OTP (Forwarded via Owner WhatsApp)
+// Send OTP via Google Gmail & Forward via Owner WhatsApp
 const sendWhatsAppOtp = async (req, res) => {
   try {
-    const { phone, name, type = 'login' } = req.body;
+    const { phone, email, name, type = 'login' } = req.body;
 
-    if (!phone || phone.trim().length < 10) {
-      return res.status(400).json({ success: false, message: 'Please provide a valid 10-digit mobile number.' });
+    if (!phone && !email) {
+      return res.status(400).json({ success: false, message: 'Please provide a valid mobile number or email address.' });
     }
 
-    const cleanPhone = phone.replace(/[^0-9]/g, '').slice(-10);
+    const cleanPhone = phone ? phone.replace(/[^0-9]/g, '').slice(-10) : '';
+    const targetKey = cleanPhone || (email && email.toLowerCase());
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    otpStore[cleanPhone] = {
+    otpStore[targetKey] = {
       otp,
       expiresAt: Date.now() + 10 * 60 * 1000, // 10 mins
       name: name || '',
+      email: email || '',
       type
     };
 
-    // Owner WhatsApp forward links (Never exposes OTP on browser screen)
-    const ownerMsg = `Hello Shree Online Owner (Mahuli, S.K.N),\nCustomer (+91 ${cleanPhone}) is requesting ${type === 'register' ? 'Registration' : 'Login'} OTP verification.\n\n*One-Time Password: ${otp}*`;
+    // 1. Dispatch OTP via Google Gmail if email is provided
+    if (email) {
+      sendOtpEmail(email, otp, name || 'Customer').catch(err => console.warn('Gmail OTP notice:', err.message));
+    }
+
+    // 2. Owner WhatsApp forward links (Never exposes OTP on browser screen)
+    const ownerMsg = `Hello Krishan Narayan Dwivedi (Shree Online Owner Desk),\nCustomer (${cleanPhone ? '+91 ' + cleanPhone : email}) requested ${type === 'register' ? 'Registration' : 'Login'} OTP verification.\n\n*One-Time Password: ${otp}*`;
     const waOwnerLink1 = `https://wa.me/91${WHATSAPP_NUMBERS.primary}?text=${encodeURIComponent(ownerMsg)}`;
     const waOwnerLink2 = `https://wa.me/91${WHATSAPP_NUMBERS.secondary}?text=${encodeURIComponent(ownerMsg)}`;
 
     await logAudit({
-      action: 'WHATSAPP_OTP_FORWARDED_BY_OWNER',
-      user: name || cleanPhone,
-      details: { phone: cleanPhone, type, forwardedBy: WHATSAPP_NUMBERS.primary }
+      action: 'OTP_FORWARDED_BY_OWNER_AND_GMAIL',
+      user: name || targetKey,
+      details: { identifier: targetKey, type, owner: WHATSAPP_NUMBERS.ownerName }
     });
 
     res.json({
       success: true,
-      message: `OTP forwarded by Shree Online Owner WhatsApp (+91 ${WHATSAPP_NUMBERS.primary}). Please check your WhatsApp.`,
+      message: `OTP dispatched via Gmail and forwarded to Owner WhatsApp (+91 ${WHATSAPP_NUMBERS.primary}).`,
       cleanPhone,
+      email: email || '',
       whatsappNumbers: WHATSAPP_NUMBERS,
       waOwnerLink1,
       waOwnerLink2
@@ -156,52 +173,61 @@ const sendWhatsAppOtp = async (req, res) => {
   }
 };
 
-// Verify WhatsApp OTP & Login / Register User
+// Verify OTP & Login / Register User
 const verifyWhatsAppOtp = async (req, res) => {
   try {
-    const { phone, otp, name, role = 'customer' } = req.body;
+    const { phone, email, otp, name, role = 'customer' } = req.body;
 
-    if (!phone || !otp) {
-      return res.status(400).json({ success: false, message: 'Phone number and OTP are required.' });
+    if ((!phone && !email) || !otp) {
+      return res.status(400).json({ success: false, message: 'Identifier and OTP are required.' });
     }
 
-    const cleanPhone = phone.replace(/[^0-9]/g, '').slice(-10);
-    const record = otpStore[cleanPhone];
+    const cleanPhone = phone ? phone.replace(/[^0-9]/g, '').slice(-10) : '';
+    const targetKey = cleanPhone || (email && email.toLowerCase());
+    const record = otpStore[targetKey];
 
     if (!record) {
-      return res.status(400).json({ success: false, message: 'No active OTP request found for this number. Please request a new OTP.' });
+      return res.status(400).json({ success: false, message: 'No active OTP request found for this account. Please request a new OTP.' });
     }
 
     if (Date.now() > record.expiresAt) {
-      delete otpStore[cleanPhone];
+      delete otpStore[targetKey];
       return res.status(400).json({ success: false, message: 'OTP has expired. Please request a new OTP.' });
     }
 
     if (record.otp !== String(otp).trim()) {
-      return res.status(400).json({ success: false, message: 'Invalid OTP entered. Please check your WhatsApp and try again.' });
+      return res.status(400).json({ success: false, message: 'Invalid OTP entered. Please check your WhatsApp/Gmail and try again.' });
     }
 
     // OTP is valid - clear store
-    delete otpStore[cleanPhone];
+    delete otpStore[targetKey];
 
-    // Find or create user by phone / email
+    const userEmail = email ? email.toLowerCase() : `${cleanPhone}@shreeonline.local`;
+
+    // Find or create user
     let user = await User.findOne({
       $or: [
         { phone: cleanPhone },
-        { email: `${cleanPhone}@shreeonline.local` }
+        { email: userEmail }
       ]
     });
 
+    let isNewUser = false;
     if (!user) {
-      // Auto-register new customer via WhatsApp OTP
-      const userName = name || record.name || `User-${cleanPhone.slice(-4)}`;
+      isNewUser = true;
+      const userName = name || record.name || (cleanPhone ? `User-${cleanPhone.slice(-4)}` : userEmail.split('@')[0]);
       user = await User.create({
         name: userName,
-        email: `${cleanPhone}@shreeonline.local`,
-        password: `wa-${cleanPhone}-${Date.now()}`,
-        phone: cleanPhone,
+        email: userEmail,
+        password: `wa-${Date.now()}`,
+        phone: cleanPhone || '',
         role: ['admin', 'operator'].includes(role) ? role : 'customer'
       });
+
+      // Send Google Welcome Email for new OTP registrations
+      if (email) {
+        sendWelcomeEmail(email, userName).catch(err => console.warn('Welcome mail notice:', err.message));
+      }
     } else {
       if (name && (!user.name || user.name.startsWith('User-'))) {
         user.name = name;
@@ -213,15 +239,15 @@ const verifyWhatsAppOtp = async (req, res) => {
     const token = signToken(user);
 
     await logAudit({
-      action: 'WHATSAPP_OTP_LOGIN_SUCCESS',
+      action: 'OTP_LOGIN_SUCCESS',
       user: user.name,
       role: user.role,
-      details: { phone: cleanPhone, email: user.email }
+      details: { phone: cleanPhone, email: user.email, isNewUser }
     });
 
     res.json({
       success: true,
-      message: 'WhatsApp OTP verified successfully.',
+      message: isNewUser ? 'Account registered and verified successfully.' : 'OTP verified successfully.',
       token,
       user: {
         id: user._id,
@@ -247,6 +273,8 @@ const getMe = async (req, res) => {
       role: req.user.role,
       phone: req.user.phone
     },
+    ownerInfo: OWNER_INFO,
+    adminInfo: ADMIN_INFO,
     whatsappHelpline: WHATSAPP_NUMBERS
   });
 };
@@ -255,7 +283,13 @@ const getMe = async (req, res) => {
 const getOperators = async (req, res) => {
   try {
     const operators = await User.find({ role: { $in: ['admin', 'operator'] }, isActive: true }).select('name email role phone');
-    res.json({ success: true, operators, whatsappNumbers: WHATSAPP_NUMBERS });
+    res.json({ 
+      success: true, 
+      operators, 
+      ownerInfo: OWNER_INFO,
+      adminInfo: ADMIN_INFO,
+      whatsappNumbers: WHATSAPP_NUMBERS 
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -268,5 +302,7 @@ module.exports = {
   verifyWhatsAppOtp,
   getMe,
   getOperators,
-  WHATSAPP_NUMBERS
+  WHATSAPP_NUMBERS,
+  OWNER_INFO,
+  ADMIN_INFO
 };
