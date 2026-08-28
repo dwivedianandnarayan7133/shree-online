@@ -1,5 +1,6 @@
 ﻿import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
+import { SERVER_BASE } from '../services/config';
 
 const SocketContext = createContext();
 
@@ -10,7 +11,8 @@ export const SocketProvider = ({ children }) => {
   const [latestPrintUpdate, setLatestPrintUpdate] = useState(null);
 
   useEffect(() => {
-    const newSocket = io(SERVER_BASE || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000'), {
+    const socketUrl = SERVER_BASE || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000');
+    const newSocket = io(socketUrl, {
       transports: ['websocket', 'polling']
     });
 

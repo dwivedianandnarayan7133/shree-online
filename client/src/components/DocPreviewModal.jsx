@@ -1,5 +1,6 @@
 ﻿import React from 'react';
 import { X, Download, Printer, ExternalLink } from 'lucide-react';
+import { getFullUrl } from '../services/config';
 
 export const DocPreviewModal = ({ isOpen, onClose, fileUrl, fileName, title = 'Document Preview' }) => {
   if (!isOpen || !fileUrl) return null;
