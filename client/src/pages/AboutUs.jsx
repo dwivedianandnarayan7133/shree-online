@@ -1,353 +1,300 @@
-﻿import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Award, ShieldCheck, Clock, MapPin, Phone, MessageCircle, 
-  Sparkles, CheckCircle2, Users, FileCheck, Layers, ArrowRight,
-  HeartHandshake, Landmark, Star, Compass, Mail
+  Award, ShieldCheck, HeartHandshake, Phone, Mail, 
+  MapPin, CheckCircle2, MessageCircle, Clock, Sparkles,
+  Layers, Users, Calendar, ArrowRight, ExternalLink
 } from 'lucide-react';
+import { api, getFullUrl } from '../services/api';
 
 export const AboutUs = ({ setActivePage }) => {
+  const [config, setConfig] = useState(null);
+
+  useEffect(() => {
+    api.getSystemConfig().then(res => {
+      if (res.success && res.config) {
+        setConfig(res.config);
+      }
+    }).catch(err => console.error(err));
+  }, []);
+
+  const ownerPhoto = config?.ownerPhoto ? getFullUrl(config.ownerPhoto) : null;
+  const adminPhoto = config?.adminPhoto ? getFullUrl(config.adminPhoto) : null;
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
-      {/* 1. HERO BANNER */}
-      <div style={{
-        background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.12) 0%, rgba(16, 185, 129, 0.08) 50%, rgba(99, 102, 241, 0.14) 100%)',
-        border: '1px solid var(--border-color)',
-        borderRadius: 'var(--radius-xl)',
-        padding: '36px 28px',
-        position: 'relative',
-        overflow: 'hidden'
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '36px', maxWidth: '1200px', margin: '0 auto' }}>
+      
+      {/* 1. HERO & ESTABLISHMENT HEADER */}
+      <section style={{ textAlign: 'center', padding: '30px 16px 20px 16px', borderBottom: '1px solid var(--border-color)' }}>
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: '8px',
+          background: 'rgba(245, 158, 11, 0.12)', color: '#f59e0b',
+          border: '1px solid rgba(245, 158, 11, 0.3)', padding: '6px 16px',
+          borderRadius: 'var(--radius-full)', fontSize: '0.82rem', fontWeight: '800', marginBottom: '14px'
+        }}>
+          <Award size={15} />
+          <span>Established into {config?.establishedYear || '2013'} • 13+ Years of Continuous Service Excellence</span>
+        </div>
+
+        <h1 style={{ fontSize: '2.4rem', fontWeight: '900', color: 'var(--text-main)', letterSpacing: '-0.02em', marginBottom: '12px' }}>
+          Shree Online Sewa Kendra
+        </h1>
+        <p style={{ fontSize: '1.1rem', color: 'var(--primary-400)', fontWeight: '700', maxWidth: '750px', margin: '0 auto 16px auto' }}>
+          {config?.tagline || 'One Window. Every Digital Service.'}
+        </p>
+        <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: '1.7', maxWidth: '880px', margin: '0 auto' }}>
+          {config?.aboutUsText || 'Established in 2013, Shree Online Sewa Kendra has been the most trusted digital services landmark in Mahuli and across Sant Kabir Nagar. We deliver error-free government applications, student exam services, instant passport photo creation, universal document restoration, and citizen welfare assistance under one unified window.'}
+        </p>
+
+        {/* Center Highlights Bar */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px',
+          marginTop: '28px', padding: '16px 20px', background: 'var(--bg-surface-alt)',
+          borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)'
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: '900', color: '#f59e0b' }}>2013</div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: '600' }}>Inception Year (Mahuli)</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: '900', color: 'var(--primary-400)' }}>100,000+</div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: '600' }}>Exam & Citizen Forms Processed</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: '900', color: '#10b981' }}>100% Verified</div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: '600' }}>Multi-Layer Form Accuracy</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: '900', color: '#6366f1' }}>Fast Laser & AI</div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: '600' }}>Instant Photo & OCR Studios</div>
+          </div>
+        </div>
+      </section>
+
+      {/* 2. FIRST OFFICIAL ADDRESS: FOUNDER & MANAGING OWNER (KRISHAN NARAYAN DWIVEDI) */}
+      <section style={{
+        padding: '32px 24px',
+        borderBottom: '1px solid var(--border-color)',
+        display: 'flex', flexDirection: 'column', gap: '20px'
       }}>
-        <div style={{ maxWidth: '820px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(99, 102, 241, 0.15)', color: 'var(--primary-400)', padding: '4px 12px', borderRadius: 'var(--radius-full)', fontSize: '0.78rem', fontWeight: '800', marginBottom: '14px' }}>
-            <Award size={14} color="#f59e0b" />
-            <span>Serving Citizens & Students Since 2013 (13+ Years of Excellence)</span>
-          </div>
-
-          <h1 style={{ fontSize: '2.2rem', fontWeight: '900', color: 'var(--text-main)', letterSpacing: '-0.03em', lineHeight: '1.2' }}>
-            Shree Online Sewa Kendra
-          </h1>
-          <p style={{ fontSize: '1.05rem', fontWeight: '700', color: 'var(--primary-400)', marginTop: '4px' }}>
-            Main Market, Mahuli, Sant Kabir Nagar (S.K.N), Uttar Pradesh - 272172
-          </p>
-          <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', marginTop: '12px', lineHeight: '1.6' }}>
-            Established in <b>2013</b>, Shree Online Sewa Kendra has been the most trusted, continuous digital services landmark in Mahuli and across Sant Kabir Nagar. We deliver error-free government applications, student exam services, instant passport photo creation, universal document restoration, and citizen welfare assistance under one unified window.
-          </p>
-
-          <div style={{ display: 'flex', gap: '16px', marginTop: '20px', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-surface)', padding: '8px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', fontSize: '0.82rem', fontWeight: '700' }}>
-              <CheckCircle2 size={16} color="var(--accent-emerald)" />
-              <span>Est. 2013 (13+ Years Service)</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-surface)', padding: '8px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', fontSize: '0.82rem', fontWeight: '700' }}>
-              <Users size={16} color="var(--accent-cyan)" />
-              <span>50,000+ Happy Citizens</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-surface)', padding: '8px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', fontSize: '0.82rem', fontWeight: '700' }}>
-              <ShieldCheck size={16} color="var(--primary-400)" />
-              <span>100% Reliable & Google Mail Verified</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. OWNER & ADMIN LEADERSHIP MESSAGES WITH CIRCULAR PHOTOS */}
-      <div>
-        <div style={{ marginBottom: '18px' }}>
-          <h2 style={{ fontSize: '1.4rem', fontWeight: '800', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <HeartHandshake size={22} color="var(--primary-500)" />
-            <span>Leadership & Operational Messages</span>
-          </h2>
-          <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)' }}>
-            Meet the leadership behind Shree Online Sewa Kendra (Est. 2013), Mahuli, S.K.N
-          </p>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '24px' }}>
-          {/* OWNER PROFILE CARD */}
-          <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '18px', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '6px', background: 'linear-gradient(90deg, #f59e0b, #ef4444)' }} />
-            
-            <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
-              {/* Circular Photo Avatar Frame */}
-              <div style={{ position: 'relative', flexShrink: 0 }}>
-                <div style={{
-                  width: '90px',
-                  height: '90px',
-                  borderRadius: '50%',
-                  padding: '3px',
-                  background: 'linear-gradient(135deg, #f59e0b, #ef4444, #3b82f6)',
-                  boxShadow: '0 8px 20px rgba(245, 158, 11, 0.35)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <div style={{
-                    width: '100%',
-                    height: '100%',
-                    borderRadius: '50%',
-                    background: '#1e293b',
-                    color: '#ffffff',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: '900',
-                    fontSize: '1.7rem',
-                    border: '2px solid #ffffff'
-                  }}>
-                    <span>KD</span>
-                  </div>
-                </div>
-                <div style={{
-                  position: 'absolute', bottom: '-2px', right: '-2px',
-                  background: '#f59e0b', color: '#ffffff', borderRadius: '50%',
-                  width: '26px', height: '26px', display: 'flex', alignItems: 'center',
-                  justifyContent: 'center', fontSize: '0.75rem', fontWeight: 'bold',
-                  border: '2px solid var(--panel-bg)'
-                }}>
-                  👑
-                </div>
+        {/* Header Profile Info (Circular Format) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+          {/* Circular Photo */}
+          <div style={{ position: 'relative' }}>
+            {ownerPhoto ? (
+              <img 
+                src={ownerPhoto} 
+                alt="Krishan Narayan Dwivedi" 
+                style={{
+                  width: '90px', height: '90px', borderRadius: '50%',
+                  objectFit: 'cover', border: '4px solid #f59e0b',
+                  boxShadow: '0 4px 16px rgba(245, 158, 11, 0.3)'
+                }}
+              />
+            ) : (
+              <div style={{
+                width: '90px', height: '90px', borderRadius: '50%',
+                background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#ffffff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '2rem', fontWeight: '900', border: '4px solid #f59e0b',
+                boxShadow: '0 4px 16px rgba(245, 158, 11, 0.3)'
+              }}>
+                KD
               </div>
-
-              <div>
-                <div style={{ fontSize: '0.74rem', color: '#f59e0b', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Founder & Managing Owner
-                </div>
-                <h3 style={{ fontSize: '1.3rem', fontWeight: '900', color: 'var(--text-main)', marginTop: '2px' }}>
-                  Krishan Narayan Dwivedi
-                </h3>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                  Shree Online Sewa Kendra • Est. 2013
-                </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                  <Mail size={12} color="var(--primary-400)" />
-                  <span>onlinebaba111111@gmail.com</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Owner Quote / Message */}
+            )}
             <div style={{
-              background: 'var(--bg-surface-alt)',
-              border: '1px solid var(--border-color)',
-              borderRadius: 'var(--radius-lg)',
-              padding: '16px',
-              position: 'relative'
-            }}>
-              <div style={{ fontSize: '1.8rem', color: '#f59e0b', position: 'absolute', top: '8px', left: '12px', opacity: 0.3, fontFamily: 'serif' }}>“</div>
-              <p style={{ fontSize: '0.86rem', color: 'var(--text-main)', lineHeight: '1.6', fontStyle: 'italic', position: 'relative', zIndex: 1, paddingLeft: '14px' }}>
-                "Since establishing Shree Online Sewa Kendra in <b>2013</b> here in Mahuli, our sole commitment has been to provide every student, youth, and family across Sant Kabir Nagar with reliable, honest, and high-speed digital services. Over these 13+ years, thousands of candidates have filled exam forms and received verified certificates through our center. We remain dedicated to your success and trust."
-              </p>
+              position: 'absolute', bottom: 0, right: 0,
+              background: '#f59e0b', color: '#000', borderRadius: '50%',
+              width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '0.8rem', fontWeight: '900'
+            }} title="Founder & Owner">
+              👑
+            </div>
+          </div>
+
+          {/* Name & Contact Desk */}
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '4px' }}>
+              <h2 style={{ fontSize: '1.45rem', fontWeight: '900', color: 'var(--text-main)', margin: 0 }}>
+                {config?.ownerName || 'Krishan Narayan Dwivedi'}
+              </h2>
+              <span className="badge badge-warning" style={{ fontSize: '0.75rem', padding: '3px 10px' }}>
+                {config?.ownerRole || 'Founder & Managing Owner'}
+              </span>
+            </div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '0.86rem', marginBottom: '8px' }}>
+              Pioneer of Digital Seva in Mahuli • Established Shree Online in 2013
             </div>
 
-            {/* Owner Direct Contact */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '12px', borderTop: '1px solid var(--border-color)', fontSize: '0.8rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)' }}>
-                <Phone size={14} color="var(--primary-400)" />
-                <span>+91 9161400719</span>
-              </div>
-              <a
-                href="https://wa.me/919161400719?text=Hello%20Krishan%20Narayan%20Dwivedi%20(Shree%20Online%20Owner),%20I%20have%20an%20inquiry"
-                target="_blank"
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', fontSize: '0.84rem' }}>
+              <a 
+                href={`https://wa.me/91${config?.ownerPhone || '9161400719'}`} 
+                target="_blank" 
                 rel="noreferrer"
-                className="btn btn-sm btn-success"
-                style={{ fontSize: '0.75rem', padding: '4px 12px' }}
+                style={{ color: '#25d366', fontWeight: '700', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px' }}
               >
-                <MessageCircle size={14} /> WhatsApp Owner
+                <MessageCircle size={15} />
+                <span>+91 {config?.ownerPhone || '9161400719'}</span>
               </a>
-            </div>
-          </div>
-
-          {/* ADMIN PROFILE CARD */}
-          <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '18px', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '6px', background: 'linear-gradient(90deg, #10b981, #06b6d4)' }} />
-            
-            <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
-              {/* Circular Photo Avatar Frame */}
-              <div style={{ position: 'relative', flexShrink: 0 }}>
-                <div style={{
-                  width: '90px',
-                  height: '90px',
-                  borderRadius: '50%',
-                  padding: '3px',
-                  background: 'linear-gradient(135deg, #10b981, #06b6d4, #6366f1)',
-                  boxShadow: '0 8px 20px rgba(16, 185, 129, 0.35)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <div style={{
-                    width: '100%',
-                    height: '100%',
-                    borderRadius: '50%',
-                    background: '#0f172a',
-                    color: '#ffffff',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: '900',
-                    fontSize: '1.7rem',
-                    border: '2px solid #ffffff'
-                  }}>
-                    <span>KD</span>
-                  </div>
-                </div>
-                <div style={{
-                  position: 'absolute', bottom: '-2px', right: '-2px',
-                  background: '#10b981', color: '#ffffff', borderRadius: '50%',
-                  width: '26px', height: '26px', display: 'flex', alignItems: 'center',
-                  justifyContent: 'center', fontSize: '0.75rem', fontWeight: 'bold',
-                  border: '2px solid var(--panel-bg)'
-                }}>
-                  🛡️
-                </div>
-              </div>
-
-              <div>
-                <div style={{ fontSize: '0.74rem', color: '#10b981', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Admin & Technical Operations
-                </div>
-                <h3 style={{ fontSize: '1.3rem', fontWeight: '900', color: 'var(--text-main)', marginTop: '2px' }}>
-                  Kamal Narayan Dwivedi
-                </h3>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                  Cyber Infrastructure & Digital Operations
-                </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                  <Mail size={12} color="var(--primary-400)" />
-                  <span>kdshree778@gmail.com</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Admin Quote / Message */}
-            <div style={{
-              background: 'var(--bg-surface-alt)',
-              border: '1px solid var(--border-color)',
-              borderRadius: 'var(--radius-lg)',
-              padding: '16px',
-              position: 'relative'
-            }}>
-              <div style={{ fontSize: '1.8rem', color: '#10b981', position: 'absolute', top: '8px', left: '12px', opacity: 0.3, fontFamily: 'serif' }}>“</div>
-              <p style={{ fontSize: '0.86rem', color: 'var(--text-main)', lineHeight: '1.6', fontStyle: 'italic', position: 'relative', zIndex: 1, paddingLeft: '14px' }}>
-                "We have integrated Google Mail notifications, OTP verification, modern AdShield protection, and AI document studios to ensure 100% smooth operations for our community. Whether generating A4 passport sheets or filling recruitment forms, Shree Online delivers supreme reliability."
-              </p>
-            </div>
-
-            {/* Admin Direct Contact */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '12px', borderTop: '1px solid var(--border-color)', fontSize: '0.8rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)' }}>
-                <Phone size={14} color="var(--primary-400)" />
-                <span>+91 8090794210</span>
-              </div>
-              <a
-                href="https://wa.me/918090794210?text=Hello%20Kamal%20Narayan%20Dwivedi%20(Shree%20Online%20Admin),%20I%20need%20assistance"
-                target="_blank"
-                rel="noreferrer"
-                className="btn btn-sm btn-secondary"
-                style={{ fontSize: '0.75rem', padding: '4px 12px' }}
+              <a 
+                href={`mailto:${config?.ownerEmail || 'onlinebaba111111@gmail.com'}`}
+                style={{ color: 'var(--primary-400)', fontWeight: '600', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px' }}
               >
-                <MessageCircle size={14} /> WhatsApp Admin
+                <Mail size={15} />
+                <span>{config?.ownerEmail || 'onlinebaba111111@gmail.com'}</span>
               </a>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* 3. CORE MILESTONES TIMELINE (2013 - 2026) */}
-      <div className="card">
-        <div className="card-header">
-          <div className="card-title">
-            <Landmark size={20} color="var(--primary-500)" />
-            <span>Shree Online Journey & Milestones (2013 – 2026)</span>
-          </div>
+        {/* Full In-Depth 500-Word Message Narrative */}
+        <div style={{
+          fontSize: '0.98rem',
+          lineHeight: '1.85',
+          color: 'var(--text-secondary)',
+          textAlign: 'justify',
+          background: 'var(--bg-surface)',
+          padding: '24px 28px',
+          borderRadius: 'var(--radius-lg)',
+          borderLeft: '4px solid #f59e0b'
+        }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '800', color: '#f59e0b', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>Founder & Managing Owner's Message to Citizens & Students</span>
+          </h3>
+          {(config?.ownerQuote || '').split('\n\n').map((para, pIdx) => (
+            <p key={pIdx} style={{ marginBottom: '16px' }}>
+              {para}
+            </p>
+          ))}
         </div>
-        <div className="card-body">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-            {[
-              { year: '2013', title: 'Center Established', desc: 'Inception of Shree Online Sewa Kendra in Main Market, Mahuli, Sant Kabir Nagar (S.K.N).' },
-              { year: '2016', title: 'CSC Digital India', desc: 'Authorized Common Service Center integration for Aadhaar, PAN, and citizen welfare schemes.' },
-              { year: '2019', title: '25,000+ Citizens Served', desc: 'Achieved milestone of 25,000+ verified government exam applications and certificate issuances.' },
-              { year: '2023', title: 'Studio Modernization', desc: 'Integrated high-speed laser printing, biometric verification, and digital photo studios.' },
-              { year: '2026', title: 'Full Portal & Google Mail Launch', desc: 'Launched full-stack Cyber Cafe Management Portal with Google Mail notifications and WhatsApp OTP.' }
-            ].map((m, idx) => (
-              <div key={idx} style={{
-                background: 'var(--bg-surface-alt)',
-                border: '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-md)',
-                padding: '16px',
-                position: 'relative'
+      </section>
+
+      {/* 3. SECOND OFFICIAL ADDRESS: MANAGING DIRECTOR & MAIN CONTROLLER (KAMAL NARAYAN DWIVEDI) */}
+      <section style={{
+        padding: '32px 24px',
+        borderBottom: '1px solid var(--border-color)',
+        display: 'flex', flexDirection: 'column', gap: '20px'
+      }}>
+        {/* Header Profile Info (Circular Format) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+          {/* Circular Photo */}
+          <div style={{ position: 'relative' }}>
+            {adminPhoto ? (
+              <img 
+                src={adminPhoto} 
+                alt="Kamal Narayan Dwivedi" 
+                style={{
+                  width: '90px', height: '90px', borderRadius: '50%',
+                  objectFit: 'cover', border: '4px solid #10b981',
+                  boxShadow: '0 4px 16px rgba(16, 185, 129, 0.3)'
+                }}
+              />
+            ) : (
+              <div style={{
+                width: '90px', height: '90px', borderRadius: '50%',
+                background: 'linear-gradient(135deg, #10b981, #059669)', color: '#ffffff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '2rem', fontWeight: '900', border: '4px solid #10b981',
+                boxShadow: '0 4px 16px rgba(16, 185, 129, 0.3)'
               }}>
-                <div style={{
-                  display: 'inline-block',
-                  background: 'rgba(99, 102, 241, 0.15)',
-                  color: 'var(--primary-400)',
-                  fontWeight: '900',
-                  fontSize: '0.85rem',
-                  padding: '2px 10px',
-                  borderRadius: 'var(--radius-full)',
-                  marginBottom: '8px'
-                }}>
-                  {m.year}
-                </div>
-                <div style={{ fontWeight: '800', fontSize: '0.92rem', color: 'var(--text-main)', marginBottom: '4px' }}>
-                  {m.title}
-                </div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>
-                  {m.desc}
-                </div>
+                KD
               </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* 4. CORE SERVICES OFFERED */}
-      <div className="card">
-        <div className="card-header">
-          <div className="card-title">
-            <Sparkles size={20} color="var(--accent-emerald)" />
-            <span>Comprehensive Digital Services at Mahuli, S.K.N</span>
-          </div>
-        </div>
-        <div className="card-body">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
-            {[
-              { icon: '🎯', title: 'Govt Job & Exam Forms', desc: 'UPSSSC, SSC, Railway, Police, UPSC, NEET, JEE & Teaching recruitments.' },
-              { icon: '📷', title: 'A4 Passport Photo Studio', desc: 'Exam sky-blue background replacement with 6 photos/line and easy-cut padding.' },
-              { icon: '📄', title: 'Doc Restore & OCR Studio', desc: 'Multi-format text & table extraction to Word (.docx) & Excel (.xlsx).' },
-              { icon: '💳', title: 'PAN & Aadhaar Services', desc: 'Instant e-PAN, NSDL/UTI correction, biometric sync and plastic card printing.' },
-              { icon: '🏛️', title: 'e-District Uttar Pradesh', desc: 'Income, Caste, Domicile, Birth & Death certificates generation.' },
-              { icon: '🖨️', title: 'High-Speed Printing & Scan', desc: 'A4/Legal Black & White, Color prints, Document lamination and book binding.' }
-            ].map((srv, i) => (
-              <div key={i} style={{
-                display: 'flex', gap: '12px', padding: '12px 14px',
-                background: 'var(--bg-surface)', border: '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-md)'
-              }}>
-                <div style={{ fontSize: '1.5rem', flexShrink: 0 }}>{srv.icon}</div>
-                <div>
-                  <div style={{ fontWeight: '700', fontSize: '0.88rem', color: 'var(--text-main)' }}>{srv.title}</div>
-                  <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '2px' }}>{srv.desc}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {setActivePage && (
-            <div style={{ marginTop: '20px', textAlign: 'center' }}>
-              <button 
-                className="btn btn-primary"
-                onClick={() => setActivePage('customer-portal')}
-              >
-                <span>Submit a Service Request Online</span>
-                <ArrowRight size={16} />
-              </button>
+            )}
+            <div style={{
+              position: 'absolute', bottom: 0, right: 0,
+              background: '#10b981', color: '#000', borderRadius: '50%',
+              width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '0.8rem', fontWeight: '900'
+            }} title="Managing Director & Main Controller">
+              🛡️
             </div>
-          )}
+          </div>
+
+          {/* Name & Contact Desk */}
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '4px' }}>
+              <h2 style={{ fontSize: '1.45rem', fontWeight: '900', color: 'var(--text-main)', margin: 0 }}>
+                {config?.adminName || 'Kamal Narayan Dwivedi'}
+              </h2>
+              <span className="badge badge-completed" style={{ fontSize: '0.75rem', padding: '3px 10px' }}>
+                {config?.adminRole || 'Managing Director & Main Controller'}
+              </span>
+            </div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '0.86rem', marginBottom: '8px' }}>
+              System Administrator & Technical Director • Shree Online Digital Architecture
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', fontSize: '0.84rem' }}>
+              <a 
+                href={`https://wa.me/91${config?.adminPhone || '8090794210'}`} 
+                target="_blank" 
+                rel="noreferrer"
+                style={{ color: '#25d366', fontWeight: '700', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px' }}
+              >
+                <MessageCircle size={15} />
+                <span>+91 {config?.adminPhone || '8090794210'}</span>
+              </a>
+              <a 
+                href={`mailto:${config?.adminEmail || 'kdshree778@gmail.com'}`}
+                style={{ color: 'var(--primary-400)', fontWeight: '600', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px' }}
+              >
+                <Mail size={15} />
+                <span>{config?.adminEmail || 'kdshree778@gmail.com'}</span>
+              </a>
+            </div>
+          </div>
         </div>
-      </div>
+
+        {/* Full In-Depth 500-Word Message Narrative */}
+        <div style={{
+          fontSize: '0.98rem',
+          lineHeight: '1.85',
+          color: 'var(--text-secondary)',
+          textAlign: 'justify',
+          background: 'var(--bg-surface)',
+          padding: '24px 28px',
+          borderRadius: 'var(--radius-lg)',
+          borderLeft: '4px solid #10b981'
+        }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '800', color: '#10b981', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>Managing Director & Main Controller's Technical & Operational Address</span>
+          </h3>
+          {(config?.adminQuote || '').split('\n\n').map((para, pIdx) => (
+            <p key={pIdx} style={{ marginBottom: '16px' }}>
+              {para}
+            </p>
+          ))}
+        </div>
+      </section>
+
+      {/* 4. SERVICES & CITIZEN CHARTER */}
+      <section style={{ padding: '0 16px 30px 16px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+          <h3 style={{ fontSize: '1.3rem', fontWeight: '800', color: 'var(--text-main)', marginBottom: '6px' }}>
+            Core Operations & Digital Studios Under One Window
+          </h3>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>
+            Available 7 days a week from 08:00 AM to 09:00 PM at Mahuli Main Market
+          </p>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+          {[
+            { title: 'Recruitment & Exam Forms', desc: 'UP Police, SSC, Railway, UPSSSC PET, UPPSC, Teaching eligibility, and all Central & State exams with instant fee receipts.', icon: '📝' },
+            { title: 'Citizen & Revenue Services', desc: 'Aadhaar updates, PAN card generation, Income/Caste/Domicile certificates, PM Kisan, and Bhulekh revenue land records.', icon: '📜' },
+            { title: 'A4 Passport Photo Studio', desc: '6 photos per line, up to 42 photos on glossy sheet, with AI auto-background segmentation and exam guidelines.', icon: '📷' },
+            { title: 'Document OCR & Restoration', desc: 'Scanned image & PDF restoration into fully editable Microsoft Word (.docx) and Excel spreadsheets.', icon: '✨' },
+          ].map((s, idx) => (
+            <div key={idx} style={{
+              background: 'var(--bg-surface-alt)', padding: '18px 20px',
+              borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)'
+            }}>
+              <div style={{ fontSize: '1.8rem', marginBottom: '8px' }}>{s.icon}</div>
+              <div style={{ fontWeight: '800', fontSize: '0.96rem', color: 'var(--text-main)', marginBottom: '4px' }}>{s.title}</div>
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>{s.desc}</div>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 };

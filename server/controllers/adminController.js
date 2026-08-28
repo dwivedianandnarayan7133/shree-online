@@ -1,4 +1,4 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 const path = require('path');
 const User = require('../models/User');
 const Request = require('../models/Request');
@@ -39,7 +39,6 @@ const getDashboardStats = async (req, res) => {
       .filter(inv => new Date(inv.createdAt) >= today)
       .reduce((acc, inv) => acc + inv.grandTotal, 0);
 
-    // Calculate disk storage usage in uploads folder
     let totalStorageBytes = 0;
     let fileCount = 0;
     const uploadDirs = [
@@ -140,6 +139,57 @@ const updateSystemConfig = async (req, res) => {
   }
 };
 
+// Profile Photo Upload for Admin, Owner, and Operators
+const uploadProfilePhoto = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No photo uploaded.' });
+    }
+
+    const photoUrl = `/uploads/customer_records/${req.file.filename}`;
+    const target = req.body.target; // 'owner', 'admin', or userId
+
+    let config = await SystemConfig.findOne();
+    if (!config) config = new SystemConfig({});
+
+    if (target === 'owner') {
+      config.ownerPhoto = photoUrl;
+      await config.save();
+    } else if (target === 'admin') {
+      config.adminPhoto = photoUrl;
+      await config.save();
+      // Also update admin user if exists
+      const adminUser = await User.findOne({ email: 'kdshree778@gmail.com' });
+      if (adminUser) {
+        adminUser.avatar = photoUrl;
+        await adminUser.save();
+      }
+    } else if (target) {
+      // Specific operator/user ID
+      const user = await User.findById(target);
+      if (user) {
+        user.avatar = photoUrl;
+        await user.save();
+      }
+    }
+
+    await logAudit({
+      action: 'PROFILE_PHOTO_UPLOADED',
+      user: req.user ? req.user.name : 'Admin',
+      role: 'admin',
+      details: { target, photoUrl }
+    });
+
+    res.json({
+      success: true,
+      message: 'Profile photo uploaded successfully.',
+      photoUrl
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 // Trigger Manual Storage Cleanup
 const triggerCleanup = async (req, res) => {
   try {
@@ -171,7 +221,7 @@ const getAllUsers = async (req, res) => {
 // Operator Management: Create Operator
 const createOperator = async (req, res) => {
   try {
-    const { name, email, password, phone, role = 'operator' } = req.body;
+    const { name, email, password, phone, role = 'operator', avatar = '' } = req.body;
 
     const existing = await User.findOne({ email: email.toLowerCase() });
     if (existing) {
@@ -183,6 +233,7 @@ const createOperator = async (req, res) => {
       email: email.toLowerCase(),
       password,
       phone: phone || '',
+      avatar: avatar || '',
       role: ['admin', 'operator'].includes(role) ? role : 'operator'
     });
 
@@ -203,7 +254,7 @@ const createOperator = async (req, res) => {
 const updateOperator = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, phone, role, isActive, password } = req.body;
+    const { name, email, phone, role, isActive, password, avatar } = req.body;
 
     const user = await User.findById(id);
     if (!user) {
@@ -213,6 +264,7 @@ const updateOperator = async (req, res) => {
     if (name) user.name = name;
     if (email) user.email = email.toLowerCase();
     if (phone !== undefined) user.phone = phone;
+    if (avatar !== undefined) user.avatar = avatar;
     if (role && ['admin', 'operator', 'customer'].includes(role)) user.role = role;
     if (isActive !== undefined) user.isActive = isActive;
     if (password) user.password = password;
@@ -283,6 +335,7 @@ module.exports = {
   getAuditLogs,
   getSystemConfig,
   updateSystemConfig,
+  uploadProfilePhoto,
   triggerCleanup,
   getAllUsers,
   createOperator,

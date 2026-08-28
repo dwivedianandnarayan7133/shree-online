@@ -91,6 +91,7 @@ export const api = {
   getAuditLogs: (params = '') => request(`/admin/logs?${params}`),
   getSystemConfig: () => request('/admin/config'),
   updateSystemConfig: (body) => request('/admin/config', { method: 'PUT', body }),
+  uploadProfilePhoto: (formData) => request('/admin/profile-photo', { method: 'POST', body: formData }),
   triggerCleanup: (body) => request('/admin/cleanup', { method: 'POST', body }),
   getUsers: () => request('/admin/users'),
 

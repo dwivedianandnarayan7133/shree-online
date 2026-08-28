@@ -1,17 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Settings, Users, Clock, ShieldCheck, 
   Trash2, HardDrive, Edit3, CheckCircle2, RefreshCw,
   PlusCircle, UserPlus, Save, Award, Layout, FileText,
-  IndianRupee, Lock, Eye, EyeOff, AlertCircle
+  IndianRupee, Lock, Eye, EyeOff, AlertCircle, Upload, Camera, Image as ImageIcon
 } from 'lucide-react';
-import { api } from '../services/api';
+import { api, getFullUrl } from '../services/api';
 
 export const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState('static_pages');
   const [loading, setLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState('');
+  const [uploadingTarget, setUploadingTarget] = useState(null);
 
+  const ownerPhotoInputRef = useRef(null);
+  const adminPhotoInputRef = useRef(null);
+  const opPhotoInputRef = useRef(null);
+  const [activeOpIdForUpload, setActiveOpIdForUpload] = useState(null);
+
+  // 1. Static Page & Footer State
   const [config, setConfig] = useState({
     portalName: 'Shree Online (Mahuli, S.K.N)',
     tagline: 'One Window. Every Digital Service.',
@@ -21,11 +28,13 @@ export const AdminPanel = () => {
     ownerRole: 'Founder & Managing Owner',
     ownerPhone: '9161400719',
     ownerEmail: 'onlinebaba111111@gmail.com',
+    ownerPhoto: '',
     ownerQuote: '',
     adminName: 'Kamal Narayan Dwivedi',
     adminRole: 'Managing Director & Main Controller',
     adminPhone: '8090794210',
     adminEmail: 'kdshree778@gmail.com',
+    adminPhoto: '',
     adminQuote: '',
     cyberCafeAddress: 'Main Market, Mahuli, Sant Kabir Nagar (S.K.N), Uttar Pradesh - 272172',
     footerTimings: 'Monday – Sunday (08:00 AM – 09:00 PM)',
@@ -34,15 +43,18 @@ export const AdminPanel = () => {
     adShieldEnabled: true
   });
 
+  // 2. Operators State
   const [users, setUsers] = useState([]);
   const [showAddOpModal, setShowAddOpModal] = useState(false);
   const [newOp, setNewOp] = useState({ name: '', email: '', phone: '', password: '', role: 'operator' });
 
+  // 3. Pricing Catalog State
   const [services, setServices] = useState([]);
   const [newService, setNewService] = useState({ name: '', category: 'online_form', price: '', description: '' });
   const [editingPriceId, setEditingPriceId] = useState(null);
   const [newPrice, setNewPrice] = useState(0);
 
+  // 4. Logs & Storage State
   const [logs, setLogs] = useState([]);
   const [cleanupResult, setCleanupResult] = useState(null);
 
@@ -73,6 +85,7 @@ export const AdminPanel = () => {
     fetchAdminData();
   }, []);
 
+  // Save Static Pages & Footer Config
   const handleSaveStaticPages = async (e) => {
     if (e) e.preventDefault();
     try {
@@ -86,6 +99,37 @@ export const AdminPanel = () => {
     }
   };
 
+  // Photo Upload Handler (Owner, Admin, Operators)
+  const handlePhotoUpload = async (e, target) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('photo', file);
+    formData.append('target', target);
+
+    setUploadingTarget(target);
+    try {
+      const res = await api.uploadProfilePhoto(formData);
+      if (res.success) {
+        if (target === 'owner') {
+          setConfig(prev => ({ ...prev, ownerPhoto: res.photoUrl }));
+        } else if (target === 'admin') {
+          setConfig(prev => ({ ...prev, adminPhoto: res.photoUrl }));
+        }
+        fetchAdminData();
+        setSaveSuccess(`Profile photo uploaded successfully for ${target === 'owner' ? 'Owner' : target === 'admin' ? 'Admin MD' : 'Operator'}.`);
+        setTimeout(() => setSaveSuccess(''), 4000);
+      }
+    } catch (err) {
+      alert(err.message || 'Photo upload failed');
+    } finally {
+      setUploadingTarget(null);
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  // Operator Actions
   const handleCreateOperator = async (e) => {
     e.preventDefault();
     try {
@@ -125,6 +169,7 @@ export const AdminPanel = () => {
     }
   };
 
+  // Service Pricing Actions
   const handleAddService = async (e) => {
     e.preventDefault();
     try {
@@ -162,6 +207,7 @@ export const AdminPanel = () => {
     }
   };
 
+  // Storage Cleanup
   const handleTriggerCleanup = async () => {
     if (!window.confirm('Trigger manual storage cleanup now?')) return;
     try {
@@ -175,8 +221,21 @@ export const AdminPanel = () => {
     }
   };
 
+  const ownerPhotoUrl = config.ownerPhoto ? getFullUrl(config.ownerPhoto) : null;
+  const adminPhotoUrl = config.adminPhoto ? getFullUrl(config.adminPhoto) : null;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Hidden file input for operator photo uploads */}
+      <input 
+        type="file" 
+        ref={opPhotoInputRef} 
+        style={{ display: 'none' }} 
+        accept="image/*"
+        onChange={(e) => handlePhotoUpload(e, activeOpIdForUpload)}
+      />
+
+      {/* Managing Director & Admin Header */}
       <div className="page-header">
         <div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(99, 102, 241, 0.15)', color: 'var(--primary-400)', padding: '3px 10px', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: '800', marginBottom: '8px' }}>
@@ -188,7 +247,7 @@ export const AdminPanel = () => {
             <span className="badge badge-primary" style={{ fontSize: '0.75rem' }}>Kamal Narayan Dwivedi</span>
           </h1>
           <p className="page-subtitle">
-            Central controller for static content, operators, pricing catalog, storage retention, and audit logs.
+            Central controller for static content, profile photo uploads, operators, pricing catalog, and system logs.
           </p>
         </div>
         <button className="btn btn-secondary btn-sm" onClick={fetchAdminData}>
@@ -208,13 +267,14 @@ export const AdminPanel = () => {
         </div>
       )}
 
+      {/* Admin Tab Navigation */}
       <div style={{
         display: 'flex', gap: '6px', borderBottom: '1px solid var(--border-color)',
         paddingBottom: '8px', overflowX: 'auto', flexWrap: 'wrap'
       }}>
         {[
-          { id: 'static_pages', label: 'Static Pages & Footer', icon: Layout },
-          { id: 'operators', label: 'Operators & Users', icon: Users },
+          { id: 'static_pages', label: 'Static Pages & Photos', icon: Layout },
+          { id: 'operators', label: 'Operators & Profiles', icon: Users },
           { id: 'pricing', label: 'Service Pricing Catalog', icon: IndianRupee },
           { id: 'retention', label: 'Storage & Retention', icon: HardDrive },
           { id: 'logs', label: 'Security Audit Logs', icon: Clock },
@@ -235,18 +295,20 @@ export const AdminPanel = () => {
         })}
       </div>
 
+      {/* 1. STATIC PAGES, LEADERSHIP MESSAGES & PHOTO UPLOADS */}
       {activeTab === 'static_pages' && (
         <form onSubmit={handleSaveStaticPages} className="card">
           <div className="card-header">
             <div className="card-title">
               <Layout size={18} color="var(--primary-500)" />
-              <span>Manage About Us, Leadership Profiles & Footer Content</span>
+              <span>Manage About Us, Leadership Profiles, Photos & Footer Content</span>
             </div>
             <button type="submit" className="btn btn-primary btn-sm">
-              <Save size={14} /> Save Changes
+              <Save size={14} /> Save All Changes
             </button>
           </div>
-          <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* Center Branding */}
             <div>
               <h3 style={{ fontSize: '0.95rem', fontWeight: '800', color: 'var(--primary-400)', marginBottom: '12px' }}>
                 🏢 Center Identity & Branding
@@ -282,8 +344,9 @@ export const AdminPanel = () => {
               </div>
             </div>
 
+            {/* About Us Summary */}
             <div className="form-group">
-              <label className="form-label">About Us Narrative (History & Service Trust)</label>
+              <label className="form-label">About Us Overview Narrative</label>
               <textarea 
                 className="form-input" 
                 rows="3" 
@@ -292,13 +355,59 @@ export const AdminPanel = () => {
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
-              <div style={{ background: 'var(--bg-surface-alt)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-                <h4 style={{ fontSize: '0.9rem', fontWeight: '800', color: '#f59e0b', marginBottom: '12px' }}>
-                  👑 Founder & Managing Owner Profile
-                </h4>
+            {/* Leadership Profiles & Circular Photo Uploads */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '24px' }}>
+              
+              {/* OWNER PROFILE & PHOTO UPLOADER */}
+              <div style={{ background: 'var(--bg-surface-alt)', padding: '20px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#f59e0b', margin: 0 }}>
+                    👑 Founder & Managing Owner
+                  </h4>
+                  <span className="badge badge-warning" style={{ fontSize: '0.72rem' }}>Krishan Narayan</span>
+                </div>
+
+                {/* Circular Photo Preview & Upload Control */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '10px 0' }}>
+                  <div style={{ position: 'relative' }}>
+                    {ownerPhotoUrl ? (
+                      <img 
+                        src={ownerPhotoUrl} 
+                        alt="Owner" 
+                        style={{ width: '70px', height: '70px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #f59e0b' }} 
+                      />
+                    ) : (
+                      <div style={{ width: '70px', height: '70px', borderRadius: '50%', background: '#f59e0b', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '1.4rem' }}>
+                        KD
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <input 
+                      type="file" 
+                      ref={ownerPhotoInputRef} 
+                      style={{ display: 'none' }} 
+                      accept="image/*"
+                      onChange={(e) => handlePhotoUpload(e, 'owner')} 
+                    />
+                    <button 
+                      type="button" 
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => ownerPhotoInputRef.current?.click()}
+                      disabled={uploadingTarget === 'owner'}
+                    >
+                      <Camera size={14} />
+                      <span>{uploadingTarget === 'owner' ? 'Uploading...' : 'Upload Owner Photo'}</span>
+                    </button>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                      JPG, PNG or WebP • Circular crop applied
+                    </div>
+                  </div>
+                </div>
+
                 <div className="form-group">
-                  <label className="form-label">Owner Name</label>
+                  <label className="form-label">Full Name</label>
                   <input 
                     type="text" 
                     className="form-input" 
@@ -306,6 +415,7 @@ export const AdminPanel = () => {
                     onChange={e => setConfig({ ...config, ownerName: e.target.value })} 
                   />
                 </div>
+
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                   <div className="form-group">
                     <label className="form-label">Mobile</label>
@@ -326,23 +436,68 @@ export const AdminPanel = () => {
                     />
                   </div>
                 </div>
+
                 <div className="form-group">
-                  <label className="form-label">Owner Inspirational Quote</label>
+                  <label className="form-label">Owner Official Message (~500 Words Address)</label>
                   <textarea 
                     className="form-input" 
-                    rows="3" 
+                    rows="8" 
                     value={config.ownerQuote} 
                     onChange={e => setConfig({ ...config, ownerQuote: e.target.value })} 
                   />
                 </div>
               </div>
 
-              <div style={{ background: 'var(--bg-surface-alt)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-                <h4 style={{ fontSize: '0.9rem', fontWeight: '800', color: '#10b981', marginBottom: '12px' }}>
-                  🛡️ Managing Director & Main Controller Profile
-                </h4>
+              {/* ADMIN PROFILE & PHOTO UPLOADER */}
+              <div style={{ background: 'var(--bg-surface-alt)', padding: '20px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#10b981', margin: 0 }}>
+                    🛡️ Managing Director & Main Controller
+                  </h4>
+                  <span className="badge badge-completed" style={{ fontSize: '0.72rem' }}>Kamal Narayan</span>
+                </div>
+
+                {/* Circular Photo Preview & Upload Control */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '10px 0' }}>
+                  <div style={{ position: 'relative' }}>
+                    {adminPhotoUrl ? (
+                      <img 
+                        src={adminPhotoUrl} 
+                        alt="Admin MD" 
+                        style={{ width: '70px', height: '70px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #10b981' }} 
+                      />
+                    ) : (
+                      <div style={{ width: '70px', height: '70px', borderRadius: '50%', background: '#10b981', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '1.4rem' }}>
+                        KD
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <input 
+                      type="file" 
+                      ref={adminPhotoInputRef} 
+                      style={{ display: 'none' }} 
+                      accept="image/*"
+                      onChange={(e) => handlePhotoUpload(e, 'admin')} 
+                    />
+                    <button 
+                      type="button" 
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => adminPhotoInputRef.current?.click()}
+                      disabled={uploadingTarget === 'admin'}
+                    >
+                      <Camera size={14} />
+                      <span>{uploadingTarget === 'admin' ? 'Uploading...' : 'Upload Admin Photo'}</span>
+                    </button>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                      JPG, PNG or WebP • Circular crop applied
+                    </div>
+                  </div>
+                </div>
+
                 <div className="form-group">
-                  <label className="form-label">Admin Name</label>
+                  <label className="form-label">Full Name</label>
                   <input 
                     type="text" 
                     className="form-input" 
@@ -350,6 +505,7 @@ export const AdminPanel = () => {
                     onChange={e => setConfig({ ...config, adminName: e.target.value })} 
                   />
                 </div>
+
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                   <div className="form-group">
                     <label className="form-label">Mobile</label>
@@ -370,11 +526,12 @@ export const AdminPanel = () => {
                     />
                   </div>
                 </div>
+
                 <div className="form-group">
-                  <label className="form-label">Admin System Message</label>
+                  <label className="form-label">Admin MD Official Message (~500 Words Address)</label>
                   <textarea 
                     className="form-input" 
-                    rows="3" 
+                    rows="8" 
                     value={config.adminQuote} 
                     onChange={e => setConfig({ ...config, adminQuote: e.target.value })} 
                   />
@@ -382,6 +539,7 @@ export const AdminPanel = () => {
               </div>
             </div>
 
+            {/* Footer Details */}
             <div>
               <h3 style={{ fontSize: '0.95rem', fontWeight: '800', color: 'var(--primary-400)', marginBottom: '12px' }}>
                 📌 Global Footer Settings
@@ -426,12 +584,13 @@ export const AdminPanel = () => {
         </form>
       )}
 
+      {/* 2. OPERATORS, USERS & OPERATOR PHOTO UPLOADS */}
       {activeTab === 'operators' && (
         <div className="card">
           <div className="card-header">
             <div className="card-title">
               <Users size={18} color="var(--primary-500)" />
-              <span>Desk Operators & System User Accounts</span>
+              <span>Desk Operators & Profile Photos</span>
             </div>
             <button 
               className="btn btn-primary btn-sm"
@@ -445,62 +604,90 @@ export const AdminPanel = () => {
               <table className="custom-table">
                 <thead>
                   <tr>
+                    <th>Photo</th>
                     <th>User / Operator</th>
                     <th>Role</th>
                     <th>Mobile</th>
                     <th>Status</th>
-                    <th>Created</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map(u => (
-                    <tr key={u._id}>
-                      <td>
-                        <div style={{ fontWeight: '700' }}>{u.name}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{u.email}</div>
-                      </td>
-                      <td>
-                        <span className={`role-tag ${u.role}`}>
-                          {u.role.toUpperCase()}
-                        </span>
-                      </td>
-                      <td>{u.phone || '—'}</td>
-                      <td>
-                        <span className={`badge ${u.isActive !== false ? 'badge-completed' : 'badge-cancelled'}`}>
-                          {u.isActive !== false ? 'Active' : 'Disabled'}
-                        </span>
-                      </td>
-                      <td style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                        {new Date(u.createdAt).toLocaleDateString('en-IN')}
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', gap: '6px' }}>
-                          <button
-                            className="btn btn-secondary btn-sm"
-                            style={{ padding: '3px 8px', fontSize: '0.72rem' }}
-                            onClick={() => handleToggleOperatorStatus(u)}
-                          >
-                            {u.isActive !== false ? 'Disable' : 'Enable'}
-                          </button>
-                          {u.email !== 'kdshree778@gmail.com' && u.email !== 'onlinebaba111111@gmail.com' && (
+                  {users.map(u => {
+                    const avatarUrl = u.avatar ? getFullUrl(u.avatar) : null;
+                    return (
+                      <tr key={u._id}>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            {avatarUrl ? (
+                              <img 
+                                src={avatarUrl} 
+                                alt={u.name} 
+                                style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border-color)' }} 
+                              />
+                            ) : (
+                              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary-600)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.82rem' }}>
+                                {u.name ? u.name[0].toUpperCase() : 'U'}
+                              </div>
+                            )}
                             <button
-                              className="btn btn-danger btn-sm"
-                              style={{ padding: '3px 8px' }}
-                              onClick={() => handleDeleteOperator(u._id, u.name)}
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              style={{ padding: '2px 6px', fontSize: '0.68rem' }}
+                              onClick={() => {
+                                setActiveOpIdForUpload(u._id);
+                                opPhotoInputRef.current?.click();
+                              }}
+                              title="Upload Operator Profile Photo"
                             >
-                              <Trash2 size={12} />
+                              <Camera size={11} /> Photo
                             </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ fontWeight: '700' }}>{u.name}</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{u.email}</div>
+                        </td>
+                        <td>
+                          <span className={`role-tag ${u.role}`}>
+                            {u.role.toUpperCase()}
+                          </span>
+                        </td>
+                        <td>{u.phone || '—'}</td>
+                        <td>
+                          <span className={`badge ${u.isActive !== false ? 'badge-completed' : 'badge-cancelled'}`}>
+                            {u.isActive !== false ? 'Active' : 'Disabled'}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              style={{ padding: '3px 8px', fontSize: '0.72rem' }}
+                              onClick={() => handleToggleOperatorStatus(u)}
+                            >
+                              {u.isActive !== false ? 'Disable' : 'Enable'}
+                            </button>
+                            {u.email !== 'kdshree778@gmail.com' && u.email !== 'onlinebaba111111@gmail.com' && (
+                              <button
+                                className="btn btn-danger btn-sm"
+                                style={{ padding: '3px 8px' }}
+                                onClick={() => handleDeleteOperator(u._id, u.name)}
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           </div>
 
+          {/* Add Operator Modal */}
           {showAddOpModal && (
             <div className="modal-overlay" onClick={() => setShowAddOpModal(false)}>
               <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
@@ -574,6 +761,7 @@ export const AdminPanel = () => {
         </div>
       )}
 
+      {/* 3. PRICING & SERVICE CATALOG */}
       {activeTab === 'pricing' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div className="card">
@@ -715,6 +903,7 @@ export const AdminPanel = () => {
         </div>
       )}
 
+      {/* 4. STORAGE & RETENTION CONTROLLER */}
       {activeTab === 'retention' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
           <div className="card">
@@ -795,6 +984,7 @@ export const AdminPanel = () => {
         </div>
       )}
 
+      {/* 5. AUDIT LOGS */}
       {activeTab === 'logs' && (
         <div className="card">
           <div className="card-header">
