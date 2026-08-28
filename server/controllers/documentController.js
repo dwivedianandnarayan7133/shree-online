@@ -1,9 +1,19 @@
-﻿const path = require('path');
 const fs = require('fs');
+const path = require('path');
+const { UPLOAD_PATHS } = require('../config/constants');
 const pdfService = require('../services/pdfService');
 const { logAudit } = require('../utils/logger');
 
-// Convert Images to PDF
+function fileToDataUri(filePath, mimeType = 'application/pdf') {
+  try {
+    if (fs.existsSync(filePath)) {
+      const buf = fs.readFileSync(filePath);
+      return `data:${mimeType};base64,${buf.toString('base64')}`;
+    }
+  } catch (e) {}
+  return null;
+}
+
 const convertImagesToPdf = async (req, res) => {
   try {
     const files = req.files;
@@ -26,10 +36,13 @@ const convertImagesToPdf = async (req, res) => {
       details: { imageCount: files.length, outSize: result.size }
     });
 
+    const dataUri = fileToDataUri(result.filePath, 'application/pdf');
+
     res.json({
       success: true,
       message: 'Images converted to PDF successfully.',
-      downloadUrl: `/uploads/processed/${result.fileName}`,
+      downloadUrl: dataUri || `/uploads/processed/${result.fileName}`,
+      dataUri,
       result
     });
   } catch (err) {
@@ -37,7 +50,6 @@ const convertImagesToPdf = async (req, res) => {
   }
 };
 
-// Merge Multiple PDFs
 const mergePdfs = async (req, res) => {
   try {
     const files = req.files;
@@ -54,10 +66,13 @@ const mergePdfs = async (req, res) => {
       details: { fileCount: files.length, pageCount: result.pageCount }
     });
 
+    const dataUri = fileToDataUri(result.filePath, 'application/pdf');
+
     res.json({
       success: true,
       message: 'PDF files merged successfully.',
-      downloadUrl: `/uploads/processed/${result.fileName}`,
+      downloadUrl: dataUri || `/uploads/processed/${result.fileName}`,
+      dataUri,
       result
     });
   } catch (err) {
@@ -65,7 +80,6 @@ const mergePdfs = async (req, res) => {
   }
 };
 
-// Split or Extract Pages from PDF
 const splitOrExtractPdf = async (req, res) => {
   try {
     const file = req.file;
@@ -83,10 +97,13 @@ const splitOrExtractPdf = async (req, res) => {
       details: { pageRange, extractedCount: result.extractedCount }
     });
 
+    const dataUri = fileToDataUri(result.filePath, 'application/pdf');
+
     res.json({
       success: true,
       message: 'PDF pages extracted successfully.',
-      downloadUrl: `/uploads/processed/${result.fileName}`,
+      downloadUrl: dataUri || `/uploads/processed/${result.fileName}`,
+      dataUri,
       result
     });
   } catch (err) {
@@ -94,22 +111,24 @@ const splitOrExtractPdf = async (req, res) => {
   }
 };
 
-// Rotate PDF
 const rotatePdf = async (req, res) => {
   try {
     const file = req.file;
-    const { angle = 90 } = req.body;
+    const { rotation = 90 } = req.body;
 
     if (!file) {
       return res.status(400).json({ success: false, message: 'Please upload a PDF file.' });
     }
 
-    const result = await pdfService.rotatePdf(file.path, angle);
+    const result = await pdfService.rotatePdf(file.path, Number(rotation));
+
+    const dataUri = fileToDataUri(result.filePath, 'application/pdf');
 
     res.json({
       success: true,
       message: 'PDF rotated successfully.',
-      downloadUrl: `/uploads/processed/${result.fileName}`,
+      downloadUrl: dataUri || `/uploads/processed/${result.fileName}`,
+      dataUri,
       result
     });
   } catch (err) {
@@ -117,22 +136,23 @@ const rotatePdf = async (req, res) => {
   }
 };
 
-// Compress PDF
 const compressPdf = async (req, res) => {
   try {
     const file = req.file;
     const { quality = 'medium' } = req.body;
 
     if (!file) {
-      return res.status(400).json({ success: false, message: 'Please upload a PDF file.' });
+      return res.status(400).json({ success: false, message: 'Please upload a PDF file to compress.' });
     }
 
     const result = await pdfService.compressPdf(file.path, quality);
+    const dataUri = fileToDataUri(result.filePath, 'application/pdf');
 
     res.json({
       success: true,
       message: 'PDF compressed successfully.',
-      downloadUrl: `/uploads/processed/${result.fileName}`,
+      downloadUrl: dataUri || `/uploads/processed/${result.fileName}`,
+      dataUri,
       result
     });
   } catch (err) {

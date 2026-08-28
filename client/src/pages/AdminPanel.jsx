@@ -1,3 +1,4 @@
+import { getFullUrl } from '../services/config';
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Settings, Users, Clock, ShieldCheck, 
@@ -5,7 +6,7 @@ import {
   PlusCircle, UserPlus, Save, Award, Layout, FileText,
   IndianRupee, Lock, Eye, EyeOff, AlertCircle, Upload, Camera, Image as ImageIcon
 } from 'lucide-react';
-import { api, getFullUrl } from '../services/api';
+import { api } from '../services/api';
 
 export const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState('static_pages');

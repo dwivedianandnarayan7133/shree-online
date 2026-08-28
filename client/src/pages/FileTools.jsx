@@ -209,7 +209,7 @@ export const FileTools = () => {
                           </td>
                           <td>
                             <a 
-                              href={`${SERVER_BASE}${r.downloadUrl}`} 
+                              href={getFullUrl(r.downloadUrl)} 
                               download={r.fileName}
                               className="btn btn-primary btn-sm"
                             >
@@ -276,7 +276,7 @@ export const FileTools = () => {
                     <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>
                       {zipResult.result.fileCount} Files • {Math.round(zipResult.result.size / 1024)} KB
                     </p>
-                    <a href={`${SERVER_BASE}${zipResult.downloadUrl}`} download={zipResult.result.fileName} className="btn btn-primary btn-lg">
+                    <a href={getFullUrl(zipResult.downloadUrl)} download={zipResult.result.fileName} className="btn btn-primary btn-lg">
                       <Download size={16} /> Download ZIP Archive
                     </a>
                   </div>

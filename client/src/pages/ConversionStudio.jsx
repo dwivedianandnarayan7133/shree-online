@@ -286,14 +286,14 @@ export const ConversionStudio = () => {
                   <div>
                     <div className="preview-box" style={{ background: '#fff' }}>
                       <img 
-                        src={`${SERVER_BASE}${restoreResult.downloadUrl}`} 
+                        src={getFullUrl(restoreResult.downloadUrl)} 
                         alt="Restored Document"
                         className="preview-img"
                       />
                     </div>
                     <div style={{ marginTop: '16px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                       <a 
-                        href={`${SERVER_BASE}${restoreResult.downloadUrl}`}
+                        href={getFullUrl(restoreResult.downloadUrl)}
                         download={restoreResult.result.fileName}
                         className="btn btn-primary flex-1"
                       >

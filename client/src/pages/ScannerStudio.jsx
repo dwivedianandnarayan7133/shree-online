@@ -160,14 +160,14 @@ export const ScannerStudio = () => {
                 <div>
                   <div className="preview-box" style={{ background: '#fff' }}>
                     <img 
-                      src={`${SERVER_BASE}${scanResult.downloadUrl}`} 
+                      src={getFullUrl(scanResult.downloadUrl)} 
                       alt="Scanned Doc" 
                       className="preview-img"
                     />
                   </div>
                   <div style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
                     <a 
-                      href={`${SERVER_BASE}${scanResult.downloadUrl}`} 
+                      href={getFullUrl(scanResult.downloadUrl)} 
                       download={scanResult.result.fileName}
                       className="btn btn-primary flex-1"
                     >

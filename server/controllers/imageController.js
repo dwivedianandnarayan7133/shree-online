@@ -1,7 +1,22 @@
-﻿const path = require('path');
+const fs = require('fs');
+const path = require('path');
+const { UPLOAD_PATHS } = require('../config/constants');
 const passportPhotoService = require('../services/passportPhotoService');
 const imageProcessingService = require('../services/imageProcessingService');
 const { logAudit } = require('../utils/logger');
+
+// Helper to safely read file to base64 Data URI
+function fileToDataUri(filePath, mimeType = 'image/jpeg') {
+  try {
+    if (fs.existsSync(filePath)) {
+      const buf = fs.readFileSync(filePath);
+      return `data:${mimeType};base64,${buf.toString('base64')}`;
+    }
+  } catch (e) {
+    console.warn('fileToDataUri notice:', e.message);
+  }
+  return null;
+}
 
 // Generate single cropped passport photo
 const generateSinglePassportPhoto = async (req, res) => {
@@ -29,10 +44,15 @@ const generateSinglePassportPhoto = async (req, res) => {
       borderWidth: Number(borderWidth)
     });
 
+    const dataUri = fileToDataUri(result.filePath, 'image/jpeg');
+    const staticUrl = `/uploads/processed/${result.fileName}`;
+
     res.json({
       success: true,
       message: 'Passport photo framed successfully.',
-      downloadUrl: `/uploads/processed/${result.fileName}`,
+      downloadUrl: dataUri || staticUrl,
+      staticUrl,
+      dataUri,
       result
     });
   } catch (err) {
@@ -49,7 +69,7 @@ const generatePassportSheet = async (req, res) => {
     }
 
     const {
-      quantity = 5,
+      quantity = 6,
       paperType = 'A4',
       spec = 'standard_35x45',
       zoom = 1.0,
@@ -57,7 +77,7 @@ const generatePassportSheet = async (req, res) => {
       includeCutLines = 'true'
     } = req.body;
 
-    // First frame the single photo
+    // 1. Process single photo
     const singleResult = await passportPhotoService.processSinglePassportPhoto(file.path, {
       spec,
       zoom: Number(zoom),
@@ -65,7 +85,7 @@ const generatePassportSheet = async (req, res) => {
       addBorder: true
     });
 
-    // Then build the printable multi-photo sheet with strict row alignment
+    // 2. Generate printable sheet
     const sheetResult = await passportPhotoService.generatePassportSheet(singleResult.filePath, {
       quantity: Number(quantity),
       paperType,
@@ -79,18 +99,22 @@ const generatePassportSheet = async (req, res) => {
       details: { quantity, paperType, spec }
     });
 
-    const jpgUrl = `/uploads/processed/${sheetResult.jpgName}`;
-    const pdfUrl = `/uploads/processed/${sheetResult.pdfName}`;
+    const singleDataUri = fileToDataUri(singleResult.filePath, 'image/jpeg');
+    const sheetJpgDataUri = fileToDataUri(sheetResult.jpgPath, 'image/jpeg');
+    const sheetPdfDataUri = fileToDataUri(sheetResult.pdfPath, 'application/pdf');
+
+    const staticJpg = `/uploads/processed/${sheetResult.jpgName}`;
+    const staticPdf = `/uploads/processed/${sheetResult.pdfName}`;
 
     res.json({
       success: true,
       message: `${quantity}x Passport photo print sheet generated successfully.`,
-      singlePhotoUrl: `/uploads/processed/${singleResult.fileName}`,
-      sheetJpgUrl: jpgUrl,
-      sheetPdfUrl: pdfUrl,
-      downloadUrlJpg: jpgUrl,
-      downloadUrlPdf: pdfUrl,
-      downloadUrl: jpgUrl,
+      singlePhotoUrl: singleDataUri || `/uploads/processed/${singleResult.fileName}`,
+      sheetJpgUrl: sheetJpgDataUri || staticJpg,
+      sheetPdfUrl: sheetPdfDataUri || staticPdf,
+      downloadUrlJpg: sheetJpgDataUri || staticJpg,
+      downloadUrlPdf: sheetPdfDataUri || staticPdf,
+      downloadUrl: sheetJpgDataUri || staticJpg,
       result: sheetResult
     });
   } catch (err) {
@@ -122,10 +146,15 @@ const restoreOldDocument = async (req, res) => {
       rotation: Number(rotation)
     });
 
+    const dataUri = fileToDataUri(result.filePath, 'image/png');
+    const staticUrl = `/uploads/processed/${result.fileName}`;
+
     res.json({
       success: true,
       message: 'Document restored and enhanced.',
-      downloadUrl: `/uploads/processed/${result.fileName}`,
+      downloadUrl: dataUri || staticUrl,
+      staticUrl,
+      dataUri,
       result
     });
   } catch (err) {
@@ -141,22 +170,21 @@ const processSignature = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please upload a signature image.' });
     }
 
-    const { crop, invert = false, contrastBoost = 1.8 } = req.body;
-    let cropObj = null;
-    if (crop) {
-      try { cropObj = typeof crop === 'string' ? JSON.parse(crop) : crop; } catch (e) {}
-    }
-
+    const { contrastBoost = 1.8, invert = 'false' } = req.body;
     const result = await imageProcessingService.processSignature(file.path, {
-      crop: cropObj,
-      invert: invert === 'true' || invert === true,
-      contrastBoost: Number(contrastBoost)
+      contrastBoost: Number(contrastBoost),
+      invert: invert === 'true' || invert === true
     });
+
+    const dataUri = fileToDataUri(result.filePath, 'image/png');
+    const staticUrl = `/uploads/processed/${result.fileName}`;
 
     res.json({
       success: true,
       message: 'Signature processed and enhanced.',
-      downloadUrl: `/uploads/processed/${result.fileName}`,
+      downloadUrl: dataUri || staticUrl,
+      staticUrl,
+      dataUri,
       result
     });
   } catch (err) {
@@ -164,7 +192,7 @@ const processSignature = async (req, res) => {
   }
 };
 
-// General Image Transform (Resize, Crop, Format Convert)
+// General Image Conversion & Resize
 const transformImage = async (req, res) => {
   try {
     const file = req.file;
@@ -172,35 +200,24 @@ const transformImage = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please upload an image.' });
     }
 
-    const {
-      width,
-      height,
-      fit = 'inside',
-      rotation = 0,
-      format = 'jpeg',
-      quality = 85,
-      crop
-    } = req.body;
-
-    let cropObj = null;
-    if (crop) {
-      try { cropObj = typeof crop === 'string' ? JSON.parse(crop) : crop; } catch (e) {}
-    }
-
-    const result = await imageProcessingService.transformImage(file.path, {
+    const { width, height, format = 'jpeg', quality = 85 } = req.body;
+    const result = await imageProcessingService.convertFormatAndResize(file.path, {
       width: width ? Number(width) : null,
       height: height ? Number(height) : null,
-      fit,
-      rotation: Number(rotation),
       format,
-      quality: Number(quality),
-      crop: cropObj
+      quality: Number(quality)
     });
+
+    const mime = format === 'png' ? 'image/png' : format === 'webp' ? 'image/webp' : 'image/jpeg';
+    const dataUri = fileToDataUri(result.filePath, mime);
+    const staticUrl = `/uploads/processed/${result.fileName}`;
 
     res.json({
       success: true,
-      message: 'Image transformed successfully.',
-      downloadUrl: `/uploads/processed/${result.fileName}`,
+      message: 'Image resized and converted.',
+      downloadUrl: dataUri || staticUrl,
+      staticUrl,
+      dataUri,
       result
     });
   } catch (err) {
