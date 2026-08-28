@@ -25,7 +25,7 @@ try {
 
 module.exports = {
   PORT: process.env.PORT || 5000,
-  MONGO_URI: process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/cybercafe_portal',
+  MONGO_URI: process.env.MONGO_URI || 'mongodb+srv://ananddev:PpxXIVSYPILYgBWf@cluster0.ovdb4wk.mongodb.net/cybercafe_portal?retryWrites=true&w=majority',
   JWT_SECRET: process.env.JWT_SECRET || 'cybercafe_super_secret_jwt_key_2026',
   JWT_EXPIRES_IN: '7d',
   RETENTION_HOURS: 24,

@@ -1,4 +1,12 @@
-﻿const app = require('../server/app');
+try {
+  require('dotenv').config({ path: require('path').join(__dirname, '../server/.env') });
+} catch (e) {
+  try {
+    require('../server/node_modules/dotenv').config({ path: require('path').join(__dirname, '../server/.env') });
+  } catch (err) {}
+}
+
+const app = require('../server/app');
 const connectDB = require('../server/config/db');
 
 let isConnected = false;

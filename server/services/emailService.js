@@ -17,7 +17,7 @@ const ADMIN_INFO = {
 // Create Google / Gmail Transporter
 function createTransporter() {
   const user = process.env.EMAIL_USER || process.env.GMAIL_USER || 'dwivedianandnarayan@gmail.com';
-  const pass = (process.env.EMAIL_PASS || process.env.GMAIL_APP_PASSWORD || process.env.GMAIL_PASSWORD || '').replace(/\s+/g, '');
+  const pass = (process.env.EMAIL_PASS || process.env.GMAIL_APP_PASSWORD || process.env.GMAIL_PASSWORD || 'sarspasgdyfvdrnc').replace(/\s+/g, '');
 
   if (pass) {
     return nodemailer.createTransport({
