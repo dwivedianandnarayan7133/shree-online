@@ -39,13 +39,14 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
   // Main navigation categories based on role
   const navCategories = [];
 
-  // 1. Workspace
-  const workspaceItems = [];
+  // 1. Workspace (Available to all visitors, with dashboard first)
+  const workspaceItems = [
+    { id: 'dashboard', label: 'Command Center Dashboard', desc: 'Real-time KPIs, live queue & quick tools', icon: LayoutDashboard },
+    { id: 'customer-portal', label: 'Citizen Service Desk', desc: 'Submit application & track token status', icon: UserCheck }
+  ];
   if (isOperator) {
-    workspaceItems.push({ id: 'dashboard', label: 'Command Center Dashboard', desc: 'Real-time KPIs, live queue & quick tools', icon: LayoutDashboard });
     workspaceItems.push({ id: 'requests', label: 'Request Pipeline Manager', desc: 'Manage customer submissions & orders', icon: Inbox });
   }
-  workspaceItems.push({ id: 'customer-portal', label: 'Citizen Service Desk', desc: 'Submit application & track token status', icon: UserCheck });
   workspaceItems.push({ id: 'about-us', label: 'About Us & Leadership', desc: 'Est. 2013 history & owner/admin messages', icon: Award });
 
   navCategories.push({
@@ -121,7 +122,7 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
         {/* 1. Left Brand Identity */}
         <div 
           className="navbar-brand" 
-          onClick={() => handleItemClick(isOperator ? 'dashboard' : 'customer-portal')}
+          onClick={() => handleItemClick('dashboard')}
           title="Shree Online Sewa Kendra (Mahuli, S.K.N)"
         >
           <div className="brand-icon-wrapper">

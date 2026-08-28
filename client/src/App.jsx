@@ -23,9 +23,7 @@ export default function App() {
   const { user, loading } = useAuth();
   
   // Default to customer portal for guests / customers, and dashboard for staff
-  const [activePage, setActivePage] = useState(() => {
-    return (user?.role === 'admin' || user?.role === 'operator') ? 'dashboard' : 'customer-portal';
-  });
+  const [activePage, setActivePage] = useState('dashboard');
 
   if (loading) {
     return (
@@ -52,7 +50,7 @@ export default function App() {
   const renderActivePage = () => {
     switch (activePage) {
       case 'dashboard':
-        return isOperator ? <Dashboard setActivePage={setActivePage} /> : <CustomerPortal setActivePage={setActivePage} />;
+        return <Dashboard setActivePage={setActivePage} />;
       case 'customer-portal':
         return <CustomerPortal setActivePage={setActivePage} />;
       case 'about-us':
