@@ -1,3 +1,4 @@
+const adminController = require('./controllers/adminController');
 require('dotenv').config();
 ﻿const express = require('express');
 const cors = require('cors');
@@ -49,6 +50,7 @@ app.use('/api/billing', billingRoutes);
 app.use('/api/print', printRoutes);
 app.use('/api/websites', websiteRoutes);
 app.use('/api/admin', adminRoutes);
+app.get('/api/config', (req, res) => adminController.getConfig(req, res));
 app.use('/api/proxy', proxyRoutes);
 
 // Health check endpoint
