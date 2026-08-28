@@ -1,4 +1,4 @@
-﻿const nodemailer = require('nodemailer');
+const nodemailer = require('nodemailer');
 
 const OWNER_INFO = {
   name: 'Krishan Narayan Dwivedi',
@@ -9,15 +9,15 @@ const OWNER_INFO = {
 
 const ADMIN_INFO = {
   name: 'Kamal Narayan Dwivedi',
-  role: 'Admin & Technical Operations',
+  role: 'Managing Director & Main Controller',
   phone: '8090794210',
   email: 'kdshree778@gmail.com'
 };
 
 // Create Google / Gmail Transporter
 function createTransporter() {
-  const user = process.env.GMAIL_USER || 'kdshree778@gmail.com';
-  const pass = process.env.GMAIL_APP_PASSWORD || process.env.GMAIL_PASSWORD;
+  const user = process.env.EMAIL_USER || process.env.GMAIL_USER || 'kdshree778@gmail.com';
+  const pass = (process.env.EMAIL_PASS || process.env.GMAIL_APP_PASSWORD || process.env.GMAIL_PASSWORD || '').replace(/\s+/g, '');
 
   if (pass) {
     return nodemailer.createTransport({
@@ -44,8 +44,9 @@ function createTransporter() {
 async function sendWelcomeEmail(toEmail, userName = 'Valued Customer') {
   try {
     const transporter = createTransporter();
+    const fromUser = process.env.EMAIL_USER || process.env.GMAIL_USER || 'kdshree778@gmail.com';
     const mailOptions = {
-      from: `"Shree Online (Mahuli, S.K.N)" <${process.env.GMAIL_USER || 'kdshree778@gmail.com'}>`,
+      from: `"Shree Online (Mahuli, S.K.N)" <${fromUser}>`,
       to: toEmail,
       subject: `Welcome to Shree Online Sewa Kendra (Est. 2013) - Mahuli, S.K.N`,
       html: `
@@ -85,8 +86,8 @@ async function sendWelcomeEmail(toEmail, userName = 'Valued Customer') {
               <div style="border-top: 1px solid #e2e8f0; padding-top: 16px; margin-top: 20px;">
                 <div style="font-size: 13px; font-weight: bold; color: #0f172a; margin-bottom: 8px;">Direct Support & Leadership Desks:</div>
                 <div style="font-size: 12px; color: #475569; line-height: 1.6;">
+                  <div>🛡️ <b>Admin MD</b>: ${ADMIN_INFO.name} • 📞 <a href="tel:${ADMIN_INFO.phone}" style="color: #2563eb;">+91 ${ADMIN_INFO.phone}</a> • ✉️ <a href="mailto:${ADMIN_INFO.email}" style="color: #2563eb;">${ADMIN_INFO.email}</a></div>
                   <div>👑 <b>Owner</b>: ${OWNER_INFO.name} • 📞 <a href="tel:${OWNER_INFO.phone}" style="color: #2563eb;">+91 ${OWNER_INFO.phone}</a> • ✉️ <a href="mailto:${OWNER_INFO.email}" style="color: #2563eb;">${OWNER_INFO.email}</a></div>
-                  <div>🛡️ <b>Admin</b>: ${ADMIN_INFO.name} • 📞 <a href="tel:${ADMIN_INFO.phone}" style="color: #2563eb;">+91 ${ADMIN_INFO.phone}</a> • ✉️ <a href="mailto:${ADMIN_INFO.email}" style="color: #2563eb;">${ADMIN_INFO.email}</a></div>
                 </div>
               </div>
 
@@ -123,8 +124,9 @@ async function sendWelcomeEmail(toEmail, userName = 'Valued Customer') {
 async function sendOtpEmail(toEmail, otp, userName = 'User') {
   try {
     const transporter = createTransporter();
+    const fromUser = process.env.EMAIL_USER || process.env.GMAIL_USER || 'kdshree778@gmail.com';
     const mailOptions = {
-      from: `"Shree Online Verification" <${process.env.GMAIL_USER || 'kdshree778@gmail.com'}>`,
+      from: `"Shree Online Verification" <${fromUser}>`,
       to: toEmail,
       subject: `Your Shree Online Verification Code: ${otp}`,
       html: `
@@ -149,8 +151,8 @@ async function sendOtpEmail(toEmail, otp, userName = 'User') {
 
               <div style="border-top: 1px solid #e2e8f0; padding-top: 14px; margin-top: 20px; font-size: 11px; color: #64748b; text-align: left;">
                 <div>📍 <b>Center</b>: Shree Online Sewa Kendra (Est. 2013), Mahuli, S.K.N</div>
+                <div>📞 <b>Admin MD Desk</b>: +91 ${ADMIN_INFO.phone} (Kamal Narayan Dwivedi)</div>
                 <div>📞 <b>Owner Desk</b>: +91 ${OWNER_INFO.phone} (Krishan Narayan Dwivedi)</div>
-                <div>📞 <b>Admin Desk</b>: +91 ${ADMIN_INFO.phone} (Kamal Narayan Dwivedi)</div>
               </div>
             </div>
           </div>
