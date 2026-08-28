@@ -1,3 +1,4 @@
+import { convertImagesToPdfClient, mergePdfsClient, splitOrExtractPdfClient, rotatePdfClient } from '../services/clientImageEngine';
 import { SERVER_BASE, getFullUrl } from '../services/config';
 ﻿import React, { useState } from 'react';
 import { 
@@ -42,15 +43,22 @@ export const DocumentTools = () => {
     }
     setLoading(true);
     try {
-      const data = new FormData();
-      imgFiles.forEach(f => data.append('images', f));
-      data.append('pageSize', pageSize);
-      data.append('orientation', orientation);
+      // 1. Instant 50ms Client-Side PDF Generation
+      const clientRes = await convertImagesToPdfClient(imgFiles, { pageSize, orientation });
+      setImg2PdfResult(clientRes);
+    } catch (clientErr) {
+      console.warn('Client engine notice, trying API fallback:', clientErr.message);
+      try {
+        const data = new FormData();
+        imgFiles.forEach(f => data.append('images', f));
+        data.append('pageSize', pageSize);
+        data.append('orientation', orientation);
 
-      const res = await api.imagesToPdf(data);
-      if (res.success) setImg2PdfResult(res);
-    } catch (err) {
-      alert(err.message || 'Conversion failed');
+        const res = await api.imagesToPdf(data);
+        if (res.success) setImg2PdfResult(res);
+      } catch (err) {
+        alert(err.message || 'Conversion failed');
+      }
     } finally {
       setLoading(false);
     }
@@ -63,13 +71,20 @@ export const DocumentTools = () => {
     }
     setLoading(true);
     try {
-      const data = new FormData();
-      mergeFiles.forEach(f => data.append('pdfs', f));
+      // 1. Instant Client-Side PDF Merge via pdf-lib
+      const clientRes = await mergePdfsClient(mergeFiles);
+      setMergeResult(clientRes);
+    } catch (clientErr) {
+      console.warn('Client engine notice, trying API fallback:', clientErr.message);
+      try {
+        const data = new FormData();
+        mergeFiles.forEach(f => data.append('pdfs', f));
 
-      const res = await api.mergePdfs(data);
-      if (res.success) setMergeResult(res);
-    } catch (err) {
-      alert(err.message || 'Merge failed');
+        const res = await api.mergePdfs(data);
+        if (res.success) setMergeResult(res);
+      } catch (err) {
+        alert(err.message || 'Merge failed');
+      }
     } finally {
       setLoading(false);
     }
@@ -82,14 +97,21 @@ export const DocumentTools = () => {
     }
     setLoading(true);
     try {
-      const data = new FormData();
-      data.append('pdf', splitFile);
-      data.append('pageRange', pageRange);
+      // 1. Instant Client-Side PDF Split via pdf-lib
+      const clientRes = await splitOrExtractPdfClient(splitFile, pageRange);
+      setSplitResult(clientRes);
+    } catch (clientErr) {
+      console.warn('Client engine notice, trying API fallback:', clientErr.message);
+      try {
+        const data = new FormData();
+        data.append('pdf', splitFile);
+        data.append('pageRange', pageRange);
 
-      const res = await api.splitPdf(data);
-      if (res.success) setSplitResult(res);
-    } catch (err) {
-      alert(err.message || 'Split failed');
+        const res = await api.splitPdf(data);
+        if (res.success) setSplitResult(res);
+      } catch (err) {
+        alert(err.message || 'Split failed');
+      }
     } finally {
       setLoading(false);
     }
@@ -102,14 +124,21 @@ export const DocumentTools = () => {
     }
     setLoading(true);
     try {
-      const data = new FormData();
-      data.append('pdf', rotateFile);
-      data.append('angle', rotateAngle);
+      // 1. Instant Client-Side PDF Rotation via pdf-lib
+      const clientRes = await rotatePdfClient(rotateFile, rotateAngle);
+      setRotateResult(clientRes);
+    } catch (clientErr) {
+      console.warn('Client engine notice, trying API fallback:', clientErr.message);
+      try {
+        const data = new FormData();
+        data.append('pdf', rotateFile);
+        data.append('rotation', rotateAngle);
 
-      const res = await api.rotatePdf(data);
-      if (res.success) setRotateResult(res);
-    } catch (err) {
-      alert(err.message || 'Rotate failed');
+        const res = await api.rotatePdf(data);
+        if (res.success) setRotateResult(res);
+      } catch (err) {
+        alert(err.message || 'Rotate failed');
+      }
     } finally {
       setLoading(false);
     }

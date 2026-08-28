@@ -1,3 +1,4 @@
+import { compressFilesClient, createZipClient } from '../services/clientImageEngine';
 import { SERVER_BASE, getFullUrl } from '../services/config';
 ﻿import React, { useState } from 'react';
 import { 
@@ -36,16 +37,23 @@ export const FileTools = () => {
 
     setCompLoading(true);
     try {
-      const data = new FormData();
-      compFiles.forEach(f => data.append('files', f));
-      data.append('quality', compQuality);
+      // 1. Instant Client-Side Image & File Compression Engine
+      const clientRes = await compressFilesClient(compFiles, compQuality);
+      setCompResults(clientRes.results);
+    } catch (clientErr) {
+      console.warn('Client engine notice, trying API fallback:', clientErr.message);
+      try {
+        const data = new FormData();
+        compFiles.forEach(f => data.append('files', f));
+        data.append('quality', compQuality);
 
-      const res = await api.compressFiles(data);
-      if (res.success) {
-        setCompResults(res.results);
+        const res = await api.compressFiles(data);
+        if (res.success) {
+          setCompResults(res.results);
+        }
+      } catch (err) {
+        alert(err.message || 'Compression failed');
       }
-    } catch (err) {
-      alert(err.message || 'Compression failed');
     } finally {
       setCompLoading(false);
     }
@@ -60,16 +68,23 @@ export const FileTools = () => {
 
     setZipLoading(true);
     try {
-      const data = new FormData();
-      zipFiles.forEach(f => data.append('files', f));
-      data.append('zipName', zipName);
+      // 1. Instant Client-Side ZIP Generation via JSZip
+      const clientRes = await createZipClient(zipFiles, zipName);
+      setZipResult(clientRes);
+    } catch (clientErr) {
+      console.warn('Client engine notice, trying API fallback:', clientErr.message);
+      try {
+        const data = new FormData();
+        zipFiles.forEach(f => data.append('files', f));
+        data.append('zipName', zipName);
 
-      const res = await api.createZip(data);
-      if (res.success) {
-        setZipResult(res);
+        const res = await api.createZip(data);
+        if (res.success) {
+          setZipResult(res);
+        }
+      } catch (err) {
+        alert(err.message || 'ZIP creation failed');
       }
-    } catch (err) {
-      alert(err.message || 'ZIP creation failed');
     } finally {
       setZipLoading(false);
     }

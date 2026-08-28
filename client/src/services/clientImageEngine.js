@@ -1,4 +1,7 @@
 import { jsPDF } from 'jspdf';
+import { PDFDocument, degrees } from 'pdf-lib';
+import QRCode from 'qrcode';
+import JSZip from 'jszip';
 
 /**
  * Load a File or Blob into an HTMLImageElement
@@ -9,11 +12,23 @@ export function loadImageFromFile(file) {
     reader.onload = (e) => {
       const img = new window.Image();
       img.onload = () => resolve(img);
-      img.onerror = (err) => reject(new Error('Failed to load image file.'));
+      img.onerror = () => reject(new Error('Failed to load image file.'));
       img.src = e.target.result;
     };
     reader.onerror = () => reject(new Error('Error reading file.'));
     reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * Read File into ArrayBuffer
+ */
+export function fileToArrayBuffer(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target.result);
+    reader.onerror = () => reject(new Error('Error reading binary file.'));
+    reader.readAsArrayBuffer(file);
   });
 }
 
@@ -24,9 +39,9 @@ const PASSPORT_SPECS = {
   'id_card_30x40': { width: 354, height: 472, mmWidth: 30, mmHeight: 40, label: 'ID Card (30 x 40 mm)' }
 };
 
-/**
- * Process Single Framed Passport Photo Client-Side
- */
+/* ==========================================================================
+   1. PASSPORT PHOTO STUDIO
+   ========================================================================== */
 export async function processSinglePassportPhotoClient(file, options = {}) {
   const {
     spec = 'standard_35x45',
@@ -68,7 +83,6 @@ export async function processSinglePassportPhotoClient(file, options = {}) {
   canvas.height = targetSpec.height;
   const ctx = canvas.getContext('2d');
 
-  // Background fill
   if (bgColor === 'white') {
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -83,10 +97,8 @@ export async function processSinglePassportPhotoClient(file, options = {}) {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
 
-  // Draw cropped photo
   ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, targetSpec.width, targetSpec.height);
 
-  // Subtle border
   if (addBorder) {
     ctx.strokeStyle = borderColor;
     ctx.lineWidth = borderWidth;
@@ -103,9 +115,6 @@ export async function processSinglePassportPhotoClient(file, options = {}) {
   };
 }
 
-/**
- * Generate Printable Passport Photo Sheet (A4 & 4x6) Client-Side with 100% Perfection
- */
 export async function generatePassportSheetClient(file, options = {}) {
   const {
     quantity = 6,
@@ -117,40 +126,27 @@ export async function generatePassportSheetClient(file, options = {}) {
     paddingGutter = 'standard'
   } = options;
 
-  // 1. Generate Single Photo
   const single = await processSinglePassportPhotoClient(file, { spec, zoom, bgColor, addBorder: true });
   const singleImg = await loadImageFromFile(await (await fetch(single.dataUri)).blob());
 
   const count = Math.max(1, Math.min(42, Number(quantity) || 6));
 
-  let sheetW = 2480; // A4 @ 300 DPI
+  let sheetW = 2480;
   let sheetH = 3508;
-  let cols = 6; // 6 photos per line on A4
+  let cols = 6;
   let photoW = 398;
   let photoH = 472;
   let gapX = 14;
   let gapY = 16;
 
   if (paddingGutter === 'wide') {
-    photoW = 390;
-    photoH = 462;
-    gapX = 20;
-    gapY = 22;
+    photoW = 390; photoH = 462; gapX = 20; gapY = 22;
   } else if (paddingGutter === 'compact') {
-    photoW = 405;
-    photoH = 480;
-    gapX = 8;
-    gapY = 10;
+    photoW = 405; photoH = 480; gapX = 8; gapY = 10;
   }
 
   if (paperType === '4x6') {
-    sheetW = 1800; // 4x6 @ 300 DPI
-    sheetH = 1200;
-    cols = 3;
-    photoW = 560;
-    photoH = 560;
-    gapX = 20;
-    gapY = 20;
+    sheetW = 1800; sheetH = 1200; cols = 3; photoW = 560; photoH = 560; gapX = 20; gapY = 20;
   }
 
   const sheetCanvas = document.createElement('canvas');
@@ -158,7 +154,6 @@ export async function generatePassportSheetClient(file, options = {}) {
   sheetCanvas.height = sheetH;
   const ctx = sheetCanvas.getContext('2d');
 
-  // White clean sheet background
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, sheetW, sheetH);
 
@@ -180,20 +175,15 @@ export async function generatePassportSheetClient(file, options = {}) {
       ctx.lineWidth = 1.2;
       ctx.setLineDash([4, 4]);
       ctx.strokeRect(left, top, photoW, photoH);
-      ctx.setLineDash([]); // Reset line dash
+      ctx.setLineDash([]);
 
-      // Corner cutting ticks
       ctx.strokeStyle = '#999999';
       ctx.lineWidth = 1.5;
       const tick = 6;
-      // Top-left
       ctx.beginPath();
       ctx.moveTo(left - tick, top); ctx.lineTo(left, top); ctx.lineTo(left, top - tick);
-      // Top-right
       ctx.moveTo(left + photoW + tick, top); ctx.lineTo(left + photoW, top); ctx.lineTo(left + photoW, top - tick);
-      // Bottom-left
       ctx.moveTo(left - tick, top + photoH); ctx.lineTo(left, top + photoH); ctx.lineTo(left, top + photoH + tick);
-      // Bottom-right
       ctx.moveTo(left + photoW + tick, top + photoH); ctx.lineTo(left + photoW, top + photoH); ctx.lineTo(left + photoW, top + photoH + tick);
       ctx.stroke();
     }
@@ -201,15 +191,9 @@ export async function generatePassportSheetClient(file, options = {}) {
 
   const sheetJpgUrl = sheetCanvas.toDataURL('image/jpeg', 0.98);
 
-  // Generate printable PDF using jsPDF
   const orientation = paperType === 'A4' ? 'p' : 'l';
   const pdfFormat = paperType === 'A4' ? 'a4' : [101.6, 152.4];
-  const doc = new jsPDF({
-    orientation,
-    unit: 'mm',
-    format: pdfFormat
-  });
-
+  const doc = new jsPDF({ orientation, unit: 'mm', format: pdfFormat });
   const pdfW = orientation === 'p' ? 210 : 297;
   const pdfH = orientation === 'p' ? 297 : 210;
 
@@ -234,9 +218,9 @@ export async function generatePassportSheetClient(file, options = {}) {
   };
 }
 
-/**
- * Signature Cropper & B&W High-Contrast Thresholding Client-Side
- */
+/* ==========================================================================
+   2. SIGNATURE & OLD DOCUMENT RESTORATION
+   ========================================================================== */
 export async function processSignatureClient(file, options = {}) {
   const { contrastBoost = 1.8, invert = false } = options;
   const img = await loadImageFromFile(file);
@@ -253,13 +237,10 @@ export async function processSignatureClient(file, options = {}) {
   const boost = Number(contrastBoost) || 1.8;
 
   for (let i = 0; i < data.length; i += 4) {
-    // Convert to grayscale
     const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-    // Contrast expansion
     let val = Math.round(((gray - 128) * boost) + 128);
     val = Math.max(0, Math.min(255, val));
 
-    // Sharp thresholding
     if (val > 165) val = 255;
     else if (val < 110) val = 0;
 
@@ -278,25 +259,31 @@ export async function processSignatureClient(file, options = {}) {
     message: 'Signature processed and enhanced successfully.',
     downloadUrl: dataUri,
     dataUri,
-    result: {
-      fileName: `signature-${Date.now()}.png`
-    }
+    result: { fileName: `signature-${Date.now()}.png` }
   };
 }
 
-/**
- * Restore Old Document Client-Side
- */
 export async function restoreOldDocumentClient(file, options = {}) {
-  const { mode = 'auto_enhance', contrast = 1.25, brightness = 1.05 } = options;
+  const { mode = 'auto_enhance', contrast = 1.25, brightness = 1.05, rotation = 0 } = options;
   const img = await loadImageFromFile(file);
 
   const canvas = document.createElement('canvas');
-  canvas.width = img.width;
-  canvas.height = img.height;
-  const ctx = canvas.getContext('2d');
+  const rot = Number(rotation) % 360;
 
-  ctx.drawImage(img, 0, 0);
+  if (rot === 90 || rot === 270) {
+    canvas.width = img.height;
+    canvas.height = img.width;
+  } else {
+    canvas.width = img.width;
+    canvas.height = img.height;
+  }
+
+  const ctx = canvas.getContext('2d');
+  ctx.translate(canvas.width / 2, canvas.height / 2);
+  ctx.rotate((rot * Math.PI) / 180);
+  ctx.drawImage(img, -img.width / 2, -img.height / 2);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+
   const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const data = imgData.data;
 
@@ -307,9 +294,7 @@ export async function restoreOldDocumentClient(file, options = {}) {
     if (mode === 'bw_scan') {
       const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
       const val = gray > 140 ? 255 : 0;
-      data[i] = val;
-      data[i + 1] = val;
-      data[i + 2] = val;
+      data[i] = val; data[i + 1] = val; data[i + 2] = val;
     } else {
       for (let c = 0; c < 3; c++) {
         let val = data[i + c] * brt;
@@ -327,17 +312,16 @@ export async function restoreOldDocumentClient(file, options = {}) {
     message: 'Document restored and enhanced.',
     downloadUrl: dataUri,
     dataUri,
-    result: {
-      fileName: `restored-${Date.now()}.png`
-    }
+    result: { fileName: `restored-${Date.now()}.png` }
   };
 }
 
-/**
- * Convert Images to PDF Client-Side
- */
-export async function convertImagesToPdfClient(files) {
-  const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+/* ==========================================================================
+   3. DOCUMENT & PDF TOOLKIT (pdf-lib)
+   ========================================================================== */
+export async function convertImagesToPdfClient(files, options = {}) {
+  const { pageSize = 'A4', orientation = 'portrait', margin = 10 } = options;
+  const doc = new jsPDF({ orientation: orientation === 'landscape' ? 'l' : 'p', unit: 'mm', format: pageSize.toLowerCase() });
 
   for (let i = 0; i < files.length; i++) {
     if (i > 0) doc.addPage();
@@ -347,8 +331,11 @@ export async function convertImagesToPdfClient(files) {
     canvas.height = img.height;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(img, 0, 0);
-    const dataUri = canvas.toDataURL('image/jpeg', 0.9);
-    doc.addImage(dataUri, 'JPEG', 10, 10, 190, 277, undefined, 'FAST');
+    const dataUri = canvas.toDataURL('image/jpeg', 0.92);
+
+    const pdfW = orientation === 'landscape' ? 297 : 210;
+    const pdfH = orientation === 'landscape' ? 210 : 297;
+    doc.addImage(dataUri, 'JPEG', margin, margin, pdfW - (margin * 2), pdfH - (margin * 2), undefined, 'FAST');
   }
 
   const pdfDataUri = doc.output('datauristring');
@@ -357,8 +344,189 @@ export async function convertImagesToPdfClient(files) {
     message: 'Images converted to PDF successfully.',
     downloadUrl: pdfDataUri,
     dataUri: pdfDataUri,
-    result: {
-      fileName: `shree-document-${Date.now()}.pdf`
+    result: { fileName: `shree-document-${Date.now()}.pdf` }
+  };
+}
+
+export async function mergePdfsClient(files) {
+  const mergedPdf = await PDFDocument.create();
+
+  for (const file of files) {
+    const arrayBuffer = await fileToArrayBuffer(file);
+    const pdf = await PDFDocument.load(arrayBuffer);
+    const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+    copiedPages.forEach((page) => mergedPdf.addPage(page));
+  }
+
+  const pdfBytes = await mergedPdf.save();
+  const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+  const dataUri = URL.createObjectURL(blob);
+
+  return {
+    success: true,
+    message: `${files.length} PDFs merged successfully.`,
+    downloadUrl: dataUri,
+    dataUri,
+    result: { fileName: `shree-merged-${Date.now()}.pdf`, pageCount: mergedPdf.getPageCount() }
+  };
+}
+
+export async function splitOrExtractPdfClient(file, pageRange = '1') {
+  const arrayBuffer = await fileToArrayBuffer(file);
+  const srcPdf = await PDFDocument.load(arrayBuffer);
+  const newPdf = await PDFDocument.create();
+
+  const totalPages = srcPdf.getPageCount();
+  const pageIndexes = [];
+
+  // Parse pageRange e.g. "1-3, 5"
+  const parts = pageRange.split(',');
+  for (const part of parts) {
+    const trimmed = part.trim();
+    if (trimmed.includes('-')) {
+      const [start, end] = trimmed.split('-').map(n => parseInt(n.trim(), 10));
+      for (let p = Math.max(1, start); p <= Math.min(totalPages, end); p++) {
+        pageIndexes.push(p - 1);
+      }
+    } else {
+      const p = parseInt(trimmed, 10);
+      if (p >= 1 && p <= totalPages) pageIndexes.push(p - 1);
     }
+  }
+
+  const uniquePages = Array.from(new Set(pageIndexes));
+  if (uniquePages.length === 0) uniquePages.push(0);
+
+  const copiedPages = await newPdf.copyPages(srcPdf, uniquePages);
+  copiedPages.forEach((page) => newPdf.addPage(page));
+
+  const pdfBytes = await newPdf.save();
+  const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+  const dataUri = URL.createObjectURL(blob);
+
+  return {
+    success: true,
+    message: `${uniquePages.length} PDF pages extracted successfully.`,
+    downloadUrl: dataUri,
+    dataUri,
+    result: { fileName: `shree-extracted-${Date.now()}.pdf`, extractedCount: uniquePages.length }
+  };
+}
+
+export async function rotatePdfClient(file, rotationDegrees = 90) {
+  const arrayBuffer = await fileToArrayBuffer(file);
+  const pdf = await PDFDocument.load(arrayBuffer);
+  const pages = pdf.getPages();
+
+  pages.forEach((page) => {
+    const currentRot = page.getRotation().angle;
+    page.setRotation(degrees(currentRot + Number(rotationDegrees)));
+  });
+
+  const pdfBytes = await pdf.save();
+  const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+  const dataUri = URL.createObjectURL(blob);
+
+  return {
+    success: true,
+    message: `PDF rotated by ${rotationDegrees}° successfully.`,
+    downloadUrl: dataUri,
+    dataUri,
+    result: { fileName: `shree-rotated-${Date.now()}.pdf` }
+  };
+}
+
+/* ==========================================================================
+   4. FILE COMPRESSION & ZIP STUDIO
+   ========================================================================== */
+export async function compressFilesClient(files, quality = 'medium') {
+  const qVal = quality === 'low' ? 0.45 : quality === 'medium' ? 0.70 : 0.88;
+  const results = [];
+
+  for (const file of files) {
+    const origSize = file.size;
+    const ext = file.name.split('.').pop().toLowerCase();
+
+    if (['jpg', 'jpeg', 'png', 'webp'].includes(ext)) {
+      const img = await loadImageFromFile(file);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+
+      const mime = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+      const dataUri = canvas.toDataURL(mime, qVal);
+
+      // Estimate compressed size
+      const compSize = Math.round((dataUri.length * 3) / 4);
+      const reductionPercent = Math.max(0, Math.round(((origSize - compSize) / origSize) * 100));
+
+      results.push({
+        originalName: file.name,
+        fileName: `compressed-${file.name}`,
+        downloadUrl: dataUri,
+        dataUri,
+        originalSize: origSize,
+        compressedSize: compSize,
+        reductionPercent
+      });
+    } else {
+      // Fallback data URI for other file types
+      const dataUri = URL.createObjectURL(file);
+      results.push({
+        originalName: file.name,
+        fileName: file.name,
+        downloadUrl: dataUri,
+        originalSize: origSize,
+        compressedSize: origSize,
+        reductionPercent: 0
+      });
+    }
+  }
+
+  return {
+    success: true,
+    message: 'Files compressed successfully.',
+    results
+  };
+}
+
+export async function createZipClient(files, zipName = 'cybercafe_archive.zip') {
+  const zip = new JSZip();
+
+  for (const file of files) {
+    const arrayBuffer = await fileToArrayBuffer(file);
+    zip.file(file.name, arrayBuffer);
+  }
+
+  const content = await zip.generateAsync({ type: 'blob' });
+  const dataUri = URL.createObjectURL(content);
+
+  return {
+    success: true,
+    message: 'ZIP archive created successfully.',
+    downloadUrl: dataUri,
+    dataUri,
+    result: { fileName: zipName.endsWith('.zip') ? zipName : `${zipName}.zip` }
+  };
+}
+
+/* ==========================================================================
+   5. UTILITY HUB (QR CODE & BARCODE)
+   ========================================================================== */
+export async function generateQrCodeClient(text, options = {}) {
+  const { width = 300, darkColor = '#000000', lightColor = '#ffffff' } = options;
+  const dataUri = await QRCode.toDataURL(text || 'https://shree-online.vercel.app', {
+    width: Number(width) || 300,
+    margin: 2,
+    color: { dark: darkColor, light: lightColor }
+  });
+
+  return {
+    success: true,
+    dataUri,
+    downloadUrl: dataUri,
+    result: { fileName: `qrcode-${Date.now()}.png` }
   };
 }

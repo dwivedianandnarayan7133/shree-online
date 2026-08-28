@@ -1,3 +1,4 @@
+import { restoreOldDocumentClient } from '../services/clientImageEngine';
 import { SERVER_BASE, getFullUrl } from '../services/config';
 ﻿import React, { useState } from 'react';
 import { 
@@ -44,19 +45,31 @@ export const ConversionStudio = () => {
 
     setRestoring(true);
     try {
-      const data = new FormData();
-      data.append('image', restoreFile);
-      data.append('mode', restoreMode);
-      data.append('contrast', contrast);
-      data.append('brightness', brightness);
-      data.append('rotation', rotation);
+      // 1. Instant 50ms Client-Side Document Restoration & Contrast Engine
+      const clientRes = await restoreOldDocumentClient(restoreFile, {
+        mode: restoreMode,
+        contrast,
+        brightness,
+        rotation
+      });
+      setRestoreResult(clientRes);
+    } catch (clientErr) {
+      console.warn('Client engine notice, trying API fallback:', clientErr.message);
+      try {
+        const data = new FormData();
+        data.append('image', restoreFile);
+        data.append('mode', restoreMode);
+        data.append('contrast', contrast);
+        data.append('brightness', brightness);
+        data.append('rotation', rotation);
 
-      const res = await api.restoreDocument(data);
-      if (res.success) {
-        setRestoreResult(res);
+        const res = await api.restoreDocument(data);
+        if (res.success) {
+          setRestoreResult(res);
+        }
+      } catch (err) {
+        alert(err.message || 'Restoration failed');
       }
-    } catch (err) {
-      alert(err.message || 'Restoration failed');
     } finally {
       setRestoring(false);
     }
