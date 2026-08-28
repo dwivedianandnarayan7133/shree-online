@@ -15,7 +15,6 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
   const { theme, toggleTheme } = useTheme();
   
   const [openDropdown, setOpenDropdown] = useState(null); // 'workspace', 'studios', 'operations', 'admin'
-  const [showStaffLoginModal, setShowStaffLoginModal] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
@@ -31,7 +30,6 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
       if (navRef.current && !navRef.current.contains(e.target)) {
         setOpenDropdown(null);
         setShowUserMenu(false);
-        setShowStaffLoginModal(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -41,7 +39,7 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
   // Main navigation categories based on role
   const navCategories = [];
 
-  // Workspace
+  // 1. Workspace
   const workspaceItems = [];
   if (isOperator) {
     workspaceItems.push({ id: 'dashboard', label: 'Command Center Dashboard', desc: 'Real-time KPIs, live queue & quick tools', icon: LayoutDashboard });
@@ -57,7 +55,7 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
     items: workspaceItems
   });
 
-  // Digital Studios
+  // 2. Digital Studios (Available across all panels)
   navCategories.push({
     id: 'studios',
     label: 'Digital Studios',
@@ -71,24 +69,21 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
     ]
   });
 
-  // Operations
-  const operationItems = [
-    { id: 'website-launcher', label: 'Custom Browser & Gateway', desc: 'In-portal ad-blocked govt browser', icon: Globe }
-  ];
+  // 3. Operations (When staff / operator)
   if (isOperator) {
-    operationItems.push({ id: 'print-manager', label: 'Print Job Manager', desc: 'A4/Color queue & printer telemetry', icon: Printer });
-    operationItems.push({ id: 'scanner-studio', label: 'Scanner Studio', desc: 'Device presets, de-skew & scan to PDF', icon: Scan });
-    operationItems.push({ id: 'billing-manager', label: 'Billing & POS Invoices', desc: 'Thermal receipts & GST calculations', icon: Receipt });
+    navCategories.push({
+      id: 'operations',
+      label: 'Operations & POS',
+      icon: Printer,
+      items: [
+        { id: 'print-manager', label: 'Print Job Manager', desc: 'A4/Color queue & printer telemetry', icon: Printer },
+        { id: 'scanner-studio', label: 'Scanner Studio', desc: 'Device presets, de-skew & scan to PDF', icon: Scan },
+        { id: 'billing-manager', label: 'Billing & POS Invoices', desc: 'Thermal receipts & GST calculations', icon: Receipt },
+      ]
+    });
   }
 
-  navCategories.push({
-    id: 'operations',
-    label: isOperator ? 'Operations & POS' : 'Online Gateway',
-    icon: Globe,
-    items: operationItems
-  });
-
-  // MD Controller (Admin Only)
+  // 4. MD Controller (Admin Only)
   if (isAdmin) {
     navCategories.push({
       id: 'admin',
@@ -103,16 +98,9 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
   const handleItemClick = (pageId) => {
     setActivePage(pageId);
     setOpenDropdown(null);
-    setShowStaffLoginModal(false);
     setShowUserMenu(false);
     setMobileDrawerOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleQuickLogin = async (role) => {
-    await loginWithDemo(role);
-    setShowStaffLoginModal(false);
-    setActivePage(role === 'customer' ? 'customer-portal' : 'dashboard');
   };
 
   const getActiveCategory = () => {
@@ -150,8 +138,10 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
           </div>
         </div>
 
-        {/* 2. Desktop Dropdown Navigation Categories */}
+        {/* 2. Desktop Navigation Categories + PROMINENT DEDICATED CUSTOM BROWSER BUTTON */}
         <nav className="navbar-dropdown-nav">
+          
+          {/* Main Dropdown Categories */}
           {navCategories.map(cat => {
             const Icon = cat.icon;
             const isOpen = openDropdown === cat.id;
@@ -202,9 +192,26 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
               </div>
             );
           })}
+
+          {/* DEDICATED DIRECT CUSTOM BROWSER BUTTON ON EACH PANEL */}
+          <button
+            type="button"
+            onClick={() => handleItemClick('website-launcher')}
+            className={`dropdown-trigger-btn ${activePage === 'website-launcher' ? 'active-category' : ''}`}
+            style={{
+              background: activePage === 'website-launcher' ? 'rgba(37, 99, 235, 0.15)' : 'rgba(37, 99, 235, 0.08)',
+              borderColor: activePage === 'website-launcher' ? '#2563eb' : 'rgba(37, 99, 235, 0.25)',
+              color: '#2563eb',
+              fontWeight: '800'
+            }}
+            title="Open AdShield™ Protected In-Portal Custom Browser"
+          >
+            <Globe size={15} color="#2563eb" />
+            <span>Custom Browser</span>
+          </button>
         </nav>
 
-        {/* 3. Right Action Tools (Theme, Quick Help, Staff/Admin Portal Login) */}
+        {/* 3. Right Action Tools (Helpline, Theme, Simple Login Button) */}
         <div className="navbar-right-tools">
           
           {/* Direct WhatsApp Call & Helpline */}
@@ -228,97 +235,8 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
             {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
 
-          {/* HEADER: OPERATOR & ADMIN PORTAL LOGIN / SWITCHER BUTTON */}
-          <div style={{ position: 'relative' }}>
-            <button
-              type="button"
-              onClick={() => setShowStaffLoginModal(!showStaffLoginModal)}
-              className="btn btn-primary btn-sm staff-portal-btn"
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '800' }}
-            >
-              <KeyRound size={14} />
-              <span>{isOperator ? 'Switch Portal ▾' : 'Admin & Staff Login ▾'}</span>
-            </button>
-
-            {/* Staff & Admin Portal Quick Access Popover */}
-            {showStaffLoginModal && (
-              <div className="staff-login-popover">
-                <div className="staff-popover-header">
-                  <div style={{ fontWeight: '800', fontSize: '0.86rem', color: 'var(--text-main)' }}>
-                    Portal Access & Role Switcher
-                  </div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                    Select desk to enter corresponding dashboard
-                  </div>
-                </div>
-
-                <div className="staff-popover-list">
-                  {/* 1. Admin Managing Director Portal */}
-                  <div 
-                    className="staff-portal-option admin-opt"
-                    onClick={() => handleQuickLogin('admin')}
-                  >
-                    <div className="portal-opt-icon">🛡️</div>
-                    <div className="portal-opt-info">
-                      <div className="portal-opt-title">Admin MD Control Center</div>
-                      <div className="portal-opt-desc">Kamal Narayan Dwivedi • Main Controller</div>
-                    </div>
-                  </div>
-
-                  {/* 2. Owner Portal */}
-                  <div 
-                    className="staff-portal-option owner-opt"
-                    onClick={() => handleQuickLogin('owner')}
-                  >
-                    <div className="portal-opt-icon">👑</div>
-                    <div className="portal-opt-info">
-                      <div className="portal-opt-title">Owner Management Portal</div>
-                      <div className="portal-opt-desc">Krishan Narayan Dwivedi • Founder & Owner</div>
-                    </div>
-                  </div>
-
-                  {/* 3. Operator Desk Portal */}
-                  <div 
-                    className="staff-portal-option op-opt"
-                    onClick={() => handleQuickLogin('operator')}
-                  >
-                    <div className="portal-opt-icon">🖥️</div>
-                    <div className="portal-opt-info">
-                      <div className="portal-opt-title">Operator Desk Portal</div>
-                      <div className="portal-opt-desc">Queue Manager, POS Invoices & Printing</div>
-                    </div>
-                  </div>
-
-                  {/* 4. Citizen / Public Window */}
-                  <div 
-                    className="staff-portal-option cust-opt"
-                    onClick={() => handleQuickLogin('customer')}
-                  >
-                    <div className="portal-opt-icon">👤</div>
-                    <div className="portal-opt-info">
-                      <div className="portal-opt-title">Citizen & Student Desk</div>
-                      <div className="portal-opt-desc">Public Service Request & Digital Studios</div>
-                    </div>
-                  </div>
-
-                  {/* 5. Custom Email Login */}
-                  <div 
-                    className="staff-portal-option custom-opt"
-                    onClick={() => handleItemClick('login')}
-                  >
-                    <div className="portal-opt-icon">🔑</div>
-                    <div className="portal-opt-info">
-                      <div className="portal-opt-title">Standard Password / Gmail Login</div>
-                      <div className="portal-opt-desc">Enter with custom email credentials</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* User Profile / Status Pill */}
-          {user && (
+          {/* SIMPLE DIRECT BUTTON TO OPEN LOGIN / REGISTER PANEL */}
+          {user ? (
             <div style={{ position: 'relative' }}>
               <button
                 type="button"
@@ -356,6 +274,13 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
                   )}
 
                   <button 
+                    onClick={() => handleItemClick('login')}
+                    className="user-menu-action"
+                  >
+                    <KeyRound size={14} /> Switch Desk / Account
+                  </button>
+
+                  <button 
                     onClick={() => { logout(); setShowUserMenu(false); setActivePage('customer-portal'); }}
                     className="user-menu-action text-danger"
                   >
@@ -364,6 +289,17 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
                 </div>
               )}
             </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => handleItemClick('login')}
+              className="btn btn-primary btn-sm"
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '800', padding: '6px 14px' }}
+              title="Open Operator, Admin & Citizen Login Panel"
+            >
+              <KeyRound size={14} />
+              <span>Admin & Staff Login</span>
+            </button>
           )}
 
           {/* Mobile Menu Toggle Button */}
@@ -382,25 +318,16 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
         <div className="mobile-nav-drawer">
           <div className="mobile-drawer-content">
             
-            {/* Quick Header Logins for Mobile */}
-            <div style={{ padding: '12px', background: 'var(--bg-surface-alt)', borderRadius: 'var(--radius-md)', marginBottom: '14px' }}>
-              <div style={{ fontSize: '0.74rem', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>
-                🚀 Direct Portal Switcher
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
-                <button className="btn btn-secondary btn-sm" onClick={() => handleQuickLogin('admin')}>
-                  🛡️ Admin MD
-                </button>
-                <button className="btn btn-secondary btn-sm" onClick={() => handleQuickLogin('owner')}>
-                  👑 Owner
-                </button>
-                <button className="btn btn-secondary btn-sm" onClick={() => handleQuickLogin('operator')}>
-                  🖥️ Operator
-                </button>
-                <button className="btn btn-secondary btn-sm" onClick={() => handleQuickLogin('customer')}>
-                  👤 Citizen Desk
-                </button>
-              </div>
+            {/* Custom Browser Fast Launcher on Mobile */}
+            <div style={{ marginBottom: '12px' }}>
+              <button
+                type="button"
+                onClick={() => handleItemClick('website-launcher')}
+                className="btn btn-primary w-full"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontWeight: '800' }}
+              >
+                <Globe size={16} /> Open Custom Browser
+              </button>
             </div>
 
             {navCategories.map(cat => (
@@ -426,6 +353,16 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
                 </div>
               </div>
             ))}
+
+            <div style={{ padding: '14px 0 0 0', borderTop: '1px solid var(--border-color)', marginTop: '8px' }}>
+              <button
+                className="btn btn-secondary w-full"
+                onClick={() => handleItemClick('login')}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+              >
+                <KeyRound size={15} /> Admin, Staff & Citizen Login
+              </button>
+            </div>
           </div>
         </div>
       )}
