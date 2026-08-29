@@ -1,4 +1,4 @@
-﻿/* Navbar Layout */
+/* Navbar Layout */
 .navbar {
   height: var(--header-height);
   background: var(--bg-glass);
@@ -1799,5 +1799,49 @@
   .table-wrapper {
     -webkit-overflow-scrolling: touch;
     border-radius: 8px !important;
+  }
+}
+
+/* ==========================================================================
+   PRINT MEDIA STYLES - RECEIPT ONLY (NO WEBSITE NAVBAR/FOOTER)
+   ========================================================================== */
+@media print {
+  /* Hide all website chrome */
+  .navbar,
+  .footer,
+  .nav-actions,
+  .tabs-container,
+  .page-header,
+  .modal-overlay,
+  .modal-header,
+  .modal-footer,
+  .btn,
+  .theme-toggle-btn,
+  .adshield-banner,
+  .stat-card,
+  button {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* When printable receipt is on screen, show only receipt */
+  #printable-receipt {
+    display: block !important;
+    visibility: visible !important;
+    position: relative !important;
+    width: 100% !important;
+    max-width: 80mm !important;
+    margin: 0 auto !important;
+    padding: 10px !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
   }
 }

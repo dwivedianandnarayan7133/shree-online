@@ -14,27 +14,30 @@ const ADMIN_INFO = {
   email: 'kdshree778@gmail.com'
 };
 
-// Create Google / Gmail Transporter
+// Create Google / Gmail Transporter with fast connection timeouts
 function createTransporter() {
   const user = process.env.EMAIL_USER || process.env.GMAIL_USER || 'dwivedianandnarayan@gmail.com';
   const pass = (process.env.EMAIL_PASS || process.env.GMAIL_APP_PASSWORD || process.env.GMAIL_PASSWORD || 'sarspasgdyfvdrnc').replace(/\s+/g, '');
 
-  if (pass) {
-    return nodemailer.createTransport({
-      service: 'gmail',
-      auth: { user, pass }
-    });
-  }
-
   return nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    auth: {
-      user: user,
-      pass: pass || 'demo-app-password'
-    }
+    port: 465,
+    secure: true,
+    auth: { user, pass },
+    connectionTimeout: 3500,
+    greetingTimeout: 3000,
+    socketTimeout: 4000
   });
+}
+
+/**
+ * Helper to race an async operation with a hard timeout
+ */
+function withTimeout(promise, ms = 3500) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Email dispatch timed out')), ms))
+  ]);
 }
 
 /**
@@ -83,7 +86,7 @@ async function sendRegisterOtpEmail(toEmail, otp, userName = 'Citizen') {
       `
     };
 
-    const info = await transporter.sendMail(mailOptions);
+    const info = await withTimeout(transporter.sendMail(mailOptions), 3500);
     console.log(`[Google Mail] Registration OTP sent to ${toEmail} (ID: ${info.messageId || 'sent'})`);
     return { success: true, messageId: info.messageId };
   } catch (err) {
@@ -137,7 +140,7 @@ async function sendPasswordResetOtpEmail(toEmail, otp, userName = 'Citizen') {
       `
     };
 
-    const info = await transporter.sendMail(mailOptions);
+    const info = await withTimeout(transporter.sendMail(mailOptions), 3500);
     console.log(`[Google Mail] Password reset OTP sent to ${toEmail} (ID: ${info.messageId || 'sent'})`);
     return { success: true, messageId: info.messageId };
   } catch (err) {
@@ -184,7 +187,7 @@ async function sendPasswordChangedEmail(toEmail, userName = 'Citizen') {
       `
     };
 
-    const info = await transporter.sendMail(mailOptions);
+    const info = await withTimeout(transporter.sendMail(mailOptions), 3500);
     console.log(`[Google Mail] Password changed confirmation sent to ${toEmail}`);
     return { success: true, messageId: info.messageId };
   } catch (err) {
@@ -239,7 +242,7 @@ async function sendLoginAlertEmail(toEmail, userName, role, ipAddress = '127.0.0
       `
     };
 
-    const info = await transporter.sendMail(mailOptions);
+    const info = await withTimeout(transporter.sendMail(mailOptions), 3500);
     console.log(`[Google Mail] Login alert sent to ${toEmail} (ID: ${info.messageId || 'sent'})`);
     return { success: true, messageId: info.messageId };
   } catch (err) {
@@ -307,7 +310,7 @@ async function sendWelcomeEmail(toEmail, userName = 'Valued Customer') {
       `
     };
 
-    const info = await transporter.sendMail(mailOptions);
+    const info = await withTimeout(transporter.sendMail(mailOptions), 3500);
     console.log(`[Google Mail] Welcome email dispatched to ${toEmail} (ID: ${info.messageId || 'sent'})`);
     return { success: true, messageId: info.messageId };
   } catch (err) {

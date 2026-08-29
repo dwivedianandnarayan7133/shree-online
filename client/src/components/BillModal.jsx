@@ -1,11 +1,73 @@
-﻿import React from 'react';
+import React from 'react';
 import { X, Printer } from 'lucide-react';
 
 export const BillModal = ({ isOpen, onClose, invoice }) => {
   if (!isOpen || !invoice) return null;
 
   const handlePrint = () => {
-    window.print();
+    const receiptContent = document.getElementById('printable-receipt');
+    if (!receiptContent) {
+      window.print();
+      return;
+    }
+
+    const printFrame = document.createElement('iframe');
+    printFrame.style.position = 'fixed';
+    printFrame.style.right = '0';
+    printFrame.style.bottom = '0';
+    printFrame.style.width = '0';
+    printFrame.style.height = '0';
+    printFrame.style.border = '0';
+    document.body.appendChild(printFrame);
+
+    const doc = printFrame.contentWindow.document;
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Receipt - ${invoice.invoiceNumber || 'INV'}</title>
+          <style>
+            @page { margin: 4mm; size: auto; }
+            body { 
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, monospace, sans-serif; 
+              margin: 0; 
+              padding: 6px; 
+              color: #000; 
+              background: #fff; 
+            }
+            .receipt-paper { 
+              max-width: 320px; 
+              margin: 0 auto; 
+              padding: 12px; 
+              border: 1px dashed #666;
+              box-sizing: border-box;
+            }
+            .receipt-header { text-align: center; margin-bottom: 10px; }
+            .receipt-header h3 { margin: 0; font-size: 18px; font-weight: 900; }
+            .receipt-header p { margin: 2px 0; font-size: 11px; }
+            .receipt-line { display: flex; justify-content: space-between; font-size: 11px; margin: 4px 0; }
+            .receipt-total { border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 6px 0; margin: 8px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="receipt-paper">
+            ${receiptContent.innerHTML}
+          </div>
+        </body>
+      </html>
+    `);
+    doc.close();
+
+    setTimeout(() => {
+      printFrame.contentWindow.focus();
+      printFrame.contentWindow.print();
+      setTimeout(() => {
+        try {
+          document.body.removeChild(printFrame);
+        } catch (e) {}
+      }, 1500);
+    }, 250);
   };
 
   return (

@@ -376,7 +376,7 @@ export const ImageTools = ({ setActivePage }) => {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                   <div className="form-group">
-                    <label className="form-label">Background Tint</label>
+                    <label className="form-label">Background Replacement Color</label>
                     <select 
                       className="form-select"
                       value={bgColor}
@@ -384,8 +384,12 @@ export const ImageTools = ({ setActivePage }) => {
                     >
                       <option value="original">Keep Original Background</option>
                       <option value="white">Clean Studio White (Passport / Visa Standard)</option>
-                      <option value="sky_blue">Sky Blue (Official SSC / UPSC / NTA Exam Standard)</option><option value="exam_blue">Vivid Exam Blue (State Board / PSC Standard)</option>
-                      <option value="light_grey">Light Grey</option>
+                      <option value="sky_blue">Sky Blue (Official SSC / UPSC / NTA / Indian Exam)</option>
+                      <option value="exam_blue">Vivid Exam Navy Blue (State Board / Police / Railway)</option>
+                      <option value="soft_blue">Soft Light Blue (Formal Certificate Style)</option>
+                      <option value="light_grey">Professional Light Grey (Studio Neutral)</option>
+                      <option value="crimson">Studio Crimson Red (Uniform / ID Standard)</option>
+                      <option value="cream">Warm Cream / Light Yellow (Classic Studio)</option>
                     </select>
                   </div>
 

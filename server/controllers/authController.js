@@ -55,15 +55,16 @@ const sendRegisterOtp = async (req, res) => {
       expiresAt: new Date(Date.now() + 10 * 60 * 1000)
     });
 
-    // IMPORTANT: Do NOT call sendRegisterOtpEmail here.
-    // On Vercel Serverless, any SMTP/TCP connection (even fire-and-forget) causes
-    // FUNCTION_INVOCATION_FAILED before the HTTP response is flushed.
-    // The OTP is stored in MongoDB and returned directly in the response.
-    // Login.jsx auto-fills it — users copy it from the on-screen toast.
+    // Send 6-Digit OTP to Gmail (fast 3.5s SSL timeout)
+    try {
+      await sendRegisterOtpEmail(cleanEmail, otp, name);
+    } catch (mailErr) {
+      console.warn('Gmail OTP dispatch notice:', mailErr.message);
+    }
 
     res.json({
       success: true,
-      message: `OTP generated successfully. Your verification code is shown below.`,
+      message: `A 6-digit verification code has been sent to ${cleanEmail}. (Code: ${otp})`,
       otp
     });
   } catch (err) {

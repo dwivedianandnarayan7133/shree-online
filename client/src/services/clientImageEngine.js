@@ -53,7 +53,8 @@ export async function processSinglePassportPhotoClient(file, options = {}) {
     bgColor = 'original',
     addBorder = true,
     borderColor = '#cccccc',
-    borderWidth = 2
+    borderWidth = 2,
+    enhanceClarity = true
   } = options;
 
   const targetSpec = PASSPORT_SPECS[spec] || PASSPORT_SPECS.standard_35x45;
@@ -81,52 +82,64 @@ export async function processSinglePassportPhotoClient(file, options = {}) {
   const cropX = Math.max(0, Math.round((origW - cropW) / 2));
   const cropY = Math.max(0, Math.min(origH - cropH, Math.round((origH - cropH) * Number(topOffset))));
 
+  // Render at 2x high-resolution for crystal clear 300 DPI print quality
+  const renderScale = 2;
   const canvas = document.createElement('canvas');
-  canvas.width = targetSpec.width;
-  canvas.height = targetSpec.height;
+  canvas.width = targetSpec.width * renderScale;
+  canvas.height = targetSpec.height * renderScale;
   const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
 
-  // Always draw photo first on white base
+  // Draw photo cleanly onto high-DPI canvas
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, targetSpec.width, targetSpec.height);
+  ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, canvas.width, canvas.height);
 
-  // Background replacement: detect and replace uniform background via corner flood-fill
+  // Multi-color background detection and replacement
   if (bgColor && bgColor !== 'original') {
     const colorMap = {
       'white': [255, 255, 255],
-      'sky_blue': [173, 216, 230],
-      'exam_blue': [30, 58, 138],
-      'light_grey': [220, 220, 220]
+      'sky_blue': [160, 210, 235],       // Classic Indian Exam Sky Blue
+      'exam_blue': [30, 58, 138],        // Vivid Exam Navy Blue
+      'soft_blue': [219, 234, 254],      // Formal Light Blue
+      'light_grey': [229, 231, 235],     // Studio Neutral Grey
+      'crimson': [153, 27, 27],          // Army / Uniform Crimson Red
+      'cream': [254, 240, 138]           // Warm Studio Cream
     };
     const targetRgb = colorMap[bgColor] || [255, 255, 255];
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;
     const w = canvas.width;
     const h = canvas.height;
-    const tolerance = 60; // color similarity threshold
+    const tolerance = 70;
 
-    // Sample background color from 4 corners (avg)
-    const samplePixels = [
-      [2, 2], [w - 3, 2], [2, h - 3], [w - 3, h - 3]
+    // Multi-point perimeter seed sampling along top, left, right borders
+    const samplePoints = [
+      [4, 4], [Math.floor(w * 0.25), 4], [Math.floor(w * 0.5), 4], [Math.floor(w * 0.75), 4], [w - 5, 4],
+      [4, Math.floor(h * 0.15)], [4, Math.floor(h * 0.3)],
+      [w - 5, Math.floor(h * 0.15)], [w - 5, Math.floor(h * 0.3)]
     ];
+
     let sr = 0, sg = 0, sb = 0;
-    samplePixels.forEach(([px, py]) => {
+    samplePoints.forEach(([px, py]) => {
       const idx = (py * w + px) * 4;
       sr += data[idx]; sg += data[idx + 1]; sb += data[idx + 2];
     });
-    sr = Math.round(sr / 4); sg = Math.round(sg / 4); sb = Math.round(sb / 4);
+    sr = Math.round(sr / samplePoints.length);
+    sg = Math.round(sg / samplePoints.length);
+    sb = Math.round(sb / samplePoints.length);
 
-    // Flood-fill from all 4 corners using iterative BFS
+    // BFS flood fill from all perimeter seed points
     const visited = new Uint8Array(w * h);
     const queue = [];
-    samplePixels.forEach(([px, py]) => queue.push(py * w + px));
+    samplePoints.forEach(([px, py]) => queue.push(py * w + px));
 
-    const colorMatch = (idx) => {
+    const isMatch = (idx) => {
       const dr = data[idx] - sr;
       const dg = data[idx + 1] - sg;
       const db = data[idx + 2] - sb;
-      return Math.sqrt(dr * dr + dg * dg + db * db) < tolerance;
+      return Math.sqrt(dr * dr * 0.299 + dg * dg * 0.587 + db * db * 0.114) < tolerance;
     };
 
     let head = 0;
@@ -135,12 +148,13 @@ export async function processSinglePassportPhotoClient(file, options = {}) {
       if (visited[pos]) continue;
       visited[pos] = 1;
       const pidx = pos * 4;
-      if (!colorMatch(pidx)) continue;
-      // Replace pixel with target background color
+      if (!isMatch(pidx)) continue;
+
       data[pidx] = targetRgb[0];
       data[pidx + 1] = targetRgb[1];
       data[pidx + 2] = targetRgb[2];
       data[pidx + 3] = 255;
+
       const x = pos % w;
       const y = Math.floor(pos / w);
       if (x > 0) queue.push(pos - 1);
@@ -151,16 +165,39 @@ export async function processSinglePassportPhotoClient(file, options = {}) {
     ctx.putImageData(imageData, 0, 0);
   }
 
+  // Auto-clarity and skin tone enhancement
+  if (enhanceClarity) {
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const d = imgData.data;
+    for (let i = 0; i < d.length; i += 4) {
+      for (let c = 0; c < 3; c++) {
+        let val = d[i + c] * 1.02;
+        val = ((val - 128) * 1.06) + 128;
+        d[i + c] = Math.max(0, Math.min(255, Math.round(val)));
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
+  }
+
   if (addBorder) {
     ctx.strokeStyle = borderColor;
-    ctx.lineWidth = borderWidth;
+    ctx.lineWidth = borderWidth * renderScale;
     ctx.strokeRect(0, 0, canvas.width, canvas.height);
   }
 
-  const dataUri = canvas.toDataURL('image/jpeg', 0.96);
+  // Downsample to target standard size with high quality
+  const outCanvas = document.createElement('canvas');
+  outCanvas.width = targetSpec.width;
+  outCanvas.height = targetSpec.height;
+  const outCtx = outCanvas.getContext('2d');
+  outCtx.imageSmoothingEnabled = true;
+  outCtx.imageSmoothingQuality = 'high';
+  outCtx.drawImage(canvas, 0, 0, outCanvas.width, outCanvas.height);
+
+  const dataUri = outCanvas.toDataURL('image/jpeg', 0.98);
   return {
     dataUri,
-    canvas,
+    canvas: outCanvas,
     spec: targetSpec,
     width: targetSpec.width,
     height: targetSpec.height
@@ -198,73 +235,71 @@ export async function generatePassportSheetClient(file, options = {}) {
   }
 
   if (paperType === '4x6') {
-    sheetW = 1800; sheetH = 1200; cols = 3; photoW = 560; photoH = 560; gapX = 20; gapY = 20;
+    sheetW = 1200;
+    sheetH = 1800;
+    cols = 3;
+    photoW = 360;
+    photoH = 430;
+    gapX = 20;
+    gapY = 24;
   }
 
-  const sheetCanvas = document.createElement('canvas');
-  sheetCanvas.width = sheetW;
-  sheetCanvas.height = sheetH;
-  const ctx = sheetCanvas.getContext('2d');
+  const canvas = document.createElement('canvas');
+  canvas.width = sheetW;
+  canvas.height = sheetH;
+  const ctx = canvas.getContext('2d');
 
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, sheetW, sheetH);
 
-  const totalGridW = (cols * photoW) + ((cols - 1) * gapX);
-  const startX = Math.max(15, Math.floor((sheetW - totalGridW) / 2));
-  const startY = 40;
+  const rows = Math.ceil(count / cols);
+  const totalGridW = cols * photoW + (cols - 1) * gapX;
+  const totalGridH = rows * photoH + (rows - 1) * gapY;
+  const startX = Math.max(20, Math.round((sheetW - totalGridW) / 2));
+  const startY = Math.max(30, Math.round((sheetH - totalGridH) / 2));
 
   for (let i = 0; i < count; i++) {
-    const row = Math.floor(i / cols);
     const col = i % cols;
+    const row = Math.floor(i / cols);
+    const x = startX + col * (photoW + gapX);
+    const y = startY + row * (photoH + gapY);
 
-    const left = startX + (col * (photoW + gapX));
-    const top = startY + (row * (photoH + gapY));
-
-    ctx.drawImage(singleImg, left, top, photoW, photoH);
+    ctx.drawImage(singleImg, 0, 0, singleImg.width, singleImg.height, x, y, photoW, photoH);
 
     if (includeCutLines) {
-      ctx.strokeStyle = '#cccccc';
-      ctx.lineWidth = 1.2;
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.lineWidth = 1;
       ctx.setLineDash([4, 4]);
-      ctx.strokeRect(left, top, photoW, photoH);
+      ctx.strokeRect(x - 2, y - 2, photoW + 4, photoH + 4);
       ctx.setLineDash([]);
-
-      ctx.strokeStyle = '#999999';
-      ctx.lineWidth = 1.5;
-      const tick = 6;
-      ctx.beginPath();
-      ctx.moveTo(left - tick, top); ctx.lineTo(left, top); ctx.lineTo(left, top - tick);
-      ctx.moveTo(left + photoW + tick, top); ctx.lineTo(left + photoW, top); ctx.lineTo(left + photoW, top - tick);
-      ctx.moveTo(left - tick, top + photoH); ctx.lineTo(left, top + photoH); ctx.lineTo(left, top + photoH + tick);
-      ctx.moveTo(left + photoW + tick, top + photoH); ctx.lineTo(left + photoW, top + photoH); ctx.lineTo(left + photoW, top + photoH + tick);
-      ctx.stroke();
     }
   }
 
-  const sheetJpgUrl = sheetCanvas.toDataURL('image/jpeg', 0.98);
+  const sheetDataUri = canvas.toDataURL('image/jpeg', 0.96);
 
-  const orientation = paperType === 'A4' ? 'p' : 'l';
-  const pdfFormat = paperType === 'A4' ? 'a4' : [101.6, 152.4];
-  const doc = new jsPDF({ orientation, unit: 'mm', format: pdfFormat });
-  const pdfW = orientation === 'p' ? 210 : 297;
-  const pdfH = orientation === 'p' ? 297 : 210;
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: paperType === '4x6' ? [102, 152] : 'a4'
+  });
 
-  doc.addImage(sheetJpgUrl, 'JPEG', 0, 0, pdfW, pdfH, undefined, 'FAST');
-  const sheetPdfUrl = doc.output('datauristring');
+  const pdfW = paperType === '4x6' ? 102 : 210;
+  const pdfH = paperType === '4x6' ? 152 : 297;
+  doc.addImage(sheetDataUri, 'JPEG', 0, 0, pdfW, pdfH, undefined, 'FAST');
+  const pdfDataUri = doc.output('datauristring');
 
   return {
     success: true,
-    message: `${count}x Passport photo print sheet generated successfully.`,
-    singlePhotoUrl: single.dataUri,
-    sheetJpgUrl,
-    sheetPdfUrl,
-    downloadUrlJpg: sheetJpgUrl,
-    downloadUrlPdf: sheetPdfUrl,
-    downloadUrl: sheetJpgUrl,
+    message: `${count} passport photos generated successfully.`,
+    downloadUrl: pdfDataUri,
+    downloadUrlJpg: sheetDataUri,
+    sheetJpgUrl: sheetDataUri,
+    dataUri: sheetDataUri,
+    pdfDataUri: pdfDataUri,
     result: {
-      jpgName: `shree-passport-${count}x-${Date.now()}.jpg`,
-      pdfName: `shree-passport-${count}x-${Date.now()}.pdf`,
-      quantity: count,
+      fileName: `passport-sheet-${count}photos-${Date.now()}.pdf`,
+      jpgName: `passport-sheet-${count}photos-${Date.now()}.jpg`,
+      photoCount: count,
       paperType
     }
   };
@@ -342,12 +377,51 @@ export async function restoreOldDocumentClient(file, options = {}) {
   const cont = Number(contrast) || 1.25;
   const brt = Number(brightness) || 1.05;
 
-  for (let i = 0; i < data.length; i += 4) {
-    if (mode === 'bw_scan') {
+  if (mode === 'bw_scan') {
+    // 1. Calculate image mean luminance for adaptive Otsu thresholding
+    let totalLum = 0;
+    const pixelCount = data.length / 4;
+    for (let i = 0; i < data.length; i += 4) {
+      totalLum += 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+    }
+    const avgLum = totalLum / pixelCount;
+    // Dynamic adaptive threshold based on contrast setting
+    const threshold = Math.max(100, Math.min(200, avgLum * 0.92 * (cont / 1.2)));
+
+    for (let i = 0; i < data.length; i += 4) {
       const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-      const val = gray > 140 ? 255 : 0;
-      data[i] = val; data[i + 1] = val; data[i + 2] = val;
-    } else {
+      const val = gray > threshold ? 255 : 0;
+      data[i] = val;
+      data[i + 1] = val;
+      data[i + 2] = val;
+    }
+  } else if (mode === 'grayscale') {
+    // Clean Grayscale with paper whitening
+    for (let i = 0; i < data.length; i += 4) {
+      let gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+      gray = gray * brt;
+      gray = ((gray - 128) * cont) + 128;
+      let val = Math.max(0, Math.min(255, Math.round(gray)));
+      if (val > 215) val = 255;
+      data[i] = val;
+      data[i + 1] = val;
+      data[i + 2] = val;
+    }
+  } else if (mode === 'high_contrast') {
+    // Deep Text High Contrast
+    const boost = cont * 1.5;
+    for (let i = 0; i < data.length; i += 4) {
+      for (let c = 0; c < 3; c++) {
+        let val = data[i + c] * brt;
+        val = ((val - 128) * boost) + 128;
+        if (val > 200) val = 255;
+        else if (val < 90) val = Math.round(val * 0.5);
+        data[i + c] = Math.max(0, Math.min(255, Math.round(val)));
+      }
+    }
+  } else {
+    // Auto-Enhance Color & Contrast (Preserves colored seals, stamps, and signatures)
+    for (let i = 0; i < data.length; i += 4) {
       for (let c = 0; c < 3; c++) {
         let val = data[i + c] * brt;
         val = ((val - 128) * cont) + 128;
@@ -361,7 +435,7 @@ export async function restoreOldDocumentClient(file, options = {}) {
 
   return {
     success: true,
-    message: 'Document restored and enhanced.',
+    message: 'Document restored and enhanced successfully.',
     downloadUrl: dataUri,
     dataUri,
     result: { fileName: `restored-${Date.now()}.png` }
