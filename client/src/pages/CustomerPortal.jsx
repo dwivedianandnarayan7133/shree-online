@@ -131,7 +131,7 @@ export const CustomerPortal = ({ setActivePage }) => {
         message += `\n📎 *Note to Customer:* Please attach your ${selectedFiles.length} document(s) directly in this chat now.`;
       }
 
-      const waNumber = '918090794210';
+      const waNumber = '9161400719';
       const encodedMessage = encodeURIComponent(message);
       const waUrl = `https://wa.me/${waNumber}?text=${encodedMessage}`;
       
