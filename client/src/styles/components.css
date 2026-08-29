@@ -1591,188 +1591,187 @@
 }
 
 .bottom-nav-label {
-  font-size: 0.68rem;
+font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--text-main, #0f172a);
+}
+
+.user-role-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--primary-500, #2563eb);
+  background: rgba(37, 99, 235, 0.1);
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: 4px;
+}
+
+.user-dropdown-popover {
+  position: absolute;
+  top: 48px;
+  right: 0;
+  width: 220px;
+  background: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  padding: 8px;
+  z-index: 1200;
+}
+
+[data-theme='dark'] .user-dropdown-popover {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+.user-dropdown-header {
+  padding: 8px 10px 10px 10px;
+  border-bottom: 1px solid var(--border-subtle, #e2e8f0);
+  margin-bottom: 6px;
+}
+
+.user-menu-action {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-main, #0f172a);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.user-menu-action:hover {
+  background: var(--bg-surface-alt, #f1f5f9);
+}
+
+.user-menu-action.text-danger {
+  color: #ef4444;
+}
+
+.user-menu-action.text-danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Mobile Toggle */
+.mobile-menu-toggle {
+  display: none;
+}
+
+@media (max-width: 960px) {
+  .navbar-dropdown-nav {
+    display: none;
+  }
+  .mobile-menu-toggle {
+    display: inline-flex;
+  }
+  .hide-mobile {
+    display: none;
+  }
+}
+
+/* Mobile Nav Drawer */
+.mobile-nav-drawer {
+  background: var(--bg-surface, #ffffff);
+  border-bottom: 2px solid var(--border-color, #e2e8f0);
+  padding: 16px 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] .mobile-nav-drawer {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+.mobile-nav-section {
+  margin-bottom: 16px;
+}
+
+.mobile-section-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--text-muted, #64748b);
+  margin-bottom: 8px;
+  letter-spacing: 0.05em;
+}
+
+.mobile-section-items {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.mobile-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--bg-surface-alt, #f8fafc);
+  font-size: 0.85rem;
   font-weight: 700;
-  line-height: 1;
+  color: var(--text-main, #0f172a);
+  cursor: pointer;
 }
 
-.bottom-nav-item.active {
-  color: #2563eb;
+[data-theme='dark'] .mobile-nav-item {
+  background: #0f172a;
 }
 
-.bottom-nav-item.active .bottom-nav-icon-box {
-  background: rgba(37, 99, 235, 0.12);
-  color: #2563eb;
-}
-
-[data-theme='dark'] .bottom-nav-item.active {
-  color: #38bdf8;
-}
-
-[data-theme='dark'] .bottom-nav-item.active .bottom-nav-icon-box {
-  background: rgba(56, 189, 248, 0.15);
-  color: #38bdf8;
+.mobile-nav-item.active {
+  background: #2563eb;
+  color: #ffffff;
 }
 
 /* ==========================================================================
-   MOBILE MEDIA QUERIES (@media max-width: 768px)
+   SHREE ONLINE - ULTRA-RESPONSIVE MOBILE STYLING & BOTTOM NAVIGATION
    ========================================================================== */
-@media (max-width: 768px) {
-  /* Show Mobile Bottom Nav */
-  .mobile-bottom-nav {
-    display: flex;
-  }
 
-  /* Add bottom padding to workspace so bottom nav never covers content */
-  .full-width-workspace {
-    padding-bottom: 80px !important;
-    padding-left: 12px !important;
-    padding-right: 12px !important;
-  }
-
-  /* Header adjustments */
-  .navbar {
-    padding: 0 12px;
-    height: 56px;
-  }
-
-  .brand-icon-wrapper {
-    width: 36px;
-    height: 36px;
-    font-size: 1.1rem;
-  }
-
-  .brand-text-title {
-    font-size: 1.05rem;
-  }
-
-  .brand-tagline {
-    font-size: 0.65rem;
-  }
-
-  /* Hide redundant top buttons on mobile */
-  .navbar-right-tools .wa-badge-btn,
-  .navbar-right-tools .btn-primary {
-    display: none !important;
-  }
-
-  /* Card layouts */
-  .card {
-    padding: 16px !important;
-    border-radius: 12px !important;
-  }
-
-  .card-header {
-    margin-bottom: 14px !important;
-  }
-
-  /* Grid layouts */
-  .quick-actions-grid,
-  .services-grid,
-  .studios-grid {
-    grid-template-columns: 1fr !important;
-    gap: 12px !important;
-  }
-
-  .kpi-metrics-grid {
-    grid-template-columns: 1fr 1fr !important;
-    gap: 10px !important;
-  }
-
-  /* Tool two-column workspace stack vertically */
-  .tool-workspace {
-    flex-direction: column !important;
-    gap: 16px !important;
-  }
-
-  .tool-panel {
-    width: 100% !important;
-  }
-
-  /* Preview images fit screen cleanly */
-  .preview-box {
-    padding: 10px !important;
-  }
-
-  .preview-img {
-    max-width: 100% !important;
-    height: auto !important;
-  }
-
-  /* Buttons full width on mobile */
-  .btn-row,
-  .tool-actions-row {
-    flex-direction: column !important;
-    gap: 8px !important;
-  }
-
-  .btn-row .btn,
-  .tool-actions-row .btn {
-    width: 100% !important;
-  }
-
-  /* Forms & inputs touch-friendly */
-  .form-input,
-  .form-select,
-  .btn {
-    min-height: 44px !important;
-    font-size: 0.9rem !important;
-  }
-
-  /* Hero banners */
-  .hero-banner {
-    padding: 20px 16px !important;
-    border-radius: 14px !important;
-  }
-
-  .hero-title {
-    font-size: 1.3rem !important;
-  }
-
-  .hero-subtitle {
-    font-size: 0.85rem !important;
-  }
-
-  /* Custom Browser Mobile Layout */
-  .browser-nav-toolbar {
-    flex-wrap: wrap !important;
-    gap: 8px !important;
-  }
-
-  .browser-omnibox {
-    order: 2 !important;
-    width: 100% !important;
-  }
-
-  .browser-actions-group {
-    order: 1 !important;
-    width: 100% !important;
-    justify-content: space-between !important;
-  }
-
-  /* Footer on mobile */
-  .footer {
-    padding: 28px 16px 84px 16px !important;
-  }
+/* Mobile Bottom Navigation Bar */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 62px;
+  background: var(--bg-surface, #ffffff);
+  border-top: 1px solid var(--border-color, #e2e8f0);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+  z-index: 900;
+  padding: 0 8px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
+[data-theme='dark'] .mobile-bottom-nav {
+  background: rgba(15, 23, 42, 0.95);
+  border-color: #334155;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4);
+}
 
-/* Job Alerts Board Responsive Polish */
-@media (max-width: 768px) {
-  .job-card {
-    padding: 14px !important;
-  }
-
-  .modal-container {
-    width: 96vw !important;
-    max-width: 96vw !important;
-    margin: 10px !important;
-    border-radius: 14px !important;
-  }
-
-  .modal-header {
-    padding: 14px 16px !important;
-  }
+.bottom-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #64748b);
+  cursor: pointer;
+  padding: 6px 0;
+  gap: 3px;
+  transition: all 0.15s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .bottom-nav-icon-box {
@@ -1810,83 +1809,141 @@
 }
 
 /* ==========================================================================
-   MOBILE MEDIA QUERIES (@media max-width: 768px)
+   TABLET RESPONSIVENESS (@media min-width: 769px and max-width: 1024px)
+   ========================================================================== */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .full-width-workspace {
+    padding: 16px 20px 32px 20px !important;
+  }
+
+  .kpi-metrics-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 14px !important;
+  }
+
+  .quick-actions-grid,
+  .services-grid,
+  .studios-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 14px !important;
+  }
+
+  .footer-container {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 24px !important;
+  }
+
+  .tool-workspace {
+    gap: 20px !important;
+  }
+
+  .tool-panel {
+    flex: 1 !important;
+  }
+
+  .modal-container {
+    max-width: 600px !important;
+    width: 90vw !important;
+  }
+
+  .browser-nav-toolbar {
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+  }
+}
+
+/* ==========================================================================
+   MOBILE RESPONSIVENESS (@media max-width: 768px)
    ========================================================================== */
 @media (max-width: 768px) {
   /* Show Mobile Bottom Nav */
   .mobile-bottom-nav {
-    display: flex;
+    display: flex !important;
   }
 
   /* Add bottom padding to workspace so bottom nav never covers content */
   .full-width-workspace {
-    padding-bottom: 80px !important;
+    padding-bottom: 84px !important;
     padding-left: 12px !important;
     padding-right: 12px !important;
+    padding-top: 12px !important;
   }
 
   /* Header adjustments */
-  .navbar {
-    padding: 0 12px;
-    height: 56px;
+  .compact-navbar-wrapper {
+    height: auto !important;
+    min-height: 56px !important;
+  }
+
+  .compact-navbar-inner {
+    padding: 8px 12px !important;
+    height: auto !important;
+    min-height: 56px !important;
+  }
+
+  .navbar-dropdown-nav {
+    display: none !important;
   }
 
   .brand-icon-wrapper {
-    width: 36px;
-    height: 36px;
-    font-size: 1.1rem;
+    width: 38px !important;
+    height: 38px !important;
   }
 
-  .brand-text-title {
-    font-size: 1.05rem;
+  .brand-name {
+    font-size: 1.05rem !important;
   }
 
-  .brand-tagline {
-    font-size: 0.65rem;
+  .brand-location {
+    font-size: 0.65rem !important;
   }
 
-  /* Hide redundant top buttons on mobile */
+  /* Hide redundant desktop buttons on mobile */
   .navbar-right-tools .wa-badge-btn,
+  .navbar-right-tools .hide-mobile,
   .navbar-right-tools .btn-primary {
     display: none !important;
   }
 
   /* Card layouts */
   .card {
-    padding: 16px !important;
+    padding: 14px !important;
     border-radius: 12px !important;
+    margin-bottom: 12px !important;
   }
 
   .card-header {
-    margin-bottom: 14px !important;
+    margin-bottom: 12px !important;
   }
 
-  /* Grid layouts */
+  /* Grid layouts stack */
   .quick-actions-grid,
   .services-grid,
   .studios-grid {
     grid-template-columns: 1fr !important;
-    gap: 12px !important;
+    gap: 10px !important;
   }
 
   .kpi-metrics-grid {
     grid-template-columns: 1fr 1fr !important;
-    gap: 10px !important;
+    gap: 8px !important;
   }
 
   /* Tool two-column workspace stack vertically */
   .tool-workspace {
     flex-direction: column !important;
-    gap: 16px !important;
+    gap: 14px !important;
   }
 
   .tool-panel {
     width: 100% !important;
+    flex: 1 1 100% !important;
   }
 
   /* Preview images fit screen cleanly */
   .preview-box {
-    padding: 10px !important;
+    padding: 8px !important;
+    min-height: auto !important;
   }
 
   .preview-img {
@@ -1911,27 +1968,27 @@
   .form-select,
   .btn {
     min-height: 44px !important;
-    font-size: 0.9rem !important;
+    font-size: 0.88rem !important;
   }
 
   /* Hero banners */
   .hero-banner {
-    padding: 20px 16px !important;
-    border-radius: 14px !important;
+    padding: 16px 12px !important;
+    border-radius: 12px !important;
   }
 
   .hero-title {
-    font-size: 1.3rem !important;
+    font-size: 1.25rem !important;
   }
 
   .hero-subtitle {
-    font-size: 0.85rem !important;
+    font-size: 0.82rem !important;
   }
 
-  /* Custom Browser Mobile Layout */
+  /* In-Portal Custom Browser Mobile Layout */
   .browser-nav-toolbar {
     flex-wrap: wrap !important;
-    gap: 8px !important;
+    gap: 6px !important;
   }
 
   .browser-omnibox {
@@ -1946,39 +2003,45 @@
   }
 
   /* Footer on mobile */
-  .footer {
-    padding: 28px 16px 84px 16px !important;
-  }
-}
-
-
-/* Job Alerts Board Responsive Polish */
-@media (max-width: 768px) {
-  .job-card {
-    padding: 14px !important;
+  .light-grey-footer {
+    padding: 24px 14px 88px 14px !important;
   }
 
+  .footer-container {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+
+  .footer-bottom-bar {
+    flex-direction: column !important;
+    gap: 10px !important;
+    text-align: center !important;
+  }
+
+  /* Modals on mobile */
   .modal-container {
-    width: 96vw !important;
-    max-width: 96vw !important;
-    margin: 10px !important;
+    width: 95vw !important;
+    max-width: 95vw !important;
+    margin: 8px !important;
     border-radius: 14px !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
   }
 
   .modal-header {
-    padding: 14px 16px !important;
+    padding: 12px 14px !important;
   }
 
   .modal-body {
-    padding: 14px 16px !important;
+    padding: 14px !important;
   }
 
   .modal-footer {
-    padding: 12px 16px !important;
+    padding: 10px 14px !important;
   }
 
   .page-title {
-    font-size: 1.2rem !important;
+    font-size: 1.25rem !important;
   }
 
   .page-subtitle {
@@ -1994,6 +2057,7 @@
   .table-wrapper {
     -webkit-overflow-scrolling: touch;
     border-radius: 8px !important;
+    overflow-x: auto !important;
   }
 
   /* Smooth scrollable tabs on mobile */
@@ -2003,7 +2067,7 @@
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     padding-bottom: 4px !important;
-    gap: 8px !important;
+    gap: 6px !important;
     flex-wrap: nowrap !important;
   }
   .tabs-container::-webkit-scrollbar {
@@ -2012,8 +2076,8 @@
   .tab-btn {
     white-space: nowrap !important;
     flex-shrink: 0 !important;
-    padding: 8px 14px !important;
-    font-size: 0.8rem !important;
+    padding: 7px 12px !important;
+    font-size: 0.78rem !important;
   }
 
   /* Auth Card Responsive Polish */
@@ -2022,7 +2086,34 @@
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 auto !important;
-    padding: 16px !important;
+    padding: 14px !important;
+  }
+
+  /* Job alerts board card */
+  .job-card {
+    padding: 14px !important;
+  }
+}
+
+/* ==========================================================================
+   EXTRA SMALL MOBILE (@media max-width: 480px)
+   ========================================================================== */
+@media (max-width: 480px) {
+  .kpi-metrics-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .stat-card {
+    padding: 12px !important;
+  }
+
+  .brand-name {
+    font-size: 0.95rem !important;
+  }
+
+  .btn-lg {
+    padding: 10px 14px !important;
+    font-size: 0.85rem !important;
   }
 }
 
@@ -2031,8 +2122,11 @@
    ========================================================================== */
 @media print {
   /* Hide all website chrome */
+  .compact-navbar-wrapper,
   .navbar,
+  .light-grey-footer,
   .footer,
+  .mobile-bottom-nav,
   .nav-actions,
   .tabs-container,
   .page-header,

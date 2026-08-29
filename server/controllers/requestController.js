@@ -1,4 +1,4 @@
-﻿const path = require('path');
+const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const Request = require('../models/Request');
@@ -101,11 +101,14 @@ const getRequests = async (req, res) => {
     }
 
     if (search) {
-      const searchRegex = new RegExp(search, 'i');
+      const sanitized = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const searchRegex = new RegExp(sanitized, 'i');
       query.$or = [
         { requestId: searchRegex },
+        { tokenNumber: searchRegex },
         { customerName: searchRegex },
         { customerPhone: searchRegex },
+        { customerEmail: searchRegex },
         { serviceName: searchRegex }
       ];
     }
