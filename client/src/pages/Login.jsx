@@ -115,10 +115,16 @@ export const Login = ({ setActivePage }) => {
 
       if (res.success) {
         setRegisterOtpSent(true);
-        setSuccessMsg(res.message || `A 6-digit OTP has been sent to ${email}. Please check your Gmail.`);
+        // Auto-fill OTP if returned in response (Vercel mode — no email sent)
+        if (res.otp) {
+          setRegisterOtpCode(res.otp);
+          setSuccessMsg(`✅ Your OTP Code is: ${res.otp} — It has been auto-filled below. Click "Verify & Create Account".`);
+        } else {
+          setSuccessMsg(res.message || `A 6-digit OTP has been sent to ${email}. Please check your Gmail.`);
+        }
       }
     } catch (err) {
-      setError(err.message || 'Failed to send OTP to Gmail.');
+      setError(err.message || 'Failed to send OTP. Please try again.');
       refreshCaptcha();
     } finally {
       setLoading(false);

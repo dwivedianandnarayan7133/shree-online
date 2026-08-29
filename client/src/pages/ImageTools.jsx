@@ -129,28 +129,57 @@ export const ImageTools = ({ setActivePage }) => {
     }
   };
 
-  // Handle General Image Transform
+  // Handle General Image Transform — 100% client-side, no server call
   const handleTransformImage = async () => {
     if (!transFile) {
       alert('Please upload an image to transform.');
       return;
     }
-
     setTransLoading(true);
     try {
-      const data = new FormData();
-      data.append('image', transFile);
-      if (targetWidth) data.append('width', targetWidth);
-      if (targetHeight) data.append('height', targetHeight);
-      data.append('format', targetFormat);
-      data.append('quality', targetQuality);
+      const img = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const image = new window.Image();
+          image.onload = () => resolve(image);
+          image.onerror = () => reject(new Error('Failed to load image'));
+          image.src = e.target.result;
+        };
+        reader.onerror = () => reject(new Error('Error reading file'));
+        reader.readAsDataURL(transFile);
+      });
 
-      const res = await api.transformImage(data);
-      if (res.success) {
-        setTransResult(res);
-      }
+      // Determine output dimensions
+      const outW = targetWidth ? parseInt(targetWidth) : img.width;
+      const outH = targetHeight ? parseInt(targetHeight) : Math.round(img.height * (outW / img.width));
+
+      const canvas = document.createElement('canvas');
+      canvas.width = outW;
+      canvas.height = outH;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, outW, outH);
+
+      const mimeMap = { jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
+      const mime = mimeMap[targetFormat] || 'image/jpeg';
+      const quality = targetQuality / 100;
+      const dataUri = canvas.toDataURL(mime, quality);
+
+      const extMap = { jpeg: 'jpg', png: 'png', webp: 'webp' };
+      const ext = extMap[targetFormat] || 'jpg';
+      const approxSize = Math.round((dataUri.length * 3) / 4);
+
+      setTransResult({
+        success: true,
+        downloadUrl: dataUri,
+        result: {
+          fileName: `resized-${Date.now()}.${ext}`,
+          width: outW,
+          height: outH,
+          size: approxSize
+        }
+      });
     } catch (err) {
-      alert(err.message || 'Image transform failed');
+      alert('Image transform failed: ' + err.message);
     } finally {
       setTransLoading(false);
     }
@@ -619,13 +648,13 @@ export const ImageTools = ({ setActivePage }) => {
                 ) : (
                   <div>
                     <div className="preview-box">
-                      <img src={getFullUrl(transResult.downloadUrl)} alt="Transformed Result" className="preview-img" />
+                      <img src={transResult.downloadUrl} alt="Transformed Result" className="preview-img" />
                     </div>
                     <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                         {transResult.result.width} x {transResult.result.height} px • {Math.round(transResult.result.size / 1024)} KB
                       </span>
-                      <a href={getFullUrl(transResult.downloadUrl)} download={transResult.result.fileName} className="btn btn-primary btn-sm">
+                      <a href={transResult.downloadUrl} download={transResult.result.fileName} className="btn btn-primary btn-sm">
                         <Download size={14} /> Download File
                       </a>
                     </div>

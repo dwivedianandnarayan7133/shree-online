@@ -55,15 +55,15 @@ const sendRegisterOtp = async (req, res) => {
       expiresAt: new Date(Date.now() + 10 * 60 * 1000)
     });
 
-    // Fire-and-forget — do NOT await; Vercel returns response instantly
-    // OTP is already saved in MongoDB, so verification works even if email never sends
-    sendRegisterOtpEmail(cleanEmail, otp, name).catch(e =>
-      console.warn('Gmail OTP notice (non-blocking):', e.message)
-    );
+    // IMPORTANT: Do NOT call sendRegisterOtpEmail here.
+    // On Vercel Serverless, any SMTP/TCP connection (even fire-and-forget) causes
+    // FUNCTION_INVOCATION_FAILED before the HTTP response is flushed.
+    // The OTP is stored in MongoDB and returned directly in the response.
+    // Login.jsx auto-fills it — users copy it from the on-screen toast.
 
     res.json({
       success: true,
-      message: `A 6-digit verification code has been sent to ${cleanEmail}. (Code: ${otp})`,
+      message: `OTP generated successfully. Your verification code is shown below.`,
       otp
     });
   } catch (err) {
