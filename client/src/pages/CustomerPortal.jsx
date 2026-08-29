@@ -87,31 +87,60 @@ export const CustomerPortal = ({ setActivePage }) => {
 
   const executeSubmit = async () => {
     setSubmitting(true);
+    let savedRequest = null;
+
     try {
+      // 1. Submit to the backend (populates the Dashboard Internal Queue)
+      const submitData = new FormData();
+      submitData.append('customerName', formData.customerName);
+      submitData.append('customerPhone', formData.customerPhone);
+      submitData.append('customerEmail', formData.customerEmail || '');
+      submitData.append('serviceCategory', formData.serviceCategory);
+      submitData.append('serviceName', formData.serviceName);
+      submitData.append('instructions', formData.instructions);
+      submitData.append('priority', formData.priority);
+
+      if (Array.isArray(selectedFiles)) {
+        selectedFiles.forEach(file => {
+          submitData.append('files', file);
+        });
+      }
+
+      try {
+        const res = await api.createRequest(submitData);
+        if (res && res.success) {
+          savedRequest = res.request;
+        }
+      } catch (backendErr) {
+        console.warn('Backend unavailable, using fallback', backendErr);
+      }
+
+      // 2. Format message for WhatsApp Gateway
       let message = `*NEW SERVICE REQUEST*\n\n`;
       message += `*Name:* ${formData.customerName.trim()}\n`;
       message += `*Phone:* ${formData.customerPhone.trim()}\n`;
       if (formData.customerEmail) message += `*Email:* ${formData.customerEmail.trim()}\n`;
+      if (savedRequest) message += `*Token ID:* ${savedRequest.requestId}\n`;
       message += `*Category:* ${formData.serviceCategory}\n`;
       message += `*Service:* ${formData.serviceName}\n`;
       if (formData.priority === 'urgent') message += `\n🚨 *PRIORITY: URGENT*\n`;
       if (formData.instructions) message += `\n*Instructions:*\n${formData.instructions.trim()}\n`;
       
       const hasFiles = selectedFiles && selectedFiles.length > 0;
-      if (hasFiles) {
+      if (hasFiles && !savedRequest) { // If backend failed but we have files
         message += `\n📎 *Note to Customer:* Please attach your ${selectedFiles.length} document(s) directly in this chat now.`;
       }
 
-      const waNumber = '918090794210'; // Default operator number
+      const waNumber = '918090794210';
       const encodedMessage = encodeURIComponent(message);
       const waUrl = `https://wa.me/${waNumber}?text=${encodedMessage}`;
       
+      // Launch WhatsApp
       window.open(waUrl, '_blank');
 
-      // Create a local confirmation token so the user sees a success screen
-      const fallbackToken = 'SHREE-' + Math.floor(10000 + Math.random() * 90000);
-      const fakeRequest = {
-        tokenNumber: fallbackToken,
+      // 3. Update the frontend UI with either the actual request or a local fallback
+      const finalRequest = savedRequest || {
+        tokenNumber: 'SHREE-' + Math.floor(10000 + Math.random() * 90000),
         requestId: `req_${Date.now()}`,
         customerName: formData.customerName,
         customerPhone: formData.customerPhone,
@@ -125,10 +154,10 @@ export const CustomerPortal = ({ setActivePage }) => {
         ]
       };
       
-      setSubmissionResult(fakeRequest);
+      setSubmissionResult(finalRequest);
       try {
         const existing = JSON.parse(localStorage.getItem('shree_requests') || '[]');
-        localStorage.setItem('shree_requests', JSON.stringify([fakeRequest, ...existing]));
+        localStorage.setItem('shree_requests', JSON.stringify([finalRequest, ...existing.filter(r => r.requestId !== finalRequest.requestId)]));
       } catch (e) {}
       
       setShowOtpModal(false);
@@ -138,7 +167,7 @@ export const CustomerPortal = ({ setActivePage }) => {
       } catch (e) {}
       
     } catch (err) {
-      console.error('WhatsApp redirect failed:', err);
+      console.error('Submission failed:', err);
     } finally {
       setSubmitting(false);
     }
