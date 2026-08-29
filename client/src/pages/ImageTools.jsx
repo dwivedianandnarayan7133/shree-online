@@ -98,6 +98,75 @@ export const ImageTools = ({ setActivePage }) => {
     }
   };
 
+  // 100% Reliable In-Memory Blob Download Triggers for Chrome / Edge / Mobile
+  const handleDownloadJpg = () => {
+    if (!passportResult) return;
+    const uri = passportResult.sheetJpgUrl || passportResult.downloadUrlJpg || passportResult.dataUri;
+    if (!uri) return;
+    const filename = passportResult.result?.jpgName || `shree-passport-${quantity}photos.jpg`;
+
+    try {
+      const parts = uri.split(',');
+      const byteString = atob(parts[1]);
+      const mimeString = parts[0].split(':')[1].split(';')[0];
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      const blob = new Blob([ab], { type: mimeString });
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch (e) {
+      const a = document.createElement('a');
+      a.href = uri;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  };
+
+  const handleDownloadPdf = () => {
+    if (!passportResult) return;
+    const uri = passportResult.pdfDataUri || passportResult.downloadUrlPdf || passportResult.sheetPdfUrl || passportResult.downloadUrl;
+    if (!uri) return;
+    const filename = passportResult.result?.pdfName || passportResult.result?.fileName || `shree-passport-${quantity}photos.pdf`;
+
+    try {
+      const parts = uri.split(',');
+      const byteString = atob(parts[1]);
+      const mimeString = parts[0].split(':')[1].split(';')[0];
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      const blob = new Blob([ab], { type: mimeString });
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch (e) {
+      const a = document.createElement('a');
+      a.href = uri;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  };
+
   // Handle Signature Processing
   const handleProcessSignature = async () => {
     if (!sigFile) {
@@ -456,21 +525,24 @@ export const ImageTools = ({ setActivePage }) => {
                     </div>
 
                     <div style={{ marginTop: '16px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                      <a 
-                        href={getFullUrl(passportResult.downloadUrlJpg || passportResult.sheetJpgUrl || passportResult.downloadUrl || `/uploads/processed/${passportResult.result?.jpgName}`)} 
-                        download={passportResult.result?.jpgName || 'passport-sheet.jpg'}
+                      <button 
+                        type="button"
+                        onClick={handleDownloadJpg}
                         className="btn btn-primary flex-1"
+                        style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                       >
                         <Download size={14} /> Download JPG (300 DPI)
-                      </a>
-                      <a 
-                        href={getFullUrl(passportResult.downloadUrlPdf || passportResult.sheetPdfUrl || `/uploads/processed/${passportResult.result?.pdfName}`)} 
-                        download={passportResult.result?.pdfName || 'passport-sheet.pdf'}
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={handleDownloadPdf}
                         className="btn btn-secondary flex-1"
+                        style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                       >
                         <Download size={14} /> Download Print PDF ({paperType})
-                      </a>
+                      </button>
                       <button 
+                        type="button"
                         className="btn btn-success"
                         onClick={() => {
                           api.createPrintJob({

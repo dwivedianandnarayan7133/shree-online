@@ -254,9 +254,9 @@ export async function generatePassportSheetClient(file, options = {}) {
 
   const rows = Math.ceil(count / cols);
   const totalGridW = cols * photoW + (cols - 1) * gapX;
-  const totalGridH = rows * photoH + (rows - 1) * gapY;
   const startX = Math.max(20, Math.round((sheetW - totalGridW) / 2));
-  const startY = Math.max(30, Math.round((sheetH - totalGridH) / 2));
+  // ALWAYS start at the top line (45px for A4, 35px for 4x6) so operators can easily cut top strips
+  const startY = paperType === '4x6' ? 35 : 45;
 
   for (let i = 0; i < count; i++) {
     const col = i % cols;
@@ -288,17 +288,23 @@ export async function generatePassportSheetClient(file, options = {}) {
   doc.addImage(sheetDataUri, 'JPEG', 0, 0, pdfW, pdfH, undefined, 'FAST');
   const pdfDataUri = doc.output('datauristring');
 
+  const fileNamePdf = `shree-passport-${count}photos-${Date.now()}.pdf`;
+  const fileNameJpg = `shree-passport-${count}photos-${Date.now()}.jpg`;
+
   return {
     success: true,
     message: `${count} passport photos generated successfully.`,
     downloadUrl: pdfDataUri,
+    downloadUrlPdf: pdfDataUri,
+    sheetPdfUrl: pdfDataUri,
+    pdfDataUri: pdfDataUri,
     downloadUrlJpg: sheetDataUri,
     sheetJpgUrl: sheetDataUri,
     dataUri: sheetDataUri,
-    pdfDataUri: pdfDataUri,
     result: {
-      fileName: `passport-sheet-${count}photos-${Date.now()}.pdf`,
-      jpgName: `passport-sheet-${count}photos-${Date.now()}.jpg`,
+      fileName: fileNamePdf,
+      pdfName: fileNamePdf,
+      jpgName: fileNameJpg,
       photoCount: count,
       paperType
     }

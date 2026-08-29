@@ -90,6 +90,8 @@ const INITIAL_JOBS = [
 // Seed initial jobs if DB has none
 const seedJobsIfEmpty = async () => {
   try {
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState !== 1) return;
     const count = await JobPosting.countDocuments();
     if (count === 0) {
       await JobPosting.insertMany(INITIAL_JOBS);
@@ -99,9 +101,6 @@ const seedJobsIfEmpty = async () => {
     console.warn('Job seeding notice:', e.message);
   }
 };
-
-// Seed in background
-seedJobsIfEmpty();
 
 // @desc    Get all job postings (Public & Searchable)
 // @route   GET /api/jobs
