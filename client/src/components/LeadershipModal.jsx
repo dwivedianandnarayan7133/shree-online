@@ -149,10 +149,9 @@ export const LeadershipModal = ({ isOpen, onClose, setActivePage }) => {
         <div className="modal-header" style={{ background: 'linear-gradient(135deg, #1e293b, #0f172a)', color: '#fff', padding: '18px 20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{
-              width: '40px', height: '40px', borderRadius: '10px',
-              background: '#000000', display: 'flex',
-              alignItems: 'center', justifyContent: 'center', overflow: 'hidden', padding: '2px',
-              border: '1px solid rgba(255,255,255,0.2)'
+              width: '42px', height: '42px', borderRadius: '10px',
+              background: 'transparent', display: 'flex',
+              alignItems: 'center', justifyContent: 'center', overflow: 'hidden', padding: '1px'
             }}>
               <img src="/logo.png" alt="Shree Online" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>

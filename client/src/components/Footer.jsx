@@ -33,7 +33,7 @@ export const Footer = ({ setActivePage }) => {
         {/* Column 1: Brand & Legacy (Est. 2013) */}
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-            <div className="brand-icon-wrapper" style={{ width: '42px', height: '42px', overflow: 'hidden', padding: '2px', background: '#000000', borderRadius: '10px' }}>
+            <div className="brand-icon-wrapper" style={{ width: '46px', height: '46px', overflow: 'hidden', padding: '1px', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <img src="/logo.png" alt="Shree Online" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
             <div>

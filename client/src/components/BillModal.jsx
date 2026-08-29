@@ -81,7 +81,7 @@ export const BillModal = ({ isOpen, onClose, invoice }) => {
         <div className="modal-body" style={{ background: '#f8fafc', padding: '24px 16px' }}>
           <div className="receipt-paper" id="printable-receipt">
             <div className="receipt-header">
-              <img src="/logo.png" alt="Shree Online" style={{ height: '36px', display: 'block', margin: '0 auto 6px auto', background: '#000', padding: '2px', borderRadius: '6px' }} />
+              <img src="/logo.png" alt="Shree Online" style={{ height: '40px', display: 'block', margin: '0 auto 6px auto', background: 'transparent' }} />
               <h3 style={{ fontSize: '1.25rem', fontWeight: '900', textTransform: 'uppercase', color: '#1e293b' }}>SHREE ONLINE</h3>
               <p style={{ fontSize: '0.8rem', fontWeight: '700', color: '#4338ca' }}>Digital Seva & CSC Center • Mahuli, S.K.N</p>
               <p style={{ fontSize: '0.72rem', color: '#555' }}>Main Market, Mahuli, Sant Kabir Nagar (S.K.N), U.P.</p>
