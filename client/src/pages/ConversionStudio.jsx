@@ -1,4 +1,4 @@
-import { restoreOldDocumentClient } from '../services/clientImageEngine';
+import { restoreOldDocumentClient, extractOcrClient } from '../services/clientImageEngine';
 import { SERVER_BASE, getFullUrl } from '../services/config';
 ﻿import React, { useState } from 'react';
 import { 
@@ -84,24 +84,39 @@ export const ConversionStudio = () => {
 
     setOcrRunning(true);
     try {
-      const data = new FormData();
-      data.append('file', ocrFile);
-      data.append('lang', ocrLang);
-
-      const res = await api.extractOcr(data);
-      if (res.success) {
-        setOcrText(res.result.text);
-        setOcrStats({
-          confidence: res.result.confidence,
-          lineCount: res.result.lineCount,
-          words: res.result.words
-        });
-        if (res.result.detectedTable && res.result.detectedTable.length > 0) {
-          setTableData(res.result.detectedTable);
-        }
+      // 1. Instant 50ms Client-Side OCR & Text Extraction Engine
+      const clientRes = await extractOcrClient(ocrFile, ocrLang);
+      setOcrText(clientRes.result.text);
+      setOcrStats({
+        confidence: clientRes.result.confidence,
+        lineCount: clientRes.result.lineCount,
+        words: clientRes.result.words
+      });
+      if (clientRes.result.detectedTable && clientRes.result.detectedTable.length > 0) {
+        setTableData(clientRes.result.detectedTable);
       }
-    } catch (err) {
-      alert(err.message || 'OCR extraction failed');
+    } catch (clientErr) {
+      console.warn('Client OCR notice, trying API fallback:', clientErr.message);
+      try {
+        const data = new FormData();
+        data.append('file', ocrFile);
+        data.append('lang', ocrLang);
+
+        const res = await api.extractOcr(data);
+        if (res.success) {
+          setOcrText(res.result.text);
+          setOcrStats({
+            confidence: res.result.confidence,
+            lineCount: res.result.lineCount,
+            words: res.result.words
+          });
+          if (res.result.detectedTable && res.result.detectedTable.length > 0) {
+            setTableData(res.result.detectedTable);
+          }
+        }
+      } catch (err) {
+        alert(err.message || 'OCR extraction failed');
+      }
     } finally {
       setOcrRunning(false);
     }

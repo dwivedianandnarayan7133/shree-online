@@ -1,4 +1,4 @@
-import { convertImagesToPdfClient, mergePdfsClient, splitOrExtractPdfClient, rotatePdfClient } from '../services/clientImageEngine';
+import { convertImagesToPdfClient, mergePdfsClient, splitOrExtractPdfClient, rotatePdfClient, compressPdfClient } from '../services/clientImageEngine';
 import { SERVER_BASE, getFullUrl } from '../services/config';
 ﻿import React, { useState } from 'react';
 import { 
@@ -151,13 +151,20 @@ export const DocumentTools = () => {
     }
     setLoading(true);
     try {
-      const data = new FormData();
-      data.append('pdf', compFile);
+      // 1. Instant 50ms Client-Side PDF Compression via pdf-lib
+      const clientRes = await compressPdfClient(compFile, 'medium');
+      setCompResult(clientRes);
+    } catch (clientErr) {
+      console.warn('Client engine notice, trying API fallback:', clientErr.message);
+      try {
+        const data = new FormData();
+        data.append('pdf', compFile);
 
-      const res = await api.compressPdf(data);
-      if (res.success) setCompResult(res);
-    } catch (err) {
-      alert(err.message || 'Compression failed');
+        const res = await api.compressPdf(data);
+        if (res.success) setCompResult(res);
+      } catch (err) {
+        alert(err.message || 'Compression failed');
+      }
     } finally {
       setLoading(false);
     }

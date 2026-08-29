@@ -3,7 +3,7 @@ const { UPLOAD_PATHS } = require('../config/constants');
 const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
-const { PDFParse } = require('pdf-parse');
+const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
 const ExcelJS = require('exceljs');
 
