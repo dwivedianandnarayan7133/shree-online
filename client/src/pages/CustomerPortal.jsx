@@ -74,7 +74,7 @@ export const CustomerPortal = ({ setActivePage }) => {
   useEffect(() => {
     if (activeTab === 'my-requests' && user) {
       setLoadingMyReqs(true);
-      api.getRequests(`customerEmail=${user.email}`)
+      api.getRequests(`search=${encodeURIComponent(user.email || user.phone)}`)
         .then(res => {
           if (res.success && res.requests) {
             setMyRequests(res.requests);
@@ -565,8 +565,7 @@ export const CustomerPortal = ({ setActivePage }) => {
                     📎 Attach Documents / Photos (Optional)
                   </h3>
                   <FileUploadZone 
-                    files={selectedFiles}
-                    setFiles={setSelectedFiles}
+                    onFilesSelected={setSelectedFiles}
                     multiple={true}
                     maxFiles={8}
                     title="Drag & drop Aadhaar, marksheets, photo or certificates here"
@@ -685,6 +684,64 @@ export const CustomerPortal = ({ setActivePage }) => {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* 3. MY REQUESTS TAB */}
+      {activeTab === 'my-requests' && user && (
+        <div className="card">
+          <div className="card-header">
+            <div className="card-title">
+              <Clock size={18} color="var(--primary-500)" />
+              <span>My Submitted Applications</span>
+            </div>
+          </div>
+          <div className="card-body">
+            {loadingMyReqs ? (
+              <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>
+                <RotateCw size={24} className="animate-spin mx-auto mb-2" />
+                <div style={{ marginTop: '8px' }}>Loading your applications...</div>
+              </div>
+            ) : myRequests.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
+                No applications found.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {myRequests.map(req => (
+                  <div key={req._id || req.requestId} style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                      <div>
+                        <div style={{ fontWeight: '800', color: 'var(--primary-600)', fontFamily: 'monospace' }}>
+                          {req.requestId}
+                        </div>
+                        <div style={{ fontWeight: '700', fontSize: '1.05rem', marginTop: '2px' }}>
+                          {req.serviceName}
+                        </div>
+                      </div>
+                      <StatusBadge status={req.status} />
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                      <span>Submitted: {new Date(req.createdAt).toLocaleDateString()}</span>
+                      <span>Category: {req.serviceCategory}</span>
+                      {req.priority === 'urgent' && <span style={{ color: 'var(--accent-rose)', fontWeight: '700' }}>URGENT</span>}
+                    </div>
+                    <div style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
+                      <button 
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => {
+                          setTrackQuery(req.requestId);
+                          setActiveTab('track');
+                        }}
+                      >
+                        <Search size={14} /> Full Live Trace
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
