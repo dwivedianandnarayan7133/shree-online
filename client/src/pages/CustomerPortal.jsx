@@ -88,62 +88,57 @@ export const CustomerPortal = ({ setActivePage }) => {
   const executeSubmit = async () => {
     setSubmitting(true);
     try {
-      const data = new FormData();
-      data.append('customerName', formData.customerName);
-      data.append('customerPhone', formData.customerPhone);
-      data.append('customerEmail', formData.customerEmail);
-      data.append('serviceCategory', formData.serviceCategory);
-      data.append('serviceName', formData.serviceName);
-      data.append('instructions', formData.instructions);
-      data.append('priority', formData.priority);
-
-      if (Array.isArray(selectedFiles)) {
-        selectedFiles.forEach(file => {
-          data.append('files', file);
-        });
+      let message = `*NEW SERVICE REQUEST*\n\n`;
+      message += `*Name:* ${formData.customerName.trim()}\n`;
+      message += `*Phone:* ${formData.customerPhone.trim()}\n`;
+      if (formData.customerEmail) message += `*Email:* ${formData.customerEmail.trim()}\n`;
+      message += `*Category:* ${formData.serviceCategory}\n`;
+      message += `*Service:* ${formData.serviceName}\n`;
+      if (formData.priority === 'urgent') message += `\n🚨 *PRIORITY: URGENT*\n`;
+      if (formData.instructions) message += `\n*Instructions:*\n${formData.instructions.trim()}\n`;
+      
+      const hasFiles = selectedFiles && selectedFiles.length > 0;
+      if (hasFiles) {
+        message += `\n📎 *Note to Customer:* Please attach your ${selectedFiles.length} document(s) directly in this chat now.`;
       }
 
-      const res = await api.createRequest(data);
-      if (res && res.success) {
-        setSubmissionResult(res.request);
-        try {
-          const existing = JSON.parse(localStorage.getItem('shree_requests') || '[]');
-          localStorage.setItem('shree_requests', JSON.stringify([res.request, ...existing.filter(r => r.requestId !== res.request.requestId)]));
-        } catch (e) {}
-        setShowOtpModal(false);
-        try {
-          confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
-        } catch (e) {}
-        return;
-      }
-      throw new Error(res?.message || 'Submission failed');
-    } catch (err) {
-      console.warn('Backend request notice, creating offline token confirmation:', err.message);
-      const fallbackToken = 'SHREE-' + Math.floor(1000 + Math.random() * 9000);
-      const fallbackRequest = {
+      const waNumber = '918090794210'; // Default operator number
+      const encodedMessage = encodeURIComponent(message);
+      const waUrl = `https://wa.me/${waNumber}?text=${encodedMessage}`;
+      
+      window.open(waUrl, '_blank');
+
+      // Create a local confirmation token so the user sees a success screen
+      const fallbackToken = 'SHREE-' + Math.floor(10000 + Math.random() * 90000);
+      const fakeRequest = {
         tokenNumber: fallbackToken,
         requestId: `req_${Date.now()}`,
         customerName: formData.customerName,
         customerPhone: formData.customerPhone,
-        customerEmail: formData.customerEmail,
         serviceName: formData.serviceName,
         serviceCategory: formData.serviceCategory,
         status: 'pending',
         priority: formData.priority,
         createdAt: new Date().toISOString(),
         statusHistory: [
-          { status: 'new', timestamp: new Date(), note: 'Application received and token assigned.', updatedBy: 'Shree Online Desk' }
+          { status: 'new', timestamp: new Date(), note: 'Redirected to WhatsApp Gateway.', updatedBy: 'System' }
         ]
       };
+      
+      setSubmissionResult(fakeRequest);
       try {
         const existing = JSON.parse(localStorage.getItem('shree_requests') || '[]');
-        localStorage.setItem('shree_requests', JSON.stringify([fallbackRequest, ...existing]));
+        localStorage.setItem('shree_requests', JSON.stringify([fakeRequest, ...existing]));
       } catch (e) {}
-      setSubmissionResult(fallbackRequest);
+      
       setShowOtpModal(false);
+      
       try {
-        confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
       } catch (e) {}
+      
+    } catch (err) {
+      console.error('WhatsApp redirect failed:', err);
     } finally {
       setSubmitting(false);
     }
