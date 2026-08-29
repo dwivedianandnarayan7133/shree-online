@@ -488,110 +488,54 @@ export async function rotatePdfClient(file, rotationDegrees = 90) {
 }
 
 export async function compressPdfClient(file, options = {}) {
-  const { targetKb = 100, quality = 'medium' } = options;
+  const { targetKb = 100 } = options;
   const origSize = file.size;
 
-  // Quality map: higher targetKb = higher quality
-  let jpegQuality;
-  if (targetKb < 50) jpegQuality = 0.35;
-  else if (targetKb < 100) jpegQuality = 0.45;
-  else if (targetKb < 200) jpegQuality = 0.55;
-  else if (targetKb < 300) jpegQuality = 0.65;
-  else if (targetKb < 500) jpegQuality = 0.72;
-  else jpegQuality = quality === 'high' ? 0.85 : quality === 'low' ? 0.42 : 0.60;
-
   try {
-    // Use jsPDF to rasterize each page: load PDF → render page on canvas → re-encode as JPEG
     const arrayBuffer = await fileToArrayBuffer(file);
-    const pdfSrc = await PDFDocument.load(arrayBuffer);
-    const pageCount = pdfSrc.getPageCount();
+    const srcPdf = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
 
-    // Create new PDF with compressed JPEG images of each page
-    const newDoc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    // Step 1: Copy all pages into a clean new PDF (strips orphaned/unused objects)
+    const newPdf = await PDFDocument.create();
+    const copiedPages = await newPdf.copyPages(srcPdf, srcPdf.getPageIndices());
+    copiedPages.forEach(page => newPdf.addPage(page));
 
-    for (let i = 0; i < pageCount; i++) {
-      if (i > 0) newDoc.addPage();
+    // Step 2: Remove metadata to reduce size
+    newPdf.setTitle('Compressed Document');
+    newPdf.setAuthor('Shree Online');
+    newPdf.setSubject('');
+    newPdf.setKeywords([]);
+    newPdf.setCreator('Shree Online PDF Compressor');
+    newPdf.setProducer('Shree Online');
 
-      // Get page dimensions
-      const page = pdfSrc.getPage(i);
-      const { width: pgW, height: pgH } = page.getSize();
+    // Step 3: Save with maximum object stream compression
+    const compressedBytes = await newPdf.save({ useObjectStreams: true, addDefaultPage: false });
+    const finalSize = compressedBytes.byteLength;
+    const reductionPercent = Math.max(0, Math.round(((origSize - finalSize) / origSize) * 100));
 
-      // Render page to canvas via a hidden iframe with PDF.js or just rasterize at target quality
-      // Simple approach: embed a placeholder JPEG (the PDF bytes re-encoded at low quality via pdf-lib)
-      // Real approach: use pdf.js to render. Since pdf.js is not imported, we downsample using pdf-lib tricks.
-
-      // Scale factor based on target KB
-      const scaleFactor = targetKb < 100 ? 0.6 : targetKb < 300 ? 0.75 : 0.9;
-      const canvasW = Math.round((pgW * 96 / 72) * scaleFactor);  // 96dpi * scale
-      const canvasH = Math.round((pgH * 96 / 72) * scaleFactor);
-
-      // Create offscreen canvas and draw a white page (no pdf.js means we can't render content,
-      // but we still re-embed original page bytes at lower resolution metadata)
-      const canvas = document.createElement('canvas');
-      canvas.width = canvasW;
-      canvas.height = canvasH;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvasW, canvasH);
-
-      // Re-copy the page at reduced resolution metadata  
-      const dataUri = canvas.toDataURL('image/jpeg', jpegQuality);
-      const mmW = (pgW / 72) * 25.4;
-      const mmH = (pgH / 72) * 25.4;
-
-      newDoc.addImage(dataUri, 'JPEG', 0, 0, mmW, mmH, undefined, 'FAST');
-    }
-
-    const pdfDataUri = newDoc.output('datauristring');
-    // Estimate compressed size from data URI
-    const compressedSize = Math.round((pdfDataUri.length * 3) / 4);
-    const reductionPercent = Math.max(0, Math.round(((origSize - compressedSize) / origSize) * 100));
-
-    // Convert data URI to Blob URL for download
-    const pdfBlob = await (await fetch(pdfDataUri)).blob();
-    const blobUrl = URL.createObjectURL(pdfBlob);
+    const blob = new Blob([compressedBytes], { type: 'application/pdf' });
+    const blobUrl = URL.createObjectURL(blob);
 
     return {
       success: true,
-      message: `PDF compressed: ${Math.round(origSize / 1024)} KB → ${Math.round(compressedSize / 1024)} KB`,
+      message: `PDF optimized: ${Math.round(origSize / 1024)} KB → ${Math.round(finalSize / 1024)} KB (${reductionPercent}% saved)`,
       downloadUrl: blobUrl,
       dataUri: blobUrl,
       originalSize: origSize,
-      compressedSize,
+      compressedSize: finalSize,
       reductionPercent,
       result: {
         fileName: `compressed-${file.name || 'document.pdf'}`,
         originalSize: origSize,
-        compressedSize,
+        compressedSize: finalSize,
         reductionPercent
       }
     };
   } catch (err) {
-    // Fallback: re-save with object streams (minimal compression, but no crash)
-    const arrayBuffer = await fileToArrayBuffer(file);
-    const pdf = await PDFDocument.load(arrayBuffer);
-    const pdfBytes = await pdf.save({ useObjectStreams: true });
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    const blobUrl = URL.createObjectURL(blob);
-    const compressedSize = pdfBytes.byteLength;
-    const reductionPercent = Math.max(0, Math.round(((origSize - compressedSize) / origSize) * 100));
-    return {
-      success: true,
-      message: `PDF optimized (${reductionPercent}% reduction)`,
-      downloadUrl: blobUrl,
-      dataUri: blobUrl,
-      originalSize: origSize,
-      compressedSize,
-      reductionPercent,
-      result: {
-        fileName: `compressed-${file.name || 'document.pdf'}`,
-        originalSize: origSize,
-        compressedSize,
-        reductionPercent
-      }
-    };
+    throw new Error('PDF compression failed: ' + err.message);
   }
 }
+
 
 /* ==========================================================================
    4. FILE COMPRESSION & ZIP STUDIO

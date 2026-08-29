@@ -36,7 +36,7 @@ export const ConversionStudio = () => {
   ]);
   const [exportLoading, setExportLoading] = useState(false);
 
-  // Run Document Restoration
+  // Run Document Restoration — 100% client-side Canvas API
   const handleRestoreDoc = async () => {
     if (!restoreFile) {
       alert('Please upload a document to restore.');
@@ -45,7 +45,6 @@ export const ConversionStudio = () => {
 
     setRestoring(true);
     try {
-      // 1. Instant 50ms Client-Side Document Restoration & Contrast Engine
       const clientRes = await restoreOldDocumentClient(restoreFile, {
         mode: restoreMode,
         contrast,
@@ -53,29 +52,14 @@ export const ConversionStudio = () => {
         rotation
       });
       setRestoreResult(clientRes);
-    } catch (clientErr) {
-      console.warn('Client engine notice, trying API fallback:', clientErr.message);
-      try {
-        const data = new FormData();
-        data.append('image', restoreFile);
-        data.append('mode', restoreMode);
-        data.append('contrast', contrast);
-        data.append('brightness', brightness);
-        data.append('rotation', rotation);
-
-        const res = await api.restoreDocument(data);
-        if (res.success) {
-          setRestoreResult(res);
-        }
-      } catch (err) {
-        alert(err.message || 'Restoration failed');
-      }
+    } catch (err) {
+      alert('Document restoration failed: ' + (err.message || 'Please try a JPG or PNG image file.'));
     } finally {
       setRestoring(false);
     }
   };
 
-  // Run OCR on document
+  // Run OCR on document — 100% client-side structured extraction
   const handleRunOcr = async () => {
     if (!ocrFile) {
       alert('Please upload a scanned document or image for OCR.');
@@ -84,7 +68,6 @@ export const ConversionStudio = () => {
 
     setOcrRunning(true);
     try {
-      // 1. Instant 50ms Client-Side OCR & Text Extraction Engine
       const clientRes = await extractOcrClient(ocrFile, ocrLang);
       setOcrText(clientRes.result.text);
       setOcrStats({
@@ -95,28 +78,8 @@ export const ConversionStudio = () => {
       if (clientRes.result.detectedTable && clientRes.result.detectedTable.length > 0) {
         setTableData(clientRes.result.detectedTable);
       }
-    } catch (clientErr) {
-      console.warn('Client OCR notice, trying API fallback:', clientErr.message);
-      try {
-        const data = new FormData();
-        data.append('file', ocrFile);
-        data.append('lang', ocrLang);
-
-        const res = await api.extractOcr(data);
-        if (res.success) {
-          setOcrText(res.result.text);
-          setOcrStats({
-            confidence: res.result.confidence,
-            lineCount: res.result.lineCount,
-            words: res.result.words
-          });
-          if (res.result.detectedTable && res.result.detectedTable.length > 0) {
-            setTableData(res.result.detectedTable);
-          }
-        }
-      } catch (err) {
-        alert(err.message || 'OCR extraction failed');
-      }
+    } catch (err) {
+      alert('OCR extraction failed: ' + (err.message || 'Please upload a clear JPG or PNG image.'));
     } finally {
       setOcrRunning(false);
     }
