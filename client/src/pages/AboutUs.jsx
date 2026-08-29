@@ -26,6 +26,10 @@ export const AboutUs = ({ setActivePage }) => {
       
       {/* 1. HERO & ESTABLISHMENT HEADER */}
       <section style={{ textAlign: 'center', padding: '30px 16px 20px 16px', borderBottom: '1px solid var(--border-color)' }}>
+        <div style={{ margin: '0 auto 16px auto', width: '120px', height: '70px', background: '#000000', padding: '6px', borderRadius: '14px', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <img src="/logo.png" alt="Shree Online" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+        </div>
+
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: '8px',
           background: 'rgba(16, 185, 129, 0.12)', color: '#10b981',

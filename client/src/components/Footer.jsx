@@ -32,9 +32,9 @@ export const Footer = ({ setActivePage }) => {
       <div className="footer-container">
         {/* Column 1: Brand & Legacy (Est. 2013) */}
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-            <div className="brand-icon-wrapper" style={{ width: '36px', height: '36px' }}>
-              ⚡
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+            <div className="brand-icon-wrapper" style={{ width: '42px', height: '42px', overflow: 'hidden', padding: '2px', background: '#000000', borderRadius: '10px' }}>
+              <img src="/logo.png" alt="Shree Online" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
             <div>
               <div style={{ fontWeight: '900', fontSize: '1.1rem', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>

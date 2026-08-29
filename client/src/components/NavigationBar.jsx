@@ -125,8 +125,8 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
           onClick={() => handleItemClick('dashboard')}
           title="Shree Online Sewa Kendra (Mahuli, S.K.N)"
         >
-          <div className="brand-icon-wrapper">
-            ⚡
+          <div className="brand-icon-wrapper" style={{ width: '40px', height: '40px', overflow: 'hidden', padding: '2px', background: '#000000', borderRadius: '10px' }}>
+            <img src="/logo.png" alt="Shree Online Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </div>
           <div>
             <div className="brand-name">

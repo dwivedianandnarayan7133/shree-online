@@ -33,7 +33,7 @@ const sendRegisterOtp = async (req, res) => {
     const cleanEmail = email.toLowerCase().trim();
 
     const existingUser = await User.findOne({ email: cleanEmail });
-    if (existingUser) {
+    if (existingUser && req.body.isStrictRegister) {
       return res.status(400).json({ success: false, message: 'This email is already registered. Please Sign In.' });
     }
 

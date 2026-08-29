@@ -149,11 +149,12 @@ export const LeadershipModal = ({ isOpen, onClose, setActivePage }) => {
         <div className="modal-header" style={{ background: 'linear-gradient(135deg, #1e293b, #0f172a)', color: '#fff', padding: '18px 20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{
-              width: '36px', height: '36px', borderRadius: '10px',
-              background: 'rgba(255,255,255,0.12)', display: 'flex',
-              alignItems: 'center', justifyContent: 'center'
+              width: '40px', height: '40px', borderRadius: '10px',
+              background: '#000000', display: 'flex',
+              alignItems: 'center', justifyContent: 'center', overflow: 'hidden', padding: '2px',
+              border: '1px solid rgba(255,255,255,0.2)'
             }}>
-              <Lock size={18} color="#38bdf8" />
+              <img src="/logo.png" alt="Shree Online" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
             <div>
               <div style={{ fontWeight: '800', fontSize: '1.05rem', letterSpacing: '-0.01em' }}>

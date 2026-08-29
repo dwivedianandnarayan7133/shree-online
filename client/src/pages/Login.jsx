@@ -334,8 +334,8 @@ export const Login = ({ setActivePage }) => {
         )}
 
         <div style={{ textAlign: 'center', padding: '16px 16px 14px 16px' }}>
-          <div className="brand-icon-wrapper" style={{ margin: '0 auto 10px auto', width: '48px', height: '48px' }}>
-            ⚡
+          <div className="brand-icon-wrapper" style={{ margin: '0 auto 10px auto', width: '64px', height: '64px', overflow: 'hidden', padding: '2px', background: '#000000', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
+            <img src="/logo.png" alt="Shree Online" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </div>
           <h2 style={{ fontSize: '1.5rem', fontWeight: '900', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
             Shree Online
