@@ -1755,3 +1755,49 @@
     padding: 28px 16px 84px 16px !important;
   }
 }
+
+
+/* Job Alerts Board Responsive Polish */
+@media (max-width: 768px) {
+  .job-card {
+    padding: 14px !important;
+  }
+
+  .modal-container {
+    width: 96vw !important;
+    max-width: 96vw !important;
+    margin: 10px !important;
+    border-radius: 14px !important;
+  }
+
+  .modal-header {
+    padding: 14px 16px !important;
+  }
+
+  .modal-body {
+    padding: 14px 16px !important;
+  }
+
+  .modal-footer {
+    padding: 12px 16px !important;
+  }
+
+  .page-title {
+    font-size: 1.2rem !important;
+  }
+
+  .page-subtitle {
+    font-size: 0.78rem !important;
+  }
+
+  /* Status tracking card mobile */
+  .tracking-box {
+    padding: 12px !important;
+  }
+
+  /* Table horizontally scrollable with touch feedback */
+  .table-wrapper {
+    -webkit-overflow-scrolling: touch;
+    border-radius: 8px !important;
+  }
+}

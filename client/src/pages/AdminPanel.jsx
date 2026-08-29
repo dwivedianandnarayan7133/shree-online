@@ -1,7 +1,8 @@
+import { JobManagerModal } from '../components/JobManagerModal';
 import { getFullUrl } from '../services/config';
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Settings, Users, Clock, ShieldCheck, 
+  Briefcase, Settings, Users, Clock, ShieldCheck, 
   Trash2, HardDrive, Edit3, CheckCircle2, RefreshCw,
   PlusCircle, UserPlus, Save, Award, Layout, FileText,
   IndianRupee, Lock, Eye, EyeOff, AlertCircle, Upload, Camera, Image as ImageIcon
@@ -55,6 +56,11 @@ export const AdminPanel = () => {
   const [editingPriceId, setEditingPriceId] = useState(null);
   const [newPrice, setNewPrice] = useState(0);
 
+  // 5. Job Postings State
+  const [adminJobs, setAdminJobs] = useState([]);
+  const [jobModalOpen, setJobModalOpen] = useState(false);
+  const [selectedAdminJob, setSelectedAdminJob] = useState(null);
+
   // 4. Logs & Storage State
   const [logs, setLogs] = useState([]);
   const [cleanupResult, setCleanupResult] = useState(null);
@@ -62,11 +68,12 @@ export const AdminPanel = () => {
   const fetchAdminData = async () => {
     setLoading(true);
     try {
-      const [servRes, confRes, logRes, userRes] = await Promise.all([
+      const [servRes, confRes, logRes, userRes, jobRes] = await Promise.all([
         api.getPricing(),
         api.getSystemConfig(),
         api.getAuditLogs('limit=30'),
-        api.getUsers()
+        api.getUsers(),
+        api.getJobs('limit=50')
       ]);
 
       if (servRes.success) setServices(servRes.services);
@@ -75,6 +82,7 @@ export const AdminPanel = () => {
       }
       if (logRes.success) setLogs(logRes.logs);
       if (userRes.success) setUsers(userRes.users);
+      if (jobRes && jobRes.success && jobRes.jobs) setAdminJobs(jobRes.jobs);
     } catch (err) {
       console.error('Failed to load admin panel data:', err);
     } finally {
@@ -82,7 +90,7 @@ export const AdminPanel = () => {
     }
   };
 
-  useEffect(() => {
+    useEffect(() => {
     fetchAdminData();
   }, []);
 
@@ -208,6 +216,19 @@ export const AdminPanel = () => {
     }
   };
 
+  // Job Postings Actions
+  const handleDeleteAdminJob = async (id, title) => {
+    if (!window.confirm(`Are you sure you want to delete job alert "${title}"?`)) return;
+    try {
+      await api.deleteJob(id);
+      setAdminJobs(prev => prev.filter(j => j._id !== id));
+      setSaveSuccess(`Job alert "${title}" deleted successfully.`);
+      setTimeout(() => setSaveSuccess(''), 4000);
+    } catch (err) {
+      alert(err.message || 'Failed to delete job alert');
+    }
+  };
+
   // Storage Cleanup
   const handleTriggerCleanup = async () => {
     if (!window.confirm('Trigger manual storage cleanup now?')) return;
@@ -275,6 +296,7 @@ export const AdminPanel = () => {
       }}>
         {[
           { id: 'static_pages', label: 'Static Pages & Photos', icon: Layout },
+          { id: 'jobs', label: 'Sarkari Job Postings', icon: Briefcase },
           { id: 'operators', label: 'Operators & Profiles', icon: Users },
           { id: 'pricing', label: 'Service Pricing Catalog', icon: IndianRupee },
           { id: 'retention', label: 'Storage & Retention', icon: HardDrive },
@@ -1087,6 +1109,114 @@ export const AdminPanel = () => {
           </div>
         </div>
       )}
+      {/* SARKARI JOB POSTINGS & RECRUITMENT ALERTS MANAGER */}
+      {activeTab === 'jobs' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div className="card">
+            <div className="card-header" style={{ flexWrap: 'wrap', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '38px', height: '38px', borderRadius: 'var(--radius-md)',
+                  background: 'linear-gradient(135deg, #2563eb, #38bdf8)', color: '#ffffff',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  <Briefcase size={20} />
+                </div>
+                <div>
+                  <h3 className="card-title">Live Government Job Postings & Alerts Board</h3>
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                    Publish and manage government vacancy alerts displayed on the public landing page.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={() => {
+                  setSelectedAdminJob(null);
+                  setJobModalOpen(true);
+                }}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '800' }}
+              >
+                <PlusCircle size={15} /> Publish New Job Alert
+              </button>
+            </div>
+
+            <div className="card-body" style={{ padding: 0 }}>
+              <div className="table-wrapper" style={{ border: 'none', borderRadius: 0 }}>
+                <table className="custom-table">
+                  <thead>
+                    <tr>
+                      <th>Title & Department</th>
+                      <th>Category</th>
+                      <th>Vacancies</th>
+                      <th>Qualification</th>
+                      <th>Last Date</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {adminJobs.map(job => (
+                      <tr key={job._id || job.title}>
+                        <td>
+                          <div style={{ fontWeight: '800', color: 'var(--text-main)' }}>{job.title}</div>
+                          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>{job.organization}</div>
+                        </td>
+                        <td>
+                          <span className="badge badge-primary" style={{ fontSize: '0.72rem' }}>
+                            {(job.category || 'upsssc').toUpperCase()}
+                          </span>
+                        </td>
+                        <td style={{ fontWeight: '700' }}>{job.totalVacancies || '—'}</td>
+                        <td style={{ fontSize: '0.78rem', maxWidth: '200px', whiteSpace: 'normal' }}>{job.qualification}</td>
+                        <td style={{ color: '#ef4444', fontWeight: '700' }}>{job.lastDate}</td>
+                        <td>
+                          <span className={`badge ${job.status === 'closing_soon' ? 'badge-warning' : 'badge-completed'}`} style={{ fontSize: '0.72rem' }}>
+                            {job.status === 'closing_soon' ? 'Closing Soon' : 'Active'}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => {
+                                setSelectedAdminJob(job);
+                                setJobModalOpen(true);
+                              }}
+                              style={{ padding: '3px 8px', fontSize: '0.72rem' }}
+                            >
+                              <Edit3 size={12} /> Edit
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-danger btn-sm"
+                              onClick={() => handleDeleteAdminJob(job._id, job.title)}
+                              style={{ padding: '3px 8px', fontSize: '0.72rem' }}
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Job Manager Modal */}
+      <JobManagerModal
+        isOpen={jobModalOpen}
+        onClose={() => setJobModalOpen(false)}
+        job={selectedAdminJob}
+        onSaved={fetchAdminData}
+      />
+
     </div>
   );
 };

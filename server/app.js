@@ -1,3 +1,4 @@
+const jobRoutes = require('./routes/jobRoutes');
 const { UPLOAD_PATHS } = require('./config/constants');
 const adminController = require('./controllers/adminController');
 require('dotenv').config();
@@ -52,6 +53,8 @@ app.use('/api/billing', billingRoutes);
 app.use('/api/print', printRoutes);
 app.use('/api/websites', websiteRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/jobs', jobRoutes);
+app.use('/jobs', jobRoutes);
 app.get('/api/config', (req, res) => adminController.getConfig(req, res));
 app.use('/api/proxy', proxyRoutes);
 

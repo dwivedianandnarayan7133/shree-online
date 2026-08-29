@@ -1,32 +1,26 @@
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const OtpVerification = require('../models/OtpVerification');
+const jwt = require('jsonwebtoken');
 const { JWT_SECRET, JWT_EXPIRES_IN } = require('../config/constants');
-const { logAudit } = require('../utils/logger');
-const { 
-  sendRegisterOtpEmail, 
-  sendPasswordResetOtpEmail, 
-  sendPasswordChangedEmail, 
-  sendLoginAlertEmail, 
-  sendWelcomeEmail, 
-  OWNER_INFO, 
-  ADMIN_INFO 
+const AuditLog = require('../models/AuditLog');
+const logAudit = async (data) => { try { await AuditLog.create(data); } catch(e){} };
+const {
+  sendRegisterOtpEmail,
+  sendPasswordResetOtpEmail,
+  sendWelcomeEmail,
+  sendLoginAlertEmail
 } = require('../services/emailService');
-
-// In-memory OTP Stores with 10-minute expiry
-const registrationOtpStore = {};
-const passwordResetOtpStore = {};
 
 const signToken = (user) => {
   return jwt.sign(
-    { id: user._id, role: user.role, email: user.email, name: user.name, phone: user.phone },
+    { id: user._id, role: user.role, name: user.name, email: user.email },
     JWT_SECRET,
     { expiresIn: JWT_EXPIRES_IN }
   );
 };
 
 /**
- * 1. Step 1 of Registration: Dispatch 6-Digit OTP to Gmail
+ * 1. Step 1 of Registration: Send 6-Digit OTP to Gmail
  */
 const sendRegisterOtp = async (req, res) => {
   try {
@@ -45,17 +39,27 @@ const sendRegisterOtp = async (req, res) => {
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    registrationOtpStore[cleanEmail] = {
-      otp,
-      name,
+    // Store in MongoDB persistent collection for serverless compatibility
+    await OtpVerification.deleteMany({ email: cleanEmail, type: 'register' });
+    await OtpVerification.create({
       email: cleanEmail,
-      password,
-      phone: phone || '',
-      role: ['admin', 'operator'].includes(role) ? role : 'customer',
-      expiresAt: Date.now() + 10 * 60 * 1000
-    };
+      otp,
+      type: 'register',
+      payload: {
+        name,
+        email: cleanEmail,
+        password,
+        phone: phone || '',
+        role: ['admin', 'operator'].includes(role) ? role : 'customer'
+      },
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+    });
 
-    await sendRegisterOtpEmail(cleanEmail, otp, name);
+    try {
+      await sendRegisterOtpEmail(cleanEmail, otp, name);
+    } catch (mailErr) {
+      console.warn('Gmail OTP email notice:', mailErr.message);
+    }
 
     res.json({
       success: true,
@@ -78,14 +82,14 @@ const verifyRegisterOtp = async (req, res) => {
     }
 
     const cleanEmail = email.toLowerCase().trim();
-    const record = registrationOtpStore[cleanEmail];
+    const record = await OtpVerification.findOne({ email: cleanEmail, type: 'register' });
 
     if (!record) {
       return res.status(400).json({ success: false, message: 'No registration request found or OTP expired. Please request a new OTP.' });
     }
 
-    if (Date.now() > record.expiresAt) {
-      delete registrationOtpStore[cleanEmail];
+    if (new Date() > record.expiresAt) {
+      await OtpVerification.deleteOne({ _id: record._id });
       return res.status(400).json({ success: false, message: 'OTP has expired. Please request a new one.' });
     }
 
@@ -93,15 +97,20 @@ const verifyRegisterOtp = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid OTP code. Please check your Gmail.' });
     }
 
-    const user = await User.create({
-      name: record.name,
-      email: cleanEmail,
-      password: record.password,
-      role: record.role,
-      phone: record.phone
-    });
+    const { name, password, role, phone } = record.payload;
 
-    delete registrationOtpStore[cleanEmail];
+    let user = await User.findOne({ email: cleanEmail });
+    if (!user) {
+      user = await User.create({
+        name,
+        email: cleanEmail,
+        password,
+        role: role || 'customer',
+        phone: phone || ''
+      });
+    }
+
+    await OtpVerification.deleteOne({ _id: record._id });
 
     const token = signToken(user);
 
@@ -153,13 +162,20 @@ const forgotPassword = async (req, res) => {
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    passwordResetOtpStore[cleanEmail] = {
+    await OtpVerification.deleteMany({ email: cleanEmail, type: 'forgot_password' });
+    await OtpVerification.create({
+      email: cleanEmail,
       otp,
-      userId: user._id,
-      expiresAt: Date.now() + 10 * 60 * 1000
-    };
+      type: 'forgot_password',
+      payload: { userId: user._id.toString() },
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+    });
 
-    await sendPasswordResetOtpEmail(cleanEmail, otp, user.name);
+    try {
+      await sendPasswordResetOtpEmail(cleanEmail, otp, user.name);
+    } catch (mailErr) {
+      console.warn('Password reset mail notice:', mailErr.message);
+    }
 
     await logAudit({
       action: 'PASSWORD_RESET_REQUESTED',
@@ -179,29 +195,25 @@ const forgotPassword = async (req, res) => {
 };
 
 /**
- * 4. Forgot Password: Step 2 - Verify OTP & Set New Password
+ * 4. Forgot Password: Step 2 - Verify OTP & Reset Password
  */
 const resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
 
     if (!email || !otp || !newPassword) {
-      return res.status(400).json({ success: false, message: 'Email, OTP, and New Password are required.' });
-    }
-
-    if (newPassword.length < 6) {
-      return res.status(400).json({ success: false, message: 'New password must be at least 6 characters long.' });
+      return res.status(400).json({ success: false, message: 'Email, OTP, and new password are required.' });
     }
 
     const cleanEmail = email.toLowerCase().trim();
-    const record = passwordResetOtpStore[cleanEmail];
+    const record = await OtpVerification.findOne({ email: cleanEmail, type: 'forgot_password' });
 
     if (!record) {
-      return res.status(400).json({ success: false, message: 'No password reset request found or OTP expired. Please request a new OTP.' });
+      return res.status(400).json({ success: false, message: 'No password reset request found or OTP expired.' });
     }
 
-    if (Date.now() > record.expiresAt) {
-      delete passwordResetOtpStore[cleanEmail];
+    if (new Date() > record.expiresAt) {
+      await OtpVerification.deleteOne({ _id: record._id });
       return res.status(400).json({ success: false, message: 'OTP has expired. Please request a new one.' });
     }
 
@@ -209,7 +221,7 @@ const resetPassword = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid OTP code. Please check your Gmail.' });
     }
 
-    const user = await User.findById(record.userId);
+    const user = await User.findById(record.payload.userId);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User account not found.' });
     }
@@ -217,21 +229,19 @@ const resetPassword = async (req, res) => {
     user.password = newPassword;
     await user.save();
 
-    delete passwordResetOtpStore[cleanEmail];
-
-    sendPasswordChangedEmail(user.email, user.name).catch(e => console.warn('Password changed notice:', e.message));
+    await OtpVerification.deleteOne({ _id: record._id });
 
     await logAudit({
       action: 'PASSWORD_RESET_COMPLETED',
       user: user.name,
       role: user.role,
-      details: { email: user.email },
+      details: { email: cleanEmail },
       ipAddress: req.ip
     });
 
     res.json({
       success: true,
-      message: 'Password reset successfully! You can now log in with your new password.'
+      message: 'Password reset successfully! You can now Sign In with your new password.'
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -239,86 +249,20 @@ const resetPassword = async (req, res) => {
 };
 
 /**
- * 5. Standard Login: Verify Password & Send Login Alert to Gmail
- */
-const login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ success: false, message: 'Please provide email and password.' });
-    }
-
-    const cleanEmail = email.toLowerCase().trim();
-    const user = await User.findOne({ email: cleanEmail });
-    if (!user) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password.' });
-    }
-
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password.' });
-    }
-
-    user.lastLogin = new Date();
-    await user.save();
-
-    const token = signToken(user);
-
-    sendLoginAlertEmail(user.email, user.name, user.role, req.ip, new Date()).catch(e => console.warn('Login alert notice:', e.message));
-
-    await logAudit({
-      action: 'USER_LOGIN',
-      user: user.name,
-      role: user.role,
-      details: { email: user.email, role: user.role },
-      ipAddress: req.ip
-    });
-
-    res.json({
-      success: true,
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        phone: user.phone,
-        avatar: user.avatar
-      },
-      message: 'Login successful. Security alert email dispatched.'
-    });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-};
-
-/**
- * 6. Get Current User Info
- */
-const getMe = async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id).select('-password');
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found.' });
-    }
-    res.json({ success: true, user });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-};
-
-/**
- * 7. Direct Register (Fallback)
+ * 5. Direct User Registration (Fallback)
  */
 const register = async (req, res) => {
   try {
     const { name, email, password, role = 'customer', phone } = req.body;
-    const cleanEmail = email.toLowerCase().trim();
 
-    const existingUser = await User.findOne({ email: cleanEmail });
-    if (existingUser) {
-      return res.status(400).json({ success: false, message: 'Email is already registered.' });
+    if (!name || !email || !password) {
+      return res.status(400).json({ success: false, message: 'Please provide name, email, and password.' });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    const existing = await User.findOne({ email: cleanEmail });
+    if (existing) {
+      return res.status(400).json({ success: false, message: 'Email already registered.' });
     }
 
     const user = await User.create({
@@ -332,7 +276,14 @@ const register = async (req, res) => {
     const token = signToken(user);
 
     sendWelcomeEmail(user.email, user.name).catch(e => console.warn('Welcome mail notice:', e.message));
-    sendLoginAlertEmail(user.email, user.name, user.role, req.ip, new Date()).catch(e => console.warn('Login alert notice:', e.message));
+
+    await logAudit({
+      action: 'USER_REGISTERED',
+      user: user.name,
+      role: user.role,
+      details: { email: user.email, role: user.role },
+      ipAddress: req.ip
+    });
 
     res.status(201).json({
       success: true,
@@ -350,6 +301,81 @@ const register = async (req, res) => {
   }
 };
 
+/**
+ * 6. User Login
+ */
+const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: 'Please provide email and password.' });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: cleanEmail }).select('+password');
+
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Invalid credentials. User not found.' });
+    }
+
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: 'Invalid credentials. Password incorrect.' });
+    }
+
+    user.lastLogin = new Date();
+    await user.save();
+
+    const token = signToken(user);
+
+    sendLoginAlertEmail(user.email, user.name, user.role, req.ip, new Date()).catch(e => console.warn('Login alert mail notice:', e.message));
+
+    await logAudit({
+      action: 'USER_LOGIN',
+      user: user.name,
+      role: user.role,
+      details: { email: user.email, role: user.role },
+      ipAddress: req.ip
+    });
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        phone: user.phone
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+const getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    res.json({ success: true, user });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+const getOperators = async (req, res) => {
+  try {
+    const operators = await User.find({
+      role: { $in: ['operator', 'admin'] }
+    }).select('-password');
+
+    res.json({ success: true, count: operators.length, operators });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 module.exports = {
   sendRegisterOtp,
   verifyRegisterOtp,
@@ -357,5 +383,6 @@ module.exports = {
   resetPassword,
   register,
   login,
-  getMe
+  getMe,
+  getOperators
 };

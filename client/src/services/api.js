@@ -1,4 +1,4 @@
-﻿import { API_BASE, SERVER_BASE, getFullUrl } from './config';
+import { API_BASE, SERVER_BASE, getFullUrl } from './config';
 export { API_BASE, SERVER_BASE, getFullUrl };
 
 async function request(endpoint, options = {}) {
@@ -15,10 +15,16 @@ async function request(endpoint, options = {}) {
     options.body = JSON.stringify(options.body);
   }
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers
-  });
+  let response;
+  try {
+    response = await fetch(`${API_BASE}${endpoint}`, {
+      ...options,
+      headers
+    });
+  } catch (netErr) {
+    console.warn(`Network fetch notice for ${endpoint}:`, netErr.message);
+    throw new Error(netErr.message || 'Unable to connect to server. Please check your internet connection.');
+  }
 
   let data = {};
   const contentType = response.headers.get('content-type') || '';
@@ -55,6 +61,13 @@ export const api = {
   addRequestNote: (id, note) => request(`/requests/${id}/notes`, { method: 'POST', body: { note } }),
   uploadDeliverable: (id, formData) => request(`/requests/${id}/deliverable`, { method: 'POST', body: formData }),
   trackRequest: (identifier) => request(`/requests/track/${identifier}`),
+
+  // Job Postings & Recruitment Alerts
+  getJobs: (params = '') => request(`/jobs?${params}`),
+  getJobById: (id) => request(`/jobs/${id}`),
+  createJob: (body) => request('/jobs', { method: 'POST', body }),
+  updateJob: (id, body) => request(`/jobs/${id}`, { method: 'PUT', body }),
+  deleteJob: (id) => request(`/jobs/${id}`, { method: 'DELETE' }),
 
   // Document Tools
   imagesToPdf: (formData) => request('/documents/images-to-pdf', { method: 'POST', body: formData }),
