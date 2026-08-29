@@ -27,11 +27,12 @@ const createRequest = async (req, res) => {
     const submittedFiles = files.map(file => ({
       fileId: uuidv4(),
       originalName: file.originalname,
-      fileName: file.filename,
-      path: file.path,
+      fileName: file.filename || `${Date.now()}-${uuidv4().substring(0,6)}-${file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_')}`,
+      path: file.path || 'database-binary',
       size: file.size,
       mimeType: file.mimetype,
-      actionType: 'uploaded'
+      actionType: 'uploaded',
+      fileData: file.buffer || null
     }));
 
     const requestId = generateRequestId();
@@ -115,6 +116,7 @@ const getRequests = async (req, res) => {
 
     const total = await Request.countDocuments(query);
     const requests = await Request.find(query)
+      .select('-submittedFiles.fileData -processedFiles.fileData')
       .sort({ createdAt: -1 })
       .skip((Number(page) - 1) * Number(limit))
       .limit(Number(limit));
@@ -137,9 +139,9 @@ const getRequestById = async (req, res) => {
     let request;
 
     if (id.startsWith('CA-')) {
-      request = await Request.findOne({ requestId: id });
+      request = await Request.findOne({ requestId: id }).select('-submittedFiles.fileData -processedFiles.fileData');
     } else {
-      request = await Request.findById(id);
+      request = await Request.findById(id).select('-submittedFiles.fileData -processedFiles.fileData');
     }
 
     if (!request) {
@@ -215,12 +217,13 @@ const addProcessedFile = async (req, res) => {
     const processedFile = {
       fileId: uuidv4(),
       originalName: file.originalname,
-      fileName: file.filename,
-      path: file.path,
+      fileName: file.filename || `${Date.now()}-${uuidv4().substring(0,6)}-${file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_')}`,
+      path: file.path || 'database-binary',
       size: file.size,
       mimeType: file.mimetype,
       actionType,
       notes,
+      fileData: file.buffer || null,
       uploadedAt: new Date()
     };
 

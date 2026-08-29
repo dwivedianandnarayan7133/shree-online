@@ -8,6 +8,7 @@ const fileSchema = new mongoose.Schema({
   size: { type: Number, required: true },
   mimeType: { type: String, required: true },
   actionType: { type: String, default: 'uploaded' },
+  fileData: { type: Buffer },
   isTemporary: { type: Boolean, default: false },
   uploadedAt: { type: Date, default: Date.now }
 });

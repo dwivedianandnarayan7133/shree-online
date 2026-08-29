@@ -42,6 +42,35 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
   }
 }));
 
+// Database fallback for Vercel Serverless where /tmp is ephemeral
+app.use('/uploads/:type/:fileName', async (req, res, next) => {
+  try {
+    const { type, fileName } = req.params;
+    if (type === 'customer_records' || type === 'processed') {
+      const RequestModel = require('./models/Request');
+      const dbReq = await RequestModel.findOne(
+        type === 'customer_records' 
+          ? { 'submittedFiles.fileName': fileName }
+          : { 'processedFiles.fileName': fileName }
+      );
+      if (dbReq) {
+        const file = type === 'customer_records' 
+          ? dbReq.submittedFiles.find(f => f.fileName === fileName)
+          : dbReq.processedFiles.find(f => f.fileName === fileName);
+        
+        if (file && file.fileData) {
+          res.setHeader('Content-Type', file.mimeType);
+          res.setHeader('Content-Disposition', `inline; filename="${file.originalName}"`);
+          return res.send(file.fileData);
+        }
+      }
+    }
+    next();
+  } catch (err) {
+    next();
+  }
+});
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/requests', requestRoutes);

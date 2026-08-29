@@ -2,9 +2,9 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
-const { UPLOAD_PATHS } = require('../config/constants');
+const { UPLOAD_PATHS, IS_SERVERLESS } = require('../config/constants');
 
-const storage = multer.diskStorage({
+const storage = IS_SERVERLESS ? multer.memoryStorage() : multer.diskStorage({
   destination: function (req, file, cb) {
     let destDir = UPLOAD_PATHS.TEMP;
     if (req.baseUrl.includes('customer') || req.baseUrl.includes('request')) {
