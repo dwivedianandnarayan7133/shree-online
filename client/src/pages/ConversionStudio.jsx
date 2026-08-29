@@ -1,4 +1,4 @@
-import { restoreOldDocumentClient, extractOcrClient } from '../services/clientImageEngine';
+import { restoreOldDocumentClient, extractOcrClient, exportToWordClient, exportToExcelClient } from '../services/clientImageEngine';
 import { SERVER_BASE, getFullUrl } from '../services/config';
 ﻿import React, { useState } from 'react';
 import { 

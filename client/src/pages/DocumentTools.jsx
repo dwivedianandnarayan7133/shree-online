@@ -151,14 +151,16 @@ export const DocumentTools = () => {
     }
     setLoading(true);
     try {
-      // 1. Instant 50ms Client-Side PDF Compression via pdf-lib
-      const clientRes = await compressPdfClient(compFile, 'medium');
+      // 1. Instant 50ms Client-Side Custom Size PDF Compressor
+      const effectiveKb = Number(customKb) || targetKb || 100;
+      const clientRes = await compressPdfClient(compFile, { targetKb: effectiveKb, quality: 'medium' });
       setCompResult(clientRes);
     } catch (clientErr) {
       console.warn('Client engine notice, trying API fallback:', clientErr.message);
       try {
         const data = new FormData();
         data.append('pdf', compFile);
+        data.append('targetKb', customKb || targetKb);
 
         const res = await api.compressPdf(data);
         if (res.success) setCompResult(res);

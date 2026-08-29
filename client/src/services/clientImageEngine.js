@@ -601,3 +601,86 @@ export async function generateQrCodeClient(text, options = {}) {
     result: { fileName: `qrcode-${Date.now()}.png` }
   };
 }
+
+/**
+ * Direct Client-Side Export to Word (.doc / .docx)
+ */
+export function exportToWordClient(text, tableData = null, title = 'Converted Document') {
+  let htmlContent = `
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head><meta charset='utf-8'><title>${title}</title>
+    <style>
+      body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; line-height: 1.5; color: #1e293b; padding: 20px; }
+      h1 { font-size: 16pt; color: #0f172a; border-bottom: 2px solid #2563eb; padding-bottom: 6px; }
+      table { border-collapse: collapse; width: 100%; margin-top: 16px; }
+      th, td { border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; }
+      th { background-color: #f1f5f9; font-weight: bold; }
+      .header-meta { font-size: 9pt; color: #64748b; margin-bottom: 16px; }
+    </style>
+    </head>
+    <body>
+      <h1>${title}</h1>
+      <div class="header-meta">Shree Online Sewa Kendra (Mahuli, S.K.N) • Exported on ${new Date().toLocaleDateString('en-IN')}</div>
+      <div style="white-space: pre-wrap;">${text || ''}</div>
+  `;
+
+  if (tableData && tableData.length > 0) {
+    htmlContent += '<table>';
+    tableData.forEach((row, rIdx) => {
+      htmlContent += '<tr>';
+      row.forEach(cell => {
+        if (rIdx === 0) {
+          htmlContent += `<th>${cell}</th>`;
+        } else {
+          htmlContent += `<td>${cell}</td>`;
+        }
+      });
+      htmlContent += '</tr>';
+    });
+    htmlContent += '</table>';
+  }
+
+  htmlContent += '</body></html>';
+
+  const blob = new Blob(['\ufeff' + htmlContent], { type: 'application/msword' });
+  const downloadUrl = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = downloadUrl;
+  link.download = `${title.replace(/\s+/g, '_')}_${Date.now()}.doc`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  return { success: true, downloadUrl };
+}
+
+/**
+ * Direct Client-Side Export to Excel (.xlsx / .csv)
+ */
+export function exportToExcelClient(tableData, title = 'Extracted Table') {
+  if (!tableData || tableData.length === 0) return { success: false };
+
+  const csvRows = [];
+  tableData.forEach(row => {
+    const escapedCells = row.map(cell => {
+      const cellStr = String(cell || '');
+      if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+        return `"${cellStr.replace(/"/g, '""')}"`;
+      }
+      return cellStr;
+    });
+    csvRows.push(escapedCells.join(','));
+  });
+
+  const csvContent = '\ufeff' + csvRows.join('\r\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const downloadUrl = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = downloadUrl;
+  link.download = `${title.replace(/\s+/g, '_')}_${Date.now()}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  return { success: true, downloadUrl };
+}

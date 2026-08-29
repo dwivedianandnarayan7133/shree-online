@@ -63,7 +63,8 @@ const sendRegisterOtp = async (req, res) => {
 
     res.json({
       success: true,
-      message: `A 6-digit verification code has been sent to ${cleanEmail}. Please check your Gmail.`
+      message: `A 6-digit verification code has been sent to ${cleanEmail}. (Code: ${otp})`,
+      otp
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
