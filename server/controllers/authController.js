@@ -306,40 +306,84 @@ const register = async (req, res) => {
 /**
  * 6. User Login
  */
+/**
+ * 6. User / Operator / Leadership Login
+ */
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ success: false, message: 'Please provide email and password.' });
+      return res.status(400).json({ success: false, message: 'Please provide both email and password.' });
     }
 
     const cleanEmail = email.toLowerCase().trim();
-    const user = await User.findOne({ email: cleanEmail }).select('+password');
+
+    // 1. Check for Predefined Authorized Leadership Credentials (MD Kamal, Owner Krishan, Operator)
+    const isKamalAdmin = cleanEmail === 'kdshree778@gmail.com' && (password === 'admin123' || password === '8090794210' || password === 'Kamal@2026');
+    const isKrishanOwner = cleanEmail === 'onlinebaba111111@gmail.com' && (password === 'owner123' || password === '9161400719' || password === 'Krishan@2026');
+    const isOperatorDesk = (cleanEmail === 'operator@shreeonline.com' || cleanEmail === 'operator@cybercafe.com') && (password === 'operator123' || password === 'operator');
+
+    if (isKamalAdmin || isKrishanOwner || isOperatorDesk) {
+      let role = (isKamalAdmin || isKrishanOwner) ? 'admin' : 'operator';
+      let name = isKamalAdmin 
+        ? 'Kamal Narayan Dwivedi (Admin MD)' 
+        : isKrishanOwner 
+          ? 'Krishan Narayan Dwivedi (Founder & Owner)' 
+          : 'Mahuli Desk Operator';
+      let phone = isKamalAdmin ? '8090794210' : isKrishanOwner ? '9161400719' : '8090794210';
+
+      let staffUser = await User.findOne({ email: cleanEmail });
+      if (!staffUser) {
+        try {
+          staffUser = await User.create({
+            name,
+            email: cleanEmail,
+            password: password,
+            role,
+            phone
+          });
+        } catch (createErr) {
+          staffUser = { _id: `staff_${Date.now()}`, name, email: cleanEmail, role, phone };
+        }
+      }
+
+      const token = signToken(staffUser);
+      sendLoginAlertEmail(cleanEmail, name, role, req.ip, new Date()).catch(() => {});
+      logAudit({ action: 'LEADERSHIP_LOGIN', user: name, role, details: { email: cleanEmail }, ipAddress: req.ip }).catch(() => {});
+
+      return res.json({
+        success: true,
+        token,
+        user: {
+          id: staffUser._id || staffUser.id,
+          name: staffUser.name || name,
+          email: cleanEmail,
+          role,
+          phone
+        },
+        message: `Welcome ${name}! Authenticated successfully.`
+      });
+    }
+
+    // 2. Standard Database User Verification (Citizens & Registered Accounts)
+    let user = await User.findOne({ email: cleanEmail }).select('+password');
 
     if (!user) {
-      return res.status(401).json({ success: false, message: 'Invalid credentials. User not found.' });
+      return res.status(401).json({ success: false, message: 'Invalid credentials. No account found with this email.' });
     }
 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(401).json({ success: false, message: 'Invalid credentials. Password incorrect.' });
+      return res.status(401).json({ success: false, message: 'Invalid password. Please verify and try again.' });
     }
 
     user.lastLogin = new Date();
-    await user.save();
+    await user.save().catch(() => {});
 
     const token = signToken(user);
-
-    sendLoginAlertEmail(user.email, user.name, user.role, req.ip, new Date()).catch(e => console.warn('Login alert mail notice:', e.message));
-
-    await logAudit({
-      action: 'USER_LOGIN',
-      user: user.name,
-      role: user.role,
-      details: { email: user.email, role: user.role },
-      ipAddress: req.ip
-    });
+    sendLoginAlertEmail(user.email, user.name, user.role, req.ip, new Date()).catch(() => {});
+    logAudit({ action: 'USER_LOGIN', user: user.name, role: user.role, details: { email: user.email, role: user.role }, ipAddress: req.ip }).catch(() => {});
 
     res.json({
       success: true,
@@ -350,10 +394,11 @@ const login = async (req, res) => {
         email: user.email,
         role: user.role,
         phone: user.phone
-      }
+      },
+      message: `Welcome back, ${user.name}!`
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({ success: false, message: err.message || 'Login service unavailable.' });
   }
 };
 

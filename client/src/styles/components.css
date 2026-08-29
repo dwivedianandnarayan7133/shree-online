@@ -1773,6 +1773,201 @@
   .modal-header {
     padding: 14px 16px !important;
   }
+}
+
+.bottom-nav-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 26px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.bottom-nav-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.bottom-nav-item.active {
+  color: #2563eb;
+}
+
+.bottom-nav-item.active .bottom-nav-icon-box {
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563eb;
+}
+
+[data-theme='dark'] .bottom-nav-item.active {
+  color: #38bdf8;
+}
+
+[data-theme='dark'] .bottom-nav-item.active .bottom-nav-icon-box {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+}
+
+/* ==========================================================================
+   MOBILE MEDIA QUERIES (@media max-width: 768px)
+   ========================================================================== */
+@media (max-width: 768px) {
+  /* Show Mobile Bottom Nav */
+  .mobile-bottom-nav {
+    display: flex;
+  }
+
+  /* Add bottom padding to workspace so bottom nav never covers content */
+  .full-width-workspace {
+    padding-bottom: 80px !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  /* Header adjustments */
+  .navbar {
+    padding: 0 12px;
+    height: 56px;
+  }
+
+  .brand-icon-wrapper {
+    width: 36px;
+    height: 36px;
+    font-size: 1.1rem;
+  }
+
+  .brand-text-title {
+    font-size: 1.05rem;
+  }
+
+  .brand-tagline {
+    font-size: 0.65rem;
+  }
+
+  /* Hide redundant top buttons on mobile */
+  .navbar-right-tools .wa-badge-btn,
+  .navbar-right-tools .btn-primary {
+    display: none !important;
+  }
+
+  /* Card layouts */
+  .card {
+    padding: 16px !important;
+    border-radius: 12px !important;
+  }
+
+  .card-header {
+    margin-bottom: 14px !important;
+  }
+
+  /* Grid layouts */
+  .quick-actions-grid,
+  .services-grid,
+  .studios-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .kpi-metrics-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+
+  /* Tool two-column workspace stack vertically */
+  .tool-workspace {
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+
+  .tool-panel {
+    width: 100% !important;
+  }
+
+  /* Preview images fit screen cleanly */
+  .preview-box {
+    padding: 10px !important;
+  }
+
+  .preview-img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Buttons full width on mobile */
+  .btn-row,
+  .tool-actions-row {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  .btn-row .btn,
+  .tool-actions-row .btn {
+    width: 100% !important;
+  }
+
+  /* Forms & inputs touch-friendly */
+  .form-input,
+  .form-select,
+  .btn {
+    min-height: 44px !important;
+    font-size: 0.9rem !important;
+  }
+
+  /* Hero banners */
+  .hero-banner {
+    padding: 20px 16px !important;
+    border-radius: 14px !important;
+  }
+
+  .hero-title {
+    font-size: 1.3rem !important;
+  }
+
+  .hero-subtitle {
+    font-size: 0.85rem !important;
+  }
+
+  /* Custom Browser Mobile Layout */
+  .browser-nav-toolbar {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  .browser-omnibox {
+    order: 2 !important;
+    width: 100% !important;
+  }
+
+  .browser-actions-group {
+    order: 1 !important;
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+
+  /* Footer on mobile */
+  .footer {
+    padding: 28px 16px 84px 16px !important;
+  }
+}
+
+
+/* Job Alerts Board Responsive Polish */
+@media (max-width: 768px) {
+  .job-card {
+    padding: 14px !important;
+  }
+
+  .modal-container {
+    width: 96vw !important;
+    max-width: 96vw !important;
+    margin: 10px !important;
+    border-radius: 14px !important;
+  }
+
+  .modal-header {
+    padding: 14px 16px !important;
+  }
 
   .modal-body {
     padding: 14px 16px !important;
@@ -1799,6 +1994,35 @@
   .table-wrapper {
     -webkit-overflow-scrolling: touch;
     border-radius: 8px !important;
+  }
+
+  /* Smooth scrollable tabs on mobile */
+  .tabs-container {
+    display: flex !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 4px !important;
+    gap: 8px !important;
+    flex-wrap: nowrap !important;
+  }
+  .tabs-container::-webkit-scrollbar {
+    display: none;
+  }
+  .tab-btn {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    padding: 8px 14px !important;
+    font-size: 0.8rem !important;
+  }
+
+  /* Auth Card Responsive Polish */
+  .auth-card,
+  .login-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    padding: 16px !important;
   }
 }
 

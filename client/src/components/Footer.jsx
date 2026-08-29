@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { 
   Layers, MapPin, Phone, MessageCircle, Clock, ShieldCheck, 
   Award, ArrowUp, Sparkles, FileText, Camera, HeartHandshake,
-  CheckCircle2, ExternalLink, Mail
+  CheckCircle2, ExternalLink, Mail, Lock
 } from 'lucide-react';
 import { api } from '../services/api';
 import { DEFAULT_CONFIG } from '../services/defaultConfig';
+import { LeadershipModal } from './LeadershipModal';
 
 export const Footer = ({ setActivePage }) => {
   const [config, setConfig] = useState(DEFAULT_CONFIG);
+  const [showStaffModal, setShowStaffModal] = useState(false);
 
   useEffect(() => {
     api.getSystemConfig().then(res => {
@@ -144,6 +146,27 @@ export const Footer = ({ setActivePage }) => {
                 </a>
               </div>
             </div>
+
+            {/* Dedicated Leadership / Admin Password Login Button */}
+            <button
+              type="button"
+              onClick={() => setShowStaffModal(true)}
+              className="btn btn-outline btn-sm"
+              style={{
+                marginTop: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                fontWeight: '800',
+                fontSize: '0.76rem',
+                borderColor: 'var(--primary-500)',
+                color: 'var(--primary-400)'
+              }}
+            >
+              <Lock size={12} color="#10b981" />
+              <span>🔐 Admin MD & Owner Desk (Password Verified)</span>
+            </button>
           </div>
         </div>
 
@@ -193,6 +216,12 @@ export const Footer = ({ setActivePage }) => {
           <ArrowUp size={12} /> Top
         </button>
       </div>
+
+      <LeadershipModal 
+        isOpen={showStaffModal}
+        onClose={() => setShowStaffModal(false)}
+        setActivePage={setActivePage}
+      />
     </footer>
   );
 };

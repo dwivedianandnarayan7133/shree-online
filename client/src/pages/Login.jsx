@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
+import { LeadershipModal } from '../components/LeadershipModal';
 
 // Generates random 5-character alphanumeric CAPTCHA
 const generateCaptchaCode = () => {
@@ -18,8 +19,9 @@ const generateCaptchaCode = () => {
 };
 
 export const Login = ({ setActivePage }) => {
-  const { login, loginWithDemo } = useAuth();
+  const { login } = useAuth();
   const [viewMode, setViewMode] = useState('signin'); // 'signin', 'register', 'forgot'
+  const [showLeadershipModal, setShowLeadershipModal] = useState(false);
 
   // Common Form States
   const [name, setName] = useState('');
@@ -792,34 +794,16 @@ export const Login = ({ setActivePage }) => {
             </div>
           )}
 
-          {/* Quick 1-Click Staff Demo Logins */}
-          <div style={{ marginTop: '20px', paddingTop: '14px', borderTop: '1px solid var(--border-color)' }}>
-            <div style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'center', marginBottom: '8px' }}>
-              ⚡ Staff Quick Logins
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-              <button 
-                type="button"
-                className="btn btn-secondary btn-sm"
-                onClick={() => handleDemoClick('admin')}
-              >
-                🛡️ Admin MD (Kamal)
-              </button>
-              <button 
-                type="button"
-                className="btn btn-secondary btn-sm"
-                onClick={() => handleDemoClick('owner')}
-              >
-                👑 Owner (Krishan)
-              </button>
-            </div>
+          {/* Password-Protected Leadership Portal Link */}
+          <div style={{ marginTop: '20px', paddingTop: '14px', borderTop: '1px solid var(--border-color)', textAlign: 'center' }}>
             <button 
               type="button"
               className="btn btn-outline btn-sm w-full"
-              style={{ marginTop: '6px' }}
-              onClick={() => handleDemoClick('operator')}
+              onClick={() => setShowLeadershipModal(true)}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: '700' }}
             >
-              🖥️ Operator Desk Demo
+              <ShieldCheck size={14} color="#10b981" />
+              <span>Admin MD & Operator Desk (Password Verification)</span>
             </button>
           </div>
 
@@ -839,6 +823,12 @@ export const Login = ({ setActivePage }) => {
 
         </div>
       </div>
+
+      <LeadershipModal 
+        isOpen={showLeadershipModal}
+        onClose={() => setShowLeadershipModal(false)}
+        setActivePage={setActivePage}
+      />
     </div>
   );
 };
