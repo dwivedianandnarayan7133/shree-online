@@ -55,11 +55,11 @@ const sendRegisterOtp = async (req, res) => {
       expiresAt: new Date(Date.now() + 10 * 60 * 1000)
     });
 
-    try {
-      await sendRegisterOtpEmail(cleanEmail, otp, name);
-    } catch (mailErr) {
-      console.warn('Gmail OTP email notice:', mailErr.message);
-    }
+    // Fire-and-forget — do NOT await; Vercel returns response instantly
+    // OTP is already saved in MongoDB, so verification works even if email never sends
+    sendRegisterOtpEmail(cleanEmail, otp, name).catch(e =>
+      console.warn('Gmail OTP notice (non-blocking):', e.message)
+    );
 
     res.json({
       success: true,

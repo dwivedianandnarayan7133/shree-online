@@ -122,48 +122,56 @@ export const ConversionStudio = () => {
     }
   };
 
-  // Export to Word (.docx)
-  const handleExportWord = async () => {
+  // Export to Word (.docx) — 100% client-side, no serverless call
+  const handleExportWord = () => {
     if (!ocrText) {
       alert('No text extracted to export.');
       return;
     }
-    setExportLoading(true);
     try {
-      const res = await api.exportToWord({
-        text: ocrText,
-        title: 'Cyber Cafe Converted Document',
-        tableData: tableData.length > 0 ? tableData : null
-      });
-      if (res.success) {
-        window.open(`${SERVER_BASE}${res.downloadUrl}`, '_blank');
+      let tableHtml = '';
+      if (tableData && tableData.length > 0) {
+        const rows = tableData.map(row =>
+          `<tr>${row.map(cell => `<td style="border:1px solid #ccc;padding:4px">${cell}</td>`).join('')}</tr>`
+        ).join('');
+        tableHtml = `<table style="border-collapse:collapse;width:100%;margin-top:16px">${rows}</table>`;
       }
+      const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>Document</title></head><body><h2>Shree Online Sewa Kendra — Extracted Document</h2><pre style="font-family:Arial,sans-serif;font-size:13px;white-space:pre-wrap">${ocrText}</pre>${tableHtml}</body></html>`;
+      const blob = new Blob([html], { type: 'application/msword' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `document_${Date.now()}.doc`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     } catch (err) {
-      alert(err.message || 'Word export failed');
-    } finally {
-      setExportLoading(false);
+      alert('Word export failed: ' + err.message);
     }
   };
 
   // Export to Excel (.xlsx)
-  const handleExportExcel = async () => {
+  const handleExportExcel = () => {
     if (!tableData || tableData.length === 0) {
       alert('No tabular data to export.');
       return;
     }
-    setExportLoading(true);
     try {
-      const res = await api.exportToExcel({
-        tableRows: tableData,
-        sheetName: 'Extracted Document Data'
-      });
-      if (res.success) {
-        window.open(`${SERVER_BASE}${res.downloadUrl}`, '_blank');
-      }
+      const csv = tableData.map(row =>
+        row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+      ).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `data_${Date.now()}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     } catch (err) {
-      alert(err.message || 'Excel export failed');
-    } finally {
-      setExportLoading(false);
+      alert('Export failed: ' + err.message);
     }
   };
 

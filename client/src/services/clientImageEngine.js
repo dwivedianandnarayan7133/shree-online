@@ -86,21 +86,70 @@ export async function processSinglePassportPhotoClient(file, options = {}) {
   canvas.height = targetSpec.height;
   const ctx = canvas.getContext('2d');
 
-  if (bgColor === 'white') {
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  } else if (bgColor === 'sky_blue') {
-    ctx.fillStyle = '#e0f2fe';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  } else if (bgColor === 'exam_blue') {
-    ctx.fillStyle = '#1e3a8a';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  } else if (bgColor === 'light_grey') {
-    ctx.fillStyle = '#f3f4f6';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  }
-
+  // Always draw photo first on white base
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, targetSpec.width, targetSpec.height);
+
+  // Background replacement: detect and replace uniform background via corner flood-fill
+  if (bgColor && bgColor !== 'original') {
+    const colorMap = {
+      'white': [255, 255, 255],
+      'sky_blue': [173, 216, 230],
+      'exam_blue': [30, 58, 138],
+      'light_grey': [220, 220, 220]
+    };
+    const targetRgb = colorMap[bgColor] || [255, 255, 255];
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    const w = canvas.width;
+    const h = canvas.height;
+    const tolerance = 60; // color similarity threshold
+
+    // Sample background color from 4 corners (avg)
+    const samplePixels = [
+      [2, 2], [w - 3, 2], [2, h - 3], [w - 3, h - 3]
+    ];
+    let sr = 0, sg = 0, sb = 0;
+    samplePixels.forEach(([px, py]) => {
+      const idx = (py * w + px) * 4;
+      sr += data[idx]; sg += data[idx + 1]; sb += data[idx + 2];
+    });
+    sr = Math.round(sr / 4); sg = Math.round(sg / 4); sb = Math.round(sb / 4);
+
+    // Flood-fill from all 4 corners using iterative BFS
+    const visited = new Uint8Array(w * h);
+    const queue = [];
+    samplePixels.forEach(([px, py]) => queue.push(py * w + px));
+
+    const colorMatch = (idx) => {
+      const dr = data[idx] - sr;
+      const dg = data[idx + 1] - sg;
+      const db = data[idx + 2] - sb;
+      return Math.sqrt(dr * dr + dg * dg + db * db) < tolerance;
+    };
+
+    let head = 0;
+    while (head < queue.length) {
+      const pos = queue[head++];
+      if (visited[pos]) continue;
+      visited[pos] = 1;
+      const pidx = pos * 4;
+      if (!colorMatch(pidx)) continue;
+      // Replace pixel with target background color
+      data[pidx] = targetRgb[0];
+      data[pidx + 1] = targetRgb[1];
+      data[pidx + 2] = targetRgb[2];
+      data[pidx + 3] = 255;
+      const x = pos % w;
+      const y = Math.floor(pos / w);
+      if (x > 0) queue.push(pos - 1);
+      if (x < w - 1) queue.push(pos + 1);
+      if (y > 0) queue.push(pos - w);
+      if (y < h - 1) queue.push(pos + w);
+    }
+    ctx.putImageData(imageData, 0, 0);
+  }
 
   if (addBorder) {
     ctx.strokeStyle = borderColor;

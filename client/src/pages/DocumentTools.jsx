@@ -35,6 +35,8 @@ export const DocumentTools = () => {
   // Compress state
   const [compFile, setCompFile] = useState(null);
   const [compResult, setCompResult] = useState(null);
+  const [targetKb, setTargetKb] = useState(100);
+  const [customKb, setCustomKb] = useState('100');
 
   const handleImgToPdf = async () => {
     if (!imgFiles || imgFiles.length === 0) {
