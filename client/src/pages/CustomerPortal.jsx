@@ -367,7 +367,7 @@ export const CustomerPortal = ({ setActivePage }) => {
           content: "";
           position: absolute;
           inset: 0;
-          background: linear-gradient(90deg, rgba(8,16,40,0.92) 0%, rgba(8,16,40,0.7) 50%, rgba(8,16,40,0.2) 100%);
+          background: linear-gradient(90deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.7) 50%, rgba(255,255,255,0.1) 100%);
         }
         
         .hero-content {
@@ -387,7 +387,7 @@ export const CustomerPortal = ({ setActivePage }) => {
           flex: 1;
           min-width: 320px;
           max-width: 650px;
-          color: #fff;
+          color: #0f172a;
         }
         .hero-title {
           font-size: 4rem;
@@ -399,7 +399,7 @@ export const CustomerPortal = ({ setActivePage }) => {
         .hero-subtitle {
           font-size: 1.15rem;
           line-height: 1.6;
-          color: #cbd5e1;
+          color: #334155;
           margin-bottom: 32px;
           max-width: 90%;
         }
