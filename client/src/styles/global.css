@@ -165,10 +165,10 @@ button {
 .form-input, .form-select, .form-textarea {
   width: 100%;
   padding: 11px 15px;
-  background: var(--input-bg);
+  background: #ffffff; /* Forced white bg for contrast */
   border: 1px solid var(--input-border);
   border-radius: var(--radius-md);
-  color: var(--text-main);
+  color: #000000 !important; /* Forced black text as requested */
   font-size: 0.92rem;
   transition: all var(--transition-fast);
 }
