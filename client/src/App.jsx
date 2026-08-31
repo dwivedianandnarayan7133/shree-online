@@ -70,7 +70,7 @@ function AppContent() {
           <Route path="/website-launcher" element={<WebsiteLauncher setActivePage={setActivePage} />} />
           <Route path="/print-manager" element={<PrintManager setActivePage={setActivePage} />} />
           <Route path="/scanner-studio" element={<ScannerStudio setActivePage={setActivePage} />} />
-          <Route path="/billing-manager" element={<BillingManager setActivePage={setActivePage} />} />
+          <Route path="/billing-manager" element={isOperator ? <BillingManager setActivePage={setActivePage} /> : <Navigate to="/" />} />
           <Route path="/admin-panel" element={isAdmin ? <AdminPanel setActivePage={setActivePage} /> : <Navigate to="/" />} />
           <Route path="/login" element={<Login setActivePage={setActivePage} />} />
           <Route path="*" element={<Navigate to="/" />} />

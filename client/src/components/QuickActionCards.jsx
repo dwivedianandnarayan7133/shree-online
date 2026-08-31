@@ -4,8 +4,13 @@ import {
   Printer, UserPlus, Globe, Receipt, Scan, QrCode
 } from 'lucide-react';
 
+import { useAuth } from '../context/AuthContext';
+
 export const QuickActionCards = ({ onSelectTool, setActivePage }) => {
-  const actions = [
+  const { user } = useAuth();
+  const isOperator = user?.role === 'admin' || user?.role === 'operator';
+
+  let actions = [
     { id: 'passport-photo', title: 'Passport Photo', desc: '4/6/8 Sheet generator', icon: Camera, color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.12)' },
     { id: 'conversion-studio', title: 'Old Doc & OCR', desc: 'Restore & Word/Excel export', icon: Sparkles, color: '#a855f7', bg: 'rgba(168, 85, 247, 0.12)' },
     { id: 'document-tools', title: 'PDF & Doc Tools', desc: 'Merge, split, images to PDF', icon: FileText, color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.12)' },
@@ -15,6 +20,10 @@ export const QuickActionCards = ({ onSelectTool, setActivePage }) => {
     { id: 'billing-manager', title: 'Billing & POS', desc: 'Receipts & daily sales', icon: Receipt, color: '#14b8a6', bg: 'rgba(20, 184, 166, 0.12)' },
     { id: 'website-launcher', title: 'Gov Portals', desc: 'Aadhaar, PAN, CSC shortcuts', icon: Globe, color: '#ec4899', bg: 'rgba(236, 72, 153, 0.12)' }
   ];
+
+  if (!isOperator) {
+    actions = actions.filter(act => act.id !== 'billing-manager');
+  }
 
   const handleClick = (id) => {
     if (typeof setActivePage === 'function') {

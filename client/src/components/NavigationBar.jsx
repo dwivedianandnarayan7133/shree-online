@@ -360,8 +360,8 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
         </div>
 
         <div className="agency-right-actions">
-          <button className="help-btn" onClick={() => handleItemClick('customer-portal')}>
-            Need Help?
+          <button className="help-btn" onClick={() => handleItemClick('login')}>
+            Sign Up & Request Service
           </button>
           <button className="search-icon-btn">
             <Search size={18} />

@@ -464,7 +464,7 @@ export const Dashboard = ({ setActivePage }) => {
                           style={{ padding: '3px 8px', fontSize: '0.72rem' }}
                           onClick={() => setActivePage('requests')}
                         >
-                          <Eye size={12} /> Manage
+                          <Eye size={12} /> View Pipeline
                         </button>
                       </td>
                     </tr>
