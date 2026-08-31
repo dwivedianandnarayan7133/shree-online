@@ -319,12 +319,102 @@ async function sendWelcomeEmail(toEmail, userName = 'Valued Customer') {
   }
 }
 
+/**
+ * 6. Send New Request Confirmation to Customer
+ */
+async function sendNewRequestEmailToCustomer(toEmail, requestData) {
+  if (!toEmail) return { success: false, message: 'No email provided' };
+  try {
+    const transporter = createTransporter();
+    const fromUser = process.env.EMAIL_USER || process.env.GMAIL_USER || 'dwivedianandnarayan@gmail.com';
+    const mailOptions = {
+      from: `"Shree Online Sewa Kendra" <${fromUser}>`,
+      to: toEmail,
+      subject: `Application Received - Token: ${requestData.requestId}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; background-color: #f1f5f9; padding: 24px; color: #1e293b;">
+          <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+            <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; padding: 28px 24px; text-align: center;">
+              <h1 style="margin: 0; font-size: 24px;">Application Received</h1>
+              <p style="margin: 4px 0 0 0; color: #ecfdf5; font-size: 13px; font-weight: bold;">
+                Shree Online Sewa Kendra
+              </p>
+            </div>
+            <div style="padding: 24px;">
+              <p>Dear <b>${requestData.customerName}</b>,</p>
+              <p>Your application has been received successfully. Below are the details:</p>
+              <ul>
+                <li><b>Token ID:</b> ${requestData.requestId}</li>
+                <li><b>Service:</b> ${requestData.serviceName}</li>
+                <li><b>Priority:</b> ${requestData.priority.toUpperCase()}</li>
+              </ul>
+              <p>You can track the live status on our portal.</p>
+              <p>Regards,<br/>Shree Online Team</p>
+            </div>
+          </div>
+        </div>
+      `
+    };
+    const info = await withTimeout(transporter.sendMail(mailOptions), 3500);
+    return { success: true, messageId: info.messageId };
+  } catch (err) {
+    console.warn(`[Google Mail Notice] Customer email failed for ${toEmail}: ${err.message}`);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * 7. Send New Request Alert to Operator/Admin
+ */
+async function sendNewRequestEmailToOperator(requestData) {
+  try {
+    const toEmail = ADMIN_INFO.email;
+    const transporter = createTransporter();
+    const fromUser = process.env.EMAIL_USER || process.env.GMAIL_USER || 'dwivedianandnarayan@gmail.com';
+    const mailOptions = {
+      from: `"Shree Online System" <${fromUser}>`,
+      to: toEmail,
+      subject: `[NEW ALERT] Alert: ${requestData.priority.toUpperCase()} Application - ${requestData.requestId}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; background-color: #f1f5f9; padding: 24px; color: #1e293b;">
+          <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+            <div style="background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); color: #ffffff; padding: 28px 24px; text-align: center;">
+              <h1 style="margin: 0; font-size: 24px;">New Operator Task</h1>
+              <p style="margin: 4px 0 0 0; color: #fef2f2; font-size: 13px; font-weight: bold;">
+                Urgency: ${requestData.priority.toUpperCase()}
+              </p>
+            </div>
+            <div style="padding: 24px;">
+              <p><b>A new service request has been submitted on the portal.</b></p>
+              <ul>
+                <li><b>Token ID:</b> ${requestData.requestId}</li>
+                <li><b>Customer:</b> ${requestData.customerName} (${requestData.customerPhone})</li>
+                <li><b>Service:</b> ${requestData.serviceName}</li>
+                <li><b>Category:</b> ${requestData.serviceCategory}</li>
+                <li><b>Notes:</b> ${requestData.instructions || 'N/A'}</li>
+              </ul>
+              <p>Please log in to the Operator Dashboard to process this request.</p>
+            </div>
+          </div>
+        </div>
+      `
+    };
+    const info = await withTimeout(transporter.sendMail(mailOptions), 3500);
+    return { success: true, messageId: info.messageId };
+  } catch (err) {
+    console.warn(`[Google Mail Notice] Operator email failed: ${err.message}`);
+    return { success: false, error: err.message };
+  }
+}
+
 module.exports = {
   sendRegisterOtpEmail,
   sendPasswordResetOtpEmail,
   sendPasswordChangedEmail,
   sendLoginAlertEmail,
   sendWelcomeEmail,
+  sendNewRequestEmailToCustomer,
+  sendNewRequestEmailToOperator,
   OWNER_INFO,
   ADMIN_INFO
 };

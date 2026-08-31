@@ -1,4 +1,4 @@
-﻿@import './variables.css';
+@import './variables.css';
 
 *, *::before, *::after {
   box-sizing: border-box;
@@ -76,14 +76,14 @@ button {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
+  background: var(--primary-500);
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.25);
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
-  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+  background: var(--primary-600);
+  box-shadow: 0 6px 16px rgba(249, 115, 22, 0.4);
   transform: translateY(-1px);
 }
 

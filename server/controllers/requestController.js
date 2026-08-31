@@ -5,6 +5,7 @@ const Request = require('../models/Request');
 const { generateRequestId } = require('../utils/idGenerator');
 const { logAudit } = require('../utils/logger');
 const { broadcastRequestUpdate, broadcastNotification } = require('../services/socketService');
+const emailService = require('../services/emailService');
 
 // Customer or Operator creates request
 const createRequest = async (req, res) => {
@@ -64,8 +65,14 @@ const createRequest = async (req, res) => {
       details: { requestId, serviceName, filesCount: submittedFiles.length }
     });
 
+    // Send email notifications asynchronously without blocking the response
+    if (customerEmail) {
+      emailService.sendNewRequestEmailToCustomer(customerEmail, request).catch(e => console.error('Customer Mail err', e));
+    }
+    emailService.sendNewRequestEmailToOperator(request).catch(e => console.error('Operator Mail err', e));
+
     // Real-time broadcast to dashboard operators
-    broadcastRequestUpdate(request);
+    broadcastRequestUpdate(request.toObject ? request.toObject() : request);
     broadcastNotification({
       title: 'New Service Request',
       message: `Request ${requestId} received from ${customerName} for ${serviceName}`,
@@ -185,7 +192,7 @@ const updateRequestStatus = async (req, res) => {
       details: { requestId: request.requestId, newStatus: status, note }
     });
 
-    broadcastRequestUpdate(request);
+    broadcastRequestUpdate(request.toObject ? request.toObject() : request);
     broadcastNotification({
       title: `Request ${request.requestId} Updated`,
       message: `Status is now: ${status.toUpperCase()}`,
@@ -239,7 +246,7 @@ const addProcessedFile = async (req, res) => {
 
     await request.save();
 
-    broadcastRequestUpdate(request);
+    broadcastRequestUpdate(request.toObject ? request.toObject() : request);
     broadcastNotification({
       title: `Processed File Ready: ${request.requestId}`,
       message: `${file.originalname} has been delivered for customer ${request.customerName}.`,
@@ -273,7 +280,7 @@ const assignOperator = async (req, res) => {
     });
 
     await request.save();
-    broadcastRequestUpdate(request);
+    broadcastRequestUpdate(request.toObject ? request.toObject() : request);
 
     res.json({ success: true, request });
   } catch (err) {
