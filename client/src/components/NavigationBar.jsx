@@ -26,6 +26,7 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
       id: 'services',
       label: 'SERVICES',
       items: [
+        { id: 'dashboard', label: 'Main Dashboard' },
         { id: 'customer-portal', label: 'Citizen Service Desk' },
         { id: 'passport-photo', label: 'Passport Photo Studio' },
         { id: 'conversion-studio', label: 'Old Doc Restore & OCR' },
@@ -48,7 +49,6 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
       id: 'operations',
       label: 'OPERATIONS',
       items: [
-        { id: 'dashboard', label: 'Command Center' },
         { id: 'requests', label: 'Request Pipeline Manager' },
         { id: 'print-manager', label: 'Print Job Manager' },
         { id: 'scanner-studio', label: 'Scanner Studio' },
