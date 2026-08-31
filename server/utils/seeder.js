@@ -1,4 +1,4 @@
-﻿const mongoose = require('mongoose');
+const mongoose = require('mongoose');
 const User = require('../models/User');
 const ServiceItem = require('../models/ServiceItem');
 const WebsiteShortcut = require('../models/WebsiteShortcut');
@@ -35,7 +35,7 @@ async function seedInitialData() {
       await User.create({
         name: 'Krishan Narayan Dwivedi',
         email: 'onlinebaba111111@gmail.com',
-        password: 'owner123',
+        password: 'Shiv@241',
         role: 'admin',
         phone: '9161400719'
       });
@@ -47,7 +47,7 @@ async function seedInitialData() {
       await User.create({
         name: 'Kamal Narayan Dwivedi',
         email: 'kdshree778@gmail.com',
-        password: 'admin123',
+        password: 'Shiv@241',
         role: 'admin',
         phone: '8090794210'
       });
@@ -60,18 +60,18 @@ async function seedInitialData() {
       await User.create({
         name: 'Kamal Narayan Dwivedi (Admin)',
         email: 'admin@cybercafe.com',
-        password: 'admin123',
+        password: 'Shiv@241',
         role: 'admin',
         phone: '8090794210'
       });
     }
 
-    const operatorExists = await User.findOne({ email: 'operator@cybercafe.com' });
+    const operatorExists = await User.findOne({ email: 'anandnarayan9120@gmail.com' });
     if (!operatorExists) {
       await User.create({
-        name: 'Desk Operator (Mahuli Counter)',
-        email: 'operator@cybercafe.com',
-        password: 'operator123',
+        name: 'Desk Operator (Anand Narayan)',
+        email: 'anandnarayan9120@gmail.com',
+        password: 'Shiv@241',
         role: 'operator',
         phone: '8090794210'
       });

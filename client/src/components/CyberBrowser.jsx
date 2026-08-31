@@ -200,11 +200,13 @@ export const CyberBrowser = () => {
         }}>
           <button 
             type="button" 
-            className="navbar-tool-btn icon-only" 
+            className="btn btn-secondary btn-sm" 
             onClick={() => handleOpenDirect(activeTab?.url)}
-            title="Reload Portal"
+            title="Pop-out securely (Required for sites that block embedding)"
+            style={{ height: '42px', display: 'flex', alignItems: 'center', gap: '6px' }}
           >
-            <RotateCw size={14} />
+            <ExternalLink size={14} />
+            <span className="hide-mobile" style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>Pop Out</span>
           </button>
 
           {/* OMNIBOX */}
@@ -264,7 +266,11 @@ export const CyberBrowser = () => {
         <div style={{ display: 'flex', minHeight: '520px' }}>
           
           {/* LEFT: PORTAL LAUNCH STATION & BROWSER IFRAME */}
-          <div style={{ flex: 1, padding: '0', background: 'var(--bg-main)', position: 'relative' }}>
+          <div style={{ flex: 1, padding: '0', background: 'var(--bg-main)', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '6px 12px', background: 'rgba(239, 68, 68, 0.05)', color: 'var(--text-secondary)', fontSize: '0.75rem', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <AlertCircle size={14} color="#ef4444" />
+              <span><strong>Note:</strong> Some Government websites strictly block embedded viewing. If you see a "refused to connect" message below, please click the <strong>Pop Out</strong> button in the top bar to open the portal securely in a new tab.</span>
+            </div>
             {activeTab?.url ? (
               <iframe
                 key={activeTab.id}

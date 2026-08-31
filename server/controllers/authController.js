@@ -319,9 +319,9 @@ const login = async (req, res) => {
     const cleanEmail = email.toLowerCase().trim();
 
     // 1. Check for Predefined Authorized Leadership Credentials (MD Kamal, Owner Krishan, Operator)
-    const isKamalAdmin = cleanEmail === 'kdshree778@gmail.com' && (password === 'admin123' || password === '8090794210' || password === 'Kamal@2026');
-    const isKrishanOwner = cleanEmail === 'onlinebaba111111@gmail.com' && (password === 'owner123' || password === '9161400719' || password === 'Krishan@2026');
-    const isOperatorDesk = (cleanEmail === 'operator@shreeonline.com' || cleanEmail === 'operator@cybercafe.com') && (password === 'operator123' || password === 'operator');
+    const isKamalAdmin = cleanEmail === 'kdshree778@gmail.com' && (password === 'Shiv@241' || password === '8090794210' || password === 'Kamal@2026');
+    const isKrishanOwner = cleanEmail === 'onlinebaba111111@gmail.com' && (password === 'Shiv@241' || password === '9161400719' || password === 'Krishan@2026');
+    const isOperatorDesk = (cleanEmail === 'anandnarayan9120@gmail.com' || cleanEmail === 'operator@cybercafe.com') && (password === 'Shiv@241' || password === 'operator');
 
     if (isKamalAdmin || isKrishanOwner || isOperatorDesk) {
       let role = (isKamalAdmin || isKrishanOwner) ? 'admin' : 'operator';

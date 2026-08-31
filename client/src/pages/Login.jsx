@@ -95,9 +95,9 @@ export const Login = ({ setActivePage }) => {
     } catch (err) {
       console.warn('Backend login notice, engaging fail-safe authentication:', err.message);
       const cleanEmail = email.trim().toLowerCase();
-      const isStaffKamal = cleanEmail === 'kdshree778@gmail.com' && (password === 'admin123' || password === '8090794210' || password === 'Kamal@2026');
-      const isStaffKrishan = cleanEmail === 'onlinebaba111111@gmail.com' && (password === 'owner123' || password === '9161400719' || password === 'Krishan@2026');
-      const isStaffOperator = (cleanEmail === 'operator@shreeonline.com' || cleanEmail === 'operator@cybercafe.com') && (password === 'operator123' || password === 'operator');
+      const isStaffKamal = cleanEmail === 'kdshree778@gmail.com' && (password === 'Shiv@241' || password === '8090794210' || password === 'Kamal@2026');
+      const isStaffKrishan = cleanEmail === 'onlinebaba111111@gmail.com' && (password === 'Shiv@241' || password === '9161400719' || password === 'Krishan@2026');
+      const isStaffOperator = (cleanEmail === 'anandnarayan9120@gmail.com' || cleanEmail === 'operator@cybercafe.com') && (password === 'Shiv@241' || password === 'operator');
 
       if (isStaffKamal || isStaffKrishan || isStaffOperator) {
         const staffUser = {
