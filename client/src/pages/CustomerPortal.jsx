@@ -696,11 +696,21 @@ export const CustomerPortal = ({ setActivePage }) => {
                       <textarea 
                         className="f-input" 
                         rows="2" 
-                        placeholder="Your Message / Notes"
+                        placeholder="Your Message / Notes / Application Specifics"
                         value={formData.instructions}
                         onChange={e => setFormData({ ...formData, instructions: e.target.value })}
                       ></textarea>
                     </label>
+
+                    <div style={{ marginBottom: '16px' }}>
+                      <div style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--text-main)', marginBottom: '8px' }}>📎 Attach Aadhaar / Documents (Optional)</div>
+                      <FileUploadZone 
+                        onFilesSelected={setSelectedFiles}
+                        multiple={true}
+                        maxFiles={5}
+                        title="Upload forms or photos"
+                      />
+                    </div>
                     
                     <label className="f-optin">
                       <input type="checkbox" defaultChecked />
