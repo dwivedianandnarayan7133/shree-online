@@ -57,6 +57,7 @@ export const api = {
   createRequest: (formData) => request('/requests', { method: 'POST', body: formData }),
   getRequests: (params = '') => request(`/requests?${params}`),
   getRequestById: (id) => request(`/requests/${id}`),
+  getFileUrl: (requestId, fileId) => `${API_URL}/requests/${requestId}/file/${fileId}`,
   updateRequestStatus: (id, body) => request(`/requests/${id}/status`, { method: 'PATCH', body }),
   addRequestNote: (id, note) => request(`/requests/${id}/notes`, { method: 'POST', body: { note } }),
   addProcessedFile: (id, formData) => request(`/requests/${id}/process-file`, { method: 'POST', body: formData }),

@@ -263,146 +263,28 @@ export const CyberBrowser = () => {
         {/* 2. MAIN BROWSER CONTENT & DATA ASSISTANT */}
         <div style={{ display: 'flex', minHeight: '520px' }}>
           
-          {/* LEFT: PORTAL LAUNCH STATION & DIRECTORY */}
-          <div style={{ flex: 1, padding: '24px', background: 'var(--bg-main)' }}>
-            
-            {/* HERO ACTIVE PORTAL CARD */}
-            <div style={{
-              background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-              color: '#ffffff',
-              borderRadius: '14px',
-              padding: '24px',
-              marginBottom: '24px',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '16px'
-            }}>
-              <div>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '3px 12px', borderRadius: '9999px', fontSize: '0.74rem', fontWeight: '800', marginBottom: '8px' }}>
-                  <ShieldCheck size={13} />
-                  <span>Verified Official Portal • AdShield™ Protected</span>
-                </div>
-                <h2 style={{ fontSize: '1.4rem', fontWeight: '900', margin: '0 0 6px 0', color: '#f8fafc' }}>
-                  {activeTab?.title}
-                </h2>
-                <div style={{ fontSize: '0.82rem', fontFamily: 'monospace', color: '#34d399', wordBreak: 'break-all' }}>
-                  🔗 {activeTab?.url}
-                </div>
+          {/* LEFT: PORTAL LAUNCH STATION & BROWSER IFRAME */}
+          <div style={{ flex: 1, padding: '0', background: 'var(--bg-main)', position: 'relative' }}>
+            {activeTab?.url ? (
+              <iframe
+                key={activeTab.id}
+                src={activeTab.url}
+                title="AdShield Secure Browser Window"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  minHeight: '600px',
+                  border: 'none',
+                  background: '#ffffff',
+                  boxShadow: 'inset 0 0 10px rgba(0,0,0,0.05)'
+                }}
+                sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-downloads"
+              />
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)' }}>
+                Please enter a URL or select a portal to launch.
               </div>
-
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button
-                  type="button"
-                  className="btn btn-primary btn-lg"
-                  onClick={() => handleOpenDirect(activeTab?.url)}
-                  style={{
-                    background: 'linear-gradient(135deg, #2563eb, #38bdf8)',
-                    color: '#ffffff',
-                    border: 'none',
-                    fontWeight: '900',
-                    padding: '12px 24px',
-                    borderRadius: '10px',
-                    boxShadow: '0 4px 16px rgba(37,99,235,0.4)',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}
-                >
-                  <ExternalLink size={18} />
-                  <span>Launch Official Portal</span>
-                </button>
-              </div>
-            </div>
-
-            {/* DIRECTORY CATEGORY PILLS & SEARCH */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', gap: '6px', overflowX: 'auto' }}>
-                {[
-                  { id: 'all', label: 'All Portals' },
-                  { id: 'exams', label: '🎓 Exams & Jobs' },
-                  { id: 'pan', label: '💳 PAN & Aadhaar' },
-                  { id: 'govt', label: '🏛️ Govt Schemes' },
-                  { id: 'travel', label: '🚆 Railway & Transport' }
-                ].map(c => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    className={`btn btn-sm ${activeCategory === c.id ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={() => setActiveCategory(c.id)}
-                    style={{ borderRadius: '20px', padding: '4px 14px', fontSize: '0.78rem', fontWeight: '700' }}
-                  >
-                    {c.label}
-                  </button>
-                ))}
-              </div>
-
-              <div style={{ width: '220px' }}>
-                <input 
-                  type="text"
-                  className="form-input"
-                  placeholder="Filter portals..."
-                  value={searchFilter}
-                  onChange={e => setSearchFilter(e.target.value)}
-                  style={{ height: '34px', fontSize: '0.78rem' }}
-                />
-              </div>
-            </div>
-
-            {/* PORTAL CARDS GRID */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
-              {filteredPortals.map(p => {
-                const isCurrent = activeTab?.url === p.url;
-                return (
-                  <div
-                    key={p.id}
-                    className="card"
-                    style={{
-                      padding: '16px',
-                      borderRadius: '12px',
-                      cursor: 'pointer',
-                      border: isCurrent ? '2px solid #2563eb' : '1px solid var(--border-color)',
-                      background: isCurrent ? 'rgba(37, 99, 235, 0.04)' : 'var(--bg-surface)',
-                      transition: 'all 0.15s ease'
-                    }}
-                    onClick={() => handleCardClick(p)}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                      <div style={{
-                        width: '44px', height: '44px', borderRadius: '10px',
-                        background: 'var(--bg-surface-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '1.4rem', flexShrink: 0
-                      }}>
-                        {p.icon}
-                      </div>
-
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'space-between' }}>
-                          <span style={{ fontWeight: '800', fontSize: '0.88rem', color: 'var(--text-main)' }}>{p.title}</span>
-                          <span style={{ fontSize: '0.65rem', fontWeight: '800', background: 'rgba(37,99,235,0.1)', color: '#2563eb', padding: '1px 6px', borderRadius: '4px' }}>
-                            {p.badge}
-                          </span>
-                        </div>
-                        <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', margin: '4px 0 8px 0', lineHeight: '1.3' }}>
-                          {p.desc}
-                        </div>
-                        <button
-                          type="button"
-                          className="btn btn-secondary btn-sm w-full"
-                          onClick={(e) => { e.stopPropagation(); handleOpenDirect(p.url); }}
-                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: '700' }}
-                        >
-                          <ExternalLink size={12} /> Launch Portal
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
+            )}
           </div>
 
           {/* RIGHT: DATA ASSISTANT SIDEBAR */}

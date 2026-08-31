@@ -159,18 +159,10 @@ export const Login = ({ setActivePage }) => {
 
       if (res.success) {
         setRegisterOtpSent(true);
-        const otpCode = res.otp || Math.floor(100000 + Math.random() * 900000).toString();
-        setRegisterOtpCode(otpCode);
-        setSuccessMsg(`✅ 6-digit OTP dispatched to ${email}. Verification Code: ${otpCode} (Auto-filled below).`);
+        setSuccessMsg(`✅ 6-digit OTP dispatched to ${email}. Please check your inbox.`);
       }
     } catch (err) {
-      console.warn('API send OTP notice, using fast direct verification:', err.message);
-      // Fail-safe client generation so user is never blocked
-      const localOtp = Math.floor(100000 + Math.random() * 900000).toString();
-      setRegisterOtpSent(true);
-      setRegisterOtpCode(localOtp);
-      setSuccessMsg(`✅ Your OTP Code is: ${localOtp} — Auto-filled below. Click "Verify OTP & Complete Registration".`);
-    } finally {
+      setError(err.message || 'Failed to dispatch OTP. Ensure your internet connection is active.');
       setLoading(false);
     }
   };
@@ -214,17 +206,7 @@ export const Login = ({ setActivePage }) => {
           return;
         }
       } catch (err2) {
-        // Fallback local session if serverless DB has cold-start
-        const demoUser = {
-          _id: 'cust_' + Date.now(),
-          name: name || 'Citizen User',
-          email: email.trim().toLowerCase(),
-          role: 'customer',
-          phone: phone || ''
-        };
-        const demoToken = 'jwt_offline_' + Date.now();
-        login(demoUser, demoToken);
-        if (setActivePage) setActivePage('customer-portal');
+        setError(err2.message || 'Verification failed. Please check your network and try again.');
       }
     } finally {
       setLoading(false);

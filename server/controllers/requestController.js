@@ -205,11 +205,37 @@ const updateRequestStatus = async (req, res) => {
   }
 };
 
+// Download Binary File from MongoDB
+const downloadFile = async (req, res) => {
+  try {
+    const { id, fileId } = req.params;
+    const request = await Request.findOne({ $or: [{ _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }, { requestId: id }] });
+    
+    if (!request) return res.status(404).json({ success: false, message: 'Request not found' });
+
+    let targetFile = request.submittedFiles.find(f => f.fileId === fileId) 
+                  || request.processedFiles.find(f => f.fileId === fileId);
+
+    if (!targetFile || !targetFile.fileData) {
+      return res.status(404).json({ success: false, message: 'File payload is missing or not a database binary.' });
+    }
+
+    res.set({
+      'Content-Type': targetFile.mimeType,
+      'Content-Disposition': `attachment; filename="${targetFile.originalName}"`
+    });
+    
+    res.send(targetFile.fileData);
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 // Attach processed file to request
 const addProcessedFile = async (req, res) => {
   try {
     const { id } = req.params;
-    const { actionType = 'processed', notes = '' } = req.body;
+    const { actionType = 'processed', notes = '', billAmount = '0' } = req.body;
     const file = req.file;
 
     if (!file) {
@@ -237,6 +263,7 @@ const addProcessedFile = async (req, res) => {
     request.processedFiles.push(processedFile);
     request.status = 'completed';
     request.completedAt = new Date();
+    request.totalCost = Number(billAmount) || 0; // Update bill
     request.statusHistory.push({
       status: 'completed',
       timestamp: new Date(),
@@ -252,6 +279,20 @@ const addProcessedFile = async (req, res) => {
       message: `${file.originalname} has been delivered for customer ${request.customerName}.`,
       type: 'success'
     });
+
+    if (request.customerEmail) {
+      emailService.sendTaskCompleteEmail(
+        request.customerEmail,
+        request.customerName,
+        request.serviceName,
+        request.requestId,
+        billAmount || '0'
+      ).catch(() => {});
+    }
+    
+    // Strip buffers so JSON doesn't crush
+    request.submittedFiles?.forEach(f => f.fileData = undefined);
+    request.processedFiles?.forEach(f => f.fileData = undefined);
 
     res.json({ success: true, message: 'File attached and request marked completed.', request, file: processedFile });
   } catch (err) {
@@ -294,5 +335,6 @@ module.exports = {
   getRequestById,
   updateRequestStatus,
   addProcessedFile,
-  assignOperator
+  assignOperator,
+  downloadFile
 };

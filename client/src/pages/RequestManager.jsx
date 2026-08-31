@@ -21,6 +21,7 @@ export const RequestManager = ({ setActivePage }) => {
   const [previewDoc, setPreviewDoc] = useState(null);
   const [statusNote, setStatusNote] = useState('');
   const [uploadFile, setUploadFile] = useState(null);
+  const [billAmount, setBillAmount] = useState('50');
   const [actionLoading, setActionLoading] = useState(false);
 
   // Billing modal
@@ -82,6 +83,8 @@ export const RequestManager = ({ setActivePage }) => {
       data.append('file', uploadFile);
       data.append('actionType', 'processed_delivery');
       data.append('notes', 'Delivered to customer');
+      data.append('billAmount', billAmount);
+
 
       const res = await api.addProcessedFile(selectedReq._id, data);
       if (res.success) {
@@ -298,12 +301,12 @@ export const RequestManager = ({ setActivePage }) => {
                         <div className="flex gap-2">
                           <button 
                             className="btn btn-secondary btn-sm"
-                            onClick={() => setPreviewDoc({ url: `/uploads/customer_records/${file.fileName}`, name: file.originalName })}
+                            onClick={() => setPreviewDoc({ url: api.getFileUrl(selectedReq.requestId, file.fileId), name: file.originalName })}
                           >
                             <Eye size={12} /> Preview
                           </button>
                           <a 
-                            href={`${SERVER_BASE}/uploads/customer_records/${file.fileName}`}
+                            href={api.getFileUrl(selectedReq.requestId, file.fileId)}
                             download
                             className="btn btn-primary btn-sm"
                           >
@@ -366,13 +369,24 @@ export const RequestManager = ({ setActivePage }) => {
                 <h3 style={{ fontSize: '0.92rem', fontWeight: '700', marginBottom: '10px' }}>
                   📤 Attach Completed Deliverable & Send to Customer
                 </h3>
-                <div className="flex gap-2 items-center">
+                <div className="flex gap-2 items-center" style={{ flexWrap: 'wrap' }}>
                   <input 
                     type="file" 
                     className="form-input"
                     onChange={e => setUploadFile(e.target.files[0])}
-                    style={{ fontSize: '0.85rem', padding: '6px' }}
+                    style={{ fontSize: '0.85rem', padding: '6px', flex: 1 }}
                   />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>₹</span>
+                    <input 
+                      type="number" 
+                      className="form-input"
+                      placeholder="Bill ₹"
+                      value={billAmount}
+                      onChange={e => setBillAmount(e.target.value)}
+                      style={{ fontSize: '0.85rem', width: '80px', padding: '6px' }}
+                    />
+                  </div>
                   <button 
                     className="btn btn-primary btn-sm" 
                     onClick={handleAttachDeliverable}
@@ -389,7 +403,7 @@ export const RequestManager = ({ setActivePage }) => {
                       <div key={pf.fileId} className="file-preview-item" style={{ background: 'var(--status-comp-bg)', borderColor: 'var(--status-comp-border)' }}>
                         <span style={{ fontWeight: '600', color: 'var(--status-comp-text)' }}>✅ {pf.originalName || pf.fileName}</span>
                         <a 
-                          href={`${SERVER_BASE}/uploads/processed/${pf.fileName}`}
+                          href={api.getFileUrl(selectedReq.requestId, pf.fileId)}
                           download
                           className="btn btn-success btn-sm"
                         >

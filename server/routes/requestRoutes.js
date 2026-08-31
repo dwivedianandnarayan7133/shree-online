@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const router = express.Router();
 const requestController = require('../controllers/requestController');
 const { verifyToken, requireRole } = require('../middleware/authMiddleware');
@@ -15,5 +15,8 @@ router.get('/:id', requestController.getRequestById);
 router.patch('/:id/status', verifyToken, requireRole('admin', 'operator'), requestController.updateRequestStatus);
 router.post('/:id/process-file', verifyToken, requireRole('admin', 'operator'), upload.single('file'), requestController.addProcessedFile);
 router.patch('/:id/assign', verifyToken, requireRole('admin', 'operator'), requestController.assignOperator);
+
+// Binary File Download Route (Serves MongoDB Buffered Data directly)
+router.get('/:id/file/:fileId', requestController.downloadFile);
 
 module.exports = router;

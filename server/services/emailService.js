@@ -24,16 +24,16 @@ function createTransporter() {
     port: 465,
     secure: true,
     auth: { user, pass },
-    connectionTimeout: 3500,
-    greetingTimeout: 3000,
-    socketTimeout: 4000
+    connectionTimeout: 12000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000
   });
 }
 
 /**
  * Helper to race an async operation with a hard timeout
  */
-function withTimeout(promise, ms = 3500) {
+function withTimeout(promise, ms = 15000) {
   return Promise.race([
     promise,
     new Promise((_, reject) => setTimeout(() => reject(new Error('Email dispatch timed out')), ms))
@@ -406,6 +406,48 @@ async function sendNewRequestEmailToOperator(requestData) {
     return { success: false, error: err.message };
   }
 }
+/**
+ * 8. Automated Task Complete & Billing Email
+ */
+async function sendTaskCompleteEmail(toEmail, userName, serviceName, requestId, totalCost) {
+  try {
+    const transporter = createTransporter();
+    const fromUser = process.env.EMAIL_USER || process.env.GMAIL_USER || 'dwivedianandnarayan@gmail.com';
+    const mailOptions = {
+      from: `"Shree Online Services" <${fromUser}>`,
+      to: toEmail,
+      subject: `Your Request is Complete: ${serviceName} (Bill: ₹${totalCost})`,
+      html: `
+        <div style="font-family: Arial, sans-serif; background-color: #f8fafc; padding: 24px; color: #1e293b;">
+          <div style="max-width: 500px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+            <div style="background: linear-gradient(135deg, #10b981, #0f172a); color: #ffffff; padding: 22px; text-align: center;">
+              <h2 style="margin: 0; font-size: 20px;">Task Completed!</h2>
+            </div>
+            <div style="padding: 24px; text-align: center;">
+              <p style="font-size: 14px; margin-top: 0;">Namaste <b>${userName}</b>,</p>
+              <p style="font-size: 13px; color: #64748b; line-height: 1.5;">
+                Your digital service request <b>${serviceName}</b> (ID: ${requestId}) has been successfully processed!
+              </p>
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin: 18px 0;">
+                <p style="margin: 0; font-size: 13px; color: #475569;">Total Bill Amount:</p>
+                <div style="font-size: 28px; font-weight: 900; color: #0284c7; margin-top: 4px;">₹${totalCost}</div>
+              </div>
+              <p style="font-size: 13px; color: #334155;">
+                You can download your processed deliverables directly from the Track Request sector in your Customer Portal.
+              </p>
+            </div>
+          </div>
+        </div>
+      `
+    };
+    const info = await withTimeout(transporter.sendMail(mailOptions), 15000);
+    console.log(`[Google Mail] Task Complete email sent to ${toEmail}`);
+    return { success: true, messageId: info.messageId };
+  } catch (err) {
+    console.warn(`[Google Mail Notice] complete mail failed: ${err.message}`);
+    return { success: false, error: err.message };
+  }
+}
 
 module.exports = {
   sendRegisterOtpEmail,
@@ -415,6 +457,7 @@ module.exports = {
   sendWelcomeEmail,
   sendNewRequestEmailToCustomer,
   sendNewRequestEmailToOperator,
+  sendTaskCompleteEmail,
   OWNER_INFO,
   ADMIN_INFO
 };

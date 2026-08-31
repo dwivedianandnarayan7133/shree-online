@@ -753,6 +753,32 @@ export const CustomerPortal = ({ setActivePage }) => {
                       </div>
                       <div style={{ fontSize: '0.9rem', color: '#334155', marginBottom: '6px' }}><strong>Service:</strong> {trackedRequest.serviceName}</div>
                       <div style={{ fontSize: '0.9rem', color: '#334155' }}><strong>Name:</strong> {trackedRequest.customerName}</div>
+                      
+                      {trackedRequest.status === 'completed' && (
+                        <div style={{ marginTop: '16px', padding: '12px', background: '#ecfdf5', border: '1px solid #10b981', borderRadius: '6px' }}>
+                          <h4 style={{ margin: '0 0 8px 0', color: '#047857', fontSize: '0.95rem' }}>✅ Operator Deliverables & Invoice</h4>
+                          <div style={{ fontSize: '0.9rem', marginBottom: '12px', display: 'flex', justifyContent: 'space-between' }}>
+                            <span><strong>Total Bill Amount:</strong></span>
+                            <span style={{ fontWeight: '800', color: '#059669', fontSize: '1.1rem' }}>₹{trackedRequest.totalCost || 0}</span>
+                          </div>
+                          
+                          {trackedRequest.processedFiles?.length > 0 && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              {trackedRequest.processedFiles.map(pf => (
+                                <a 
+                                  key={pf.fileId}
+                                  href={api.getFileUrl(trackedRequest.requestId, pf.fileId)}
+                                  download
+                                  className="btn btn-primary"
+                                  style={{ padding: '8px', fontSize: '0.85rem' }}
+                                >
+                                  ⬇️ Download Original: {pf.originalName}
+                                </a>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

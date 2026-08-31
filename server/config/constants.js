@@ -2,7 +2,7 @@ const path = require('path');
 const os = require('os');
 const fs = require('fs');
 
-const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NOW_REGION);
+const isServerless = true; // Forced true for persistent MongoDB Buffer storage to bypass ephemeral cloud disks
 const baseUploadDir = isServerless 
   ? path.join(os.tmpdir(), 'shree_uploads') 
   : path.join(__dirname, '../uploads');
