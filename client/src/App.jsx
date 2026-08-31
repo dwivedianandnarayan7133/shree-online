@@ -1,5 +1,6 @@
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { MobileBottomNav } from './components/MobileBottomNav';
-import React, { useState } from 'react';
+import React from 'react';
 import { useAuth } from './context/AuthContext';
 import { NavigationBar } from './components/NavigationBar';
 import { Footer } from './components/Footer';
@@ -20,11 +21,19 @@ import { AdminPanel } from './pages/AdminPanel';
 import { AboutUs } from './pages/AboutUs';
 import { Login } from './pages/Login';
 
-export default function App() {
+function AppContent() {
   const { user, loading } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   
-  // Default to customer portal for guests / customers, and dashboard for staff
-  const [activePage, setActivePage] = useState('dashboard');
+  // Synthetic setActivePage to minimize refactoring across all pages
+  const setActivePage = (page) => {
+    if (page === 'customer-portal') navigate('/');
+    else navigate(`/${page}`);
+  };
+
+  // Derive activePage string for legacy components that rely on it (e.g. Navigation)
+  const activePage = location.pathname === '/' ? 'customer-portal' : location.pathname.substring(1);
 
   if (loading) {
     return (
@@ -40,69 +49,47 @@ export default function App() {
     );
   }
 
-  // If user explicitly navigated to login page
-  if (activePage === 'login') {
-    return <Login setActivePage={setActivePage} />;
-  }
-
   const isOperator = user?.role === 'admin' || user?.role === 'operator';
   const isAdmin = user?.role === 'admin';
 
-  const renderActivePage = () => {
-    switch (activePage) {
-      case 'dashboard':
-        return <Dashboard setActivePage={setActivePage} />;
-      case 'customer-portal':
-        return <CustomerPortal setActivePage={setActivePage} />;
-      case 'about-us':
-        return <AboutUs setActivePage={setActivePage} />;
-      case 'requests':
-        return isOperator ? <RequestManager setActivePage={setActivePage} /> : <CustomerPortal setActivePage={setActivePage} />;
-      case 'passport-photo':
-        return <ImageTools setActivePage={setActivePage} />;
-      case 'conversion-studio':
-        return <ConversionStudio />;
-      case 'document-tools':
-        return <DocumentTools />;
-      case 'file-tools':
-        return <FileTools />;
-      case 'utility-hub':
-        return <UtilityHub />;
-      case 'website-launcher':
-        return <WebsiteLauncher />;
-      case 'print-manager':
-        return <PrintManager />;
-      case 'scanner-studio':
-        return <ScannerStudio />;
-      case 'billing-manager':
-        return <BillingManager />;
-      case 'admin-panel':
-        return isAdmin ? <AdminPanel /> : <CustomerPortal setActivePage={setActivePage} />;
-      default:
-        return <CustomerPortal setActivePage={setActivePage} />;
-    }
-  };
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      {/* Universal Responsive Top Navigation Bar */}
       <NavigationBar activePage={activePage} setActivePage={setActivePage} />
 
-      {/* Main Full-Width Responsive Workspace */}
       <main className="full-width-workspace" style={{ paddingBottom: activePage === 'website-launcher' ? 0 : '24px' }}>
-        {renderActivePage()}
+        <Routes>
+          <Route path="/" element={<CustomerPortal setActivePage={setActivePage} />} />
+          <Route path="/dashboard" element={<Dashboard setActivePage={setActivePage} />} />
+          <Route path="/about-us" element={<AboutUs setActivePage={setActivePage} />} />
+          <Route path="/requests" element={isOperator ? <RequestManager setActivePage={setActivePage} /> : <Navigate to="/" />} />
+          <Route path="/passport-photo" element={<ImageTools setActivePage={setActivePage} />} />
+          <Route path="/conversion-studio" element={<ConversionStudio setActivePage={setActivePage} />} />
+          <Route path="/document-tools" element={<DocumentTools setActivePage={setActivePage} />} />
+          <Route path="/file-tools" element={<FileTools setActivePage={setActivePage} />} />
+          <Route path="/utility-hub" element={<UtilityHub setActivePage={setActivePage} />} />
+          <Route path="/website-launcher" element={<WebsiteLauncher setActivePage={setActivePage} />} />
+          <Route path="/print-manager" element={<PrintManager setActivePage={setActivePage} />} />
+          <Route path="/scanner-studio" element={<ScannerStudio setActivePage={setActivePage} />} />
+          <Route path="/billing-manager" element={<BillingManager setActivePage={setActivePage} />} />
+          <Route path="/admin-panel" element={isAdmin ? <AdminPanel setActivePage={setActivePage} /> : <Navigate to="/" />} />
+          <Route path="/login" element={<Login setActivePage={setActivePage} />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
       </main>
 
-      {/* Global Responsive Footer on all pages except In-Portal Browser */}
       {activePage !== 'website-launcher' && (
         <Footer setActivePage={setActivePage} />
       )}
-
-      {/* Native App-Like Mobile Bottom Navigation Bar */}
       <MobileBottomNav activePage={activePage} setActivePage={setActivePage} />
-
-      {/* Floating WhatsApp Quick Conversation & Helpline Widget */}
       <WhatsAppChatWidget currentUser={user} />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
   );
 }

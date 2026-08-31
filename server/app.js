@@ -100,4 +100,10 @@ app.get('/api/health', (req, res) => {
 // Central Error Handler
 app.use(errorHandler);
 
+// Production Static Serving for Render (React Router Support)
+app.use(express.static(path.join(__dirname, '../client/dist')));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+});
+
 module.exports = app;
