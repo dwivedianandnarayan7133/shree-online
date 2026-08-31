@@ -470,12 +470,14 @@ export const CustomerPortal = ({ setActivePage }) => {
           border-radius: 6px;
           font-size: 0.95rem;
           background: #f8fafc;
+          color: #000000 !important;
           transition: 0.2s;
         }
         .f-input:focus {
           outline: none;
           border-color: var(--primary-500);
           background: #fff;
+          color: #000000 !important;
           box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
         }
         .f-optin {
