@@ -59,7 +59,7 @@ export const api = {
   getRequestById: (id) => request(`/requests/${id}`),
   updateRequestStatus: (id, body) => request(`/requests/${id}/status`, { method: 'PATCH', body }),
   addRequestNote: (id, note) => request(`/requests/${id}/notes`, { method: 'POST', body: { note } }),
-  uploadDeliverable: (id, formData) => request(`/requests/${id}/deliverable`, { method: 'POST', body: formData }),
+  addProcessedFile: (id, formData) => request(`/requests/${id}/process-file`, { method: 'POST', body: formData }),
   trackRequest: (identifier) => request(`/requests/track/${identifier}`),
 
   // Job Postings & Recruitment Alerts
