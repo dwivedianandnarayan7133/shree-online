@@ -28,7 +28,13 @@ const app = express();
 app.use(adShieldGuard);
 
 // Global Middleware
-app.use(cors({ origin: '*', credentials: true }));
+app.use(cors({ 
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    return callback(null, origin); // Reflect the requesting origin securely
+  }, 
+  credentials: true 
+}));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(rateLimiter(300, 60 * 1000));
