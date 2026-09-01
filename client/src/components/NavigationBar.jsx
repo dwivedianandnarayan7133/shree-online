@@ -327,7 +327,7 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
 
       {/* 2. Main Sticky Navbar */}
       <nav className="agency-main-nav">
-        <div className="agency-brand-area" onClick={() => handleItemClick('customer-portal')}>
+        <div className="agency-brand-area" onClick={() => handleItemClick('dashboard')}>
           <div style={{ background: '#f8fafc', padding: '4px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
             <img src="/logo.png" alt="Logo" className="agency-logo-img" />
           </div>

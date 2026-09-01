@@ -86,7 +86,7 @@ export const Login = ({ setActivePage }) => {
       if (res && res.success && res.user) {
         login(res.user, res.token || 'user-active-token');
         if (setActivePage) {
-          setActivePage((res.user?.role === 'admin' || res.user?.role === 'operator') ? 'dashboard' : 'customer-portal');
+          setActivePage('dashboard');
         }
         return;
       }
@@ -122,7 +122,7 @@ export const Login = ({ setActivePage }) => {
           phone: phone || ''
         };
         login(citizenUser, 'citizen-token-active');
-        if (setActivePage) setActivePage('customer-portal');
+        if (setActivePage) setActivePage('dashboard');
         return;
       }
 
@@ -186,7 +186,7 @@ export const Login = ({ setActivePage }) => {
 
       if (res.success) {
         login(res.user, res.token);
-        if (setActivePage) setActivePage('customer-portal');
+        if (setActivePage) setActivePage('dashboard');
         return;
       }
     } catch (err) {
@@ -202,7 +202,7 @@ export const Login = ({ setActivePage }) => {
 
         if (res2.success) {
           login(res2.user, res2.token);
-          if (setActivePage) setActivePage('customer-portal');
+          if (setActivePage) setActivePage('dashboard');
           return;
         }
       } catch (err2) {

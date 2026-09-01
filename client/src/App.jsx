@@ -28,12 +28,12 @@ function AppContent() {
   
   // Synthetic setActivePage to minimize refactoring across all pages
   const setActivePage = (page) => {
-    if (page === 'customer-portal') navigate('/');
+    if (page === 'dashboard') navigate('/');
     else navigate(`/${page}`);
   };
 
   // Derive activePage string for legacy components that rely on it (e.g. Navigation)
-  const activePage = location.pathname === '/' ? 'customer-portal' : location.pathname.substring(1);
+  const activePage = location.pathname === '/' ? 'dashboard' : location.pathname.substring(1);
 
   if (loading) {
     return (
@@ -58,8 +58,8 @@ function AppContent() {
 
       <main className="full-width-workspace" style={{ paddingBottom: activePage === 'website-launcher' ? 0 : '24px' }}>
         <Routes>
-          <Route path="/" element={<CustomerPortal setActivePage={setActivePage} />} />
-          <Route path="/dashboard" element={<Dashboard setActivePage={setActivePage} />} />
+          <Route path="/" element={<Dashboard setActivePage={setActivePage} />} />
+          <Route path="/customer-portal" element={<CustomerPortal setActivePage={setActivePage} />} />
           <Route path="/about-us" element={<AboutUs setActivePage={setActivePage} />} />
           <Route path="/requests" element={isOperator ? <RequestManager setActivePage={setActivePage} /> : <Navigate to="/" />} />
           <Route path="/passport-photo" element={<ImageTools setActivePage={setActivePage} />} />
