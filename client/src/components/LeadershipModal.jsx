@@ -67,7 +67,7 @@ export const LeadershipModal = ({ isOpen, onClose, setActivePage }) => {
     operator: {
       name: 'Mahuli Desk Operator',
       roleTitle: 'Front Desk Operator (Mahuli Market)',
-      email: 'operator@shreeonline.com',
+      email: 'anandnarayan9120@gmail.com',
       badge: '🖥️ OPERATOR',
       color: '#4338ca',
       phone: '+91 8090794210'
@@ -112,9 +112,9 @@ export const LeadershipModal = ({ isOpen, onClose, setActivePage }) => {
       }
     } catch (err) {
       // Offline / Direct verification fallback for authorized credentials
-      const validAdminPass = selectedRole === 'admin' && (password === 'admin123' || password === '8090794210' || password === 'Kamal@2026');
-      const validOwnerPass = selectedRole === 'owner' && (password === 'owner123' || password === '9161400719' || password === 'Krishan@2026');
-      const validOperatorPass = selectedRole === 'operator' && (password === 'operator123' || password === 'operator');
+      const validAdminPass = selectedRole === 'admin' && (password === 'Shiv@241' || password === '8090794210' || password === 'Kamal@2026');
+      const validOwnerPass = selectedRole === 'owner' && (password === 'Shiv@241' || password === '9161400719' || password === 'Krishan@2026');
+      const validOperatorPass = selectedRole === 'operator' && (password === 'Shiv@241' || password === 'operator');
 
       if (validAdminPass || validOwnerPass || validOperatorPass) {
         const staffUser = {
