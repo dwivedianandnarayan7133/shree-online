@@ -15,13 +15,21 @@ export const ImageTools = ({ setActivePage }) => {
   // Passport photo generator state
   const [passportFile, setPassportFile] = useState(null);
   const [spec, setSpec] = useState('standard_35x45');
-  const [quantity, setQuantity] = useState(6); // Default 6 photos (1 complete line on A4)
-  const [paperType, setPaperType] = useState('A4'); // Default A4
-  const [paddingGutter, setPaddingGutter] = useState('standard'); // 'compact', 'standard', 'wide'
+  const [quantity, setQuantity] = useState(6);
+  const [paperType, setPaperType] = useState('A4');
+  const [paddingGutter, setPaddingGutter] = useState('standard');
   const [bgColor, setBgColor] = useState('original');
   const [zoom, setZoom] = useState(1.0);
   const [generating, setGenerating] = useState(false);
   const [passportResult, setPassportResult] = useState(null);
+
+  // Photo Enhancement Controls
+  const [brightness, setBrightness] = useState(100);
+  const [contrast, setContrast] = useState(108);
+  const [saturation, setSaturation] = useState(110);
+  const [sharpness, setSharpness] = useState(0); // 0=off, 1=light, 2=medium, 3=strong
+  const [photoFilter, setPhotoFilter] = useState('none'); // preset filter
+  const [enhancedPreview, setEnhancedPreview] = useState(null); // data URI of enhanced photo
 
   // Signature state
   const [sigFile, setSigFile] = useState(null);
@@ -53,6 +61,85 @@ export const ImageTools = ({ setActivePage }) => {
     setQuantity(prev => Math.max(1, prev - 1));
   };
 
+  // Apply photo enhancements client-side using Canvas + CSS filters
+  const applyEnhancements = async (file) => {
+    if (!file) return null;
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new window.Image();
+        img.onload = () => {
+          // Upscale 2x for HD quality
+          const scale = 2;
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          const ctx = canvas.getContext('2d');
+
+          // Build CSS filter string
+          let filterStr = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
+
+          // Preset filter overrides
+          if (photoFilter === 'vivid')    filterStr = 'brightness(105%) contrast(120%) saturate(140%)';
+          if (photoFilter === 'studio')   filterStr = 'brightness(108%) contrast(115%) saturate(105%)';
+          if (photoFilter === 'natural')  filterStr = 'brightness(102%) contrast(105%) saturate(100%)';
+          if (photoFilter === 'hd_crisp') filterStr = 'brightness(110%) contrast(130%) saturate(110%)';
+          if (photoFilter === 'warm')     filterStr = 'brightness(105%) contrast(108%) saturate(115%) sepia(15%)';
+          if (photoFilter === 'cool')     filterStr = 'brightness(104%) contrast(110%) saturate(95%) hue-rotate(10deg)';
+          if (photoFilter === 'bw_id')    filterStr = 'brightness(110%) contrast(130%) saturate(0%) grayscale(100%)';
+
+          ctx.filter = filterStr;
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          ctx.filter = 'none';
+
+          // Sharpness via unsharp mask (convolution kernel)
+          if (sharpness > 0) {
+            const amount = sharpness === 1 ? 0.3 : sharpness === 2 ? 0.6 : 1.0;
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const d = imageData.data;
+            const w = canvas.width;
+            // Simple unsharp: subtract blurred version
+            const blurred = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            for (let y = 1; y < canvas.height - 1; y++) {
+              for (let x = 1; x < w - 1; x++) {
+                const idx = (y * w + x) * 4;
+                for (let c = 0; c < 3; c++) {
+                  const orig = d[idx + c];
+                  const avg = (d[idx - 4 + c] + d[idx + 4 + c] + d[idx - w * 4 + c] + d[idx + w * 4 + c]) / 4;
+                  blurred.data[idx + c] = Math.min(255, Math.max(0, orig + amount * (orig - avg)));
+                }
+                blurred.data[idx + 3] = d[idx + 3];
+              }
+            }
+            ctx.putImageData(blurred, 0, 0);
+          }
+
+          resolve(canvas.toDataURL('image/jpeg', 0.97));
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Generate live preview of enhancements
+  const handlePreviewEnhancement = async () => {
+    if (!passportFile) return;
+    const dataUri = await applyEnhancements(passportFile);
+    setEnhancedPreview(dataUri);
+  };
+
+  // Convert data URI to File for passing to the generator
+  const dataUriToFile = (dataUri, filename) => {
+    const arr = dataUri.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) u8arr[n] = bstr.charCodeAt(n);
+    return new File([u8arr], filename, { type: mime });
+  };
+
   // Handle Passport Photo Generation
   const handleGeneratePassport = async () => {
     if (!passportFile) {
@@ -62,8 +149,17 @@ export const ImageTools = ({ setActivePage }) => {
 
     setGenerating(true);
     try {
-      // 1. Instant 50ms High-Res Client Canvas Engine
-      const clientRes = await generatePassportSheetClient(passportFile, {
+      // Apply enhancements first, then pass enhanced image to generator
+      let fileToProcess = passportFile;
+      try {
+        const enhancedUri = await applyEnhancements(passportFile);
+        fileToProcess = dataUriToFile(enhancedUri, 'enhanced_photo.jpg');
+      } catch (enhErr) {
+        console.warn('Enhancement notice, using original:', enhErr.message);
+      }
+
+      // 1. Instant High-Res Client Canvas Engine
+      const clientRes = await generatePassportSheetClient(fileToProcess, {
         spec,
         quantity,
         paperType,
@@ -476,22 +572,96 @@ export const ImageTools = ({ setActivePage }) => {
                   </div>
                 </div>
 
+                {/* ---- PHOTO ENHANCEMENT PANEL ---- */}
+                <div style={{ background: 'linear-gradient(135deg, #0f172a, #1e293b)', borderRadius: '10px', padding: '16px', marginTop: '14px', marginBottom: '12px', border: '1px solid #334155' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <Sparkles size={16} color="#f59e0b" />
+                    <span style={{ fontWeight: '800', color: '#f1f5f9', fontSize: '0.88rem' }}>HD Photo Enhancement</span>
+                    <span style={{ marginLeft: 'auto', fontSize: '0.68rem', color: '#64748b', fontWeight: '600' }}>2× Upscale + Sharpening</span>
+                  </div>
+
+                  {/* Preset Filters */}
+                  <div style={{ marginBottom: '12px' }}>
+                    <div style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: '700', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Preset Filter</div>
+                    <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                      {[
+                        { id: 'none',     label: 'Manual',     color: '#64748b' },
+                        { id: 'studio',   label: '📸 Studio',  color: '#3b82f6' },
+                        { id: 'vivid',    label: '🌈 Vivid',   color: '#8b5cf6' },
+                        { id: 'hd_crisp', label: '✨ HD Crisp', color: '#f59e0b' },
+                        { id: 'natural',  label: '🌿 Natural', color: '#10b981' },
+                        { id: 'warm',     label: '🍂 Warm',    color: '#ea580c' },
+                        { id: 'cool',     label: '❄️ Cool',    color: '#0ea5e9' },
+                        { id: 'bw_id',    label: '⬛ B&W ID',  color: '#475569' },
+                      ].map(f => (
+                        <button key={f.id} type="button" onClick={() => setPhotoFilter(f.id)}
+                          style={{ padding: '4px 9px', fontSize: '0.7rem', fontWeight: '800', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                            background: photoFilter === f.id ? f.color : 'rgba(255,255,255,0.08)',
+                            color: photoFilter === f.id ? '#fff' : '#cbd5e1', transition: 'all 0.15s' }}>
+                          {f.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Manual Sliders */}
+                  {photoFilter === 'none' && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                      {[
+                        { label: 'Brightness', value: brightness, set: setBrightness, min: 60,  max: 160 },
+                        { label: 'Contrast',   value: contrast,   set: setContrast,   min: 60,  max: 180 },
+                        { label: 'Saturation', value: saturation, set: setSaturation, min: 0,   max: 200 },
+                      ].map(ctrl => (
+                        <div key={ctrl.label}>
+                          <div style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                            <span>{ctrl.label}</span><span style={{ color: '#f1f5f9', fontWeight: '700' }}>{ctrl.value}%</span>
+                          </div>
+                          <input type="range" min={ctrl.min} max={ctrl.max} value={ctrl.value}
+                            onChange={e => ctrl.set(Number(e.target.value))}
+                            style={{ width: '100%', accentColor: '#f59e0b' }} />
+                        </div>
+                      ))}
+                      <div>
+                        <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginBottom: '3px' }}>Sharpness</div>
+                        <select value={sharpness} onChange={e => setSharpness(Number(e.target.value))}
+                          style={{ width: '100%', background: '#1e293b', color: '#f1f5f9', border: '1px solid #334155', borderRadius: '6px', padding: '5px 8px', fontSize: '0.75rem' }}>
+                          <option value={0}>Off (Smooth)</option>
+                          <option value={1}>Light Sharpen</option>
+                          <option value={2}>Medium Sharpen</option>
+                          <option value={3}>Strong Sharpen</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Preview Button + Result */}
+                  {passportFile && (
+                    <button type="button" onClick={handlePreviewEnhancement}
+                      style={{ width: '100%', background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.4)', borderRadius: '6px', padding: '7px', fontSize: '0.78rem', fontWeight: '800', cursor: 'pointer' }}>
+                      👁 Preview HD Enhancement
+                    </button>
+                  )}
+                  {enhancedPreview && (
+                    <div style={{ textAlign: 'center', marginTop: '10px' }}>
+                      <img src={enhancedPreview} alt="Enhanced Preview" style={{ maxHeight: '160px', borderRadius: '6px', border: '2px solid #f59e0b', objectFit: 'contain' }} />
+                      <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '4px' }}>↑ Enhanced preview (applied to final sheet)</div>
+                    </div>
+                  )}
+                </div>
+
                 <button 
                   className="btn btn-primary btn-lg w-full"
                   disabled={!passportFile || generating}
                   onClick={handleGeneratePassport}
-                  style={{ marginTop: '10px' }}
+                  style={{ marginTop: '4px' }}
                 >
                   {generating ? (
-                    <>
-                      <RefreshCw size={16} className="animate-spin" /> Generating {quantity} Easy-Cut Padded Photos...
-                    </>
+                    <><RefreshCw size={16} className="animate-spin" /> Generating {quantity} HD Enhanced Photos...</>
                   ) : (
-                    <>
-                      <Sparkles size={16} /> Generate {quantity}x Passport Sheet (Easy-Cut Padding)
-                    </>
+                    <><Sparkles size={16} /> Generate {quantity}x HD Passport Sheet</>
                   )}
                 </button>
+
               </div>
             </div>
           </div>
