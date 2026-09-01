@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { api } from '../services/api';
 import { FileUploadZone } from '../components/FileUploadZone';
-import imglyRemoveBackground from '@imgly/background-removal';
+import { removeBackground } from '@imgly/background-removal';
 
 export const ImageTools = ({ setActivePage }) => {
   const [activeSubTab, setActiveSubTab] = useState('passport'); // 'passport', 'signature', 'transform', 'bg-remover'
@@ -365,7 +365,7 @@ export const ImageTools = ({ setActivePage }) => {
     setBgLoading(true);
     try {
       // Run the @imgly ML model client-side
-      const blob = await imglyRemoveBackground(bgFile);
+      const blob = await removeBackground(bgFile);
       const url = URL.createObjectURL(blob);
       setBgResult({
         downloadUrl: url,
