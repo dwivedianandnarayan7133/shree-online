@@ -38,6 +38,8 @@ export const Login = ({ setActivePage }) => {
   const [registerOtpSent, setRegisterOtpSent] = useState(false);
   const [registerOtpCode, setRegisterOtpCode] = useState('');
   const [registerRole, setRegisterRole] = useState('customer');
+  const [fallbackOtp, setFallbackOtp] = useState(''); // shown on-screen if email fails
+  const [forgotFallbackOtp, setForgotFallbackOtp] = useState(''); // for forgot password flow
 
   // Forgot Password Gmail OTP State
   const [forgotStep, setForgotStep] = useState(1); // 1: Enter Email, 2: Enter OTP & New Password
@@ -159,7 +161,15 @@ export const Login = ({ setActivePage }) => {
 
       if (res.success) {
         setRegisterOtpSent(true);
-        setSuccessMsg(`✅ 6-digit OTP dispatched to ${email}. Please check your inbox.`);
+        if (res.fallbackOtp) {
+          // Email failed on server — show OTP directly on screen
+          setFallbackOtp(res.fallbackOtp);
+          setRegisterOtpCode(res.fallbackOtp); // auto-fill the input
+          setSuccessMsg(`⚠️ Email could not be delivered. Your OTP code is displayed below — please copy it now.`);
+        } else {
+          setFallbackOtp('');
+          setSuccessMsg(`✅ 6-digit OTP sent to ${email}. Please check your inbox and spam folder.`);
+        }
       }
     } catch (err) {
       setError(err.message || 'Failed to dispatch OTP. Ensure your internet connection is active.');
@@ -226,7 +236,14 @@ export const Login = ({ setActivePage }) => {
       const res = await api.forgotPassword({ email });
       if (res.success) {
         setForgotStep(2);
-        setSuccessMsg(res.message || `A 6-digit password recovery code has been sent to ${email}.`);
+        if (res.fallbackOtp) {
+          setForgotFallbackOtp(res.fallbackOtp);
+          setForgotOtp(res.fallbackOtp); // auto-fill
+          setSuccessMsg(`⚠️ Email could not be delivered. Your OTP is shown below — copy it now.`);
+        } else {
+          setForgotFallbackOtp('');
+          setSuccessMsg(res.message || `A 6-digit recovery code has been sent to ${email}.`);
+        }
       }
     } catch (err) {
       setError(err.message || 'No account found with this email address.');
@@ -632,6 +649,21 @@ export const Login = ({ setActivePage }) => {
                     </div>
                   </div>
 
+                  {/* Fallback: Show OTP on screen if email couldn't be delivered */}
+                  {fallbackOtp && (
+                    <div style={{ background: '#fef3c7', border: '2px dashed #f59e0b', borderRadius: '8px', padding: '16px', marginBottom: '16px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '0.78rem', fontWeight: '700', color: '#92400e', marginBottom: '8px' }}>
+                        ⚠️ EMAIL DELIVERY FAILED — Use this code:
+                      </div>
+                      <div style={{ fontSize: '2rem', fontWeight: '900', letterSpacing: '8px', color: '#b45309', fontFamily: 'monospace' }}>
+                        {fallbackOtp}
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: '#78350f', marginTop: '6px' }}>
+                        Copy this code and paste it below. It expires in 10 minutes.
+                      </div>
+                    </div>
+                  )}
+
                   <div className="form-group">
                     <label className="form-label">Enter 6-Digit OTP</label>
                     <input 
@@ -777,6 +809,21 @@ export const Login = ({ setActivePage }) => {
                     <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>Enter OTP code sent to:</div>
                     <div style={{ fontSize: '0.92rem', fontWeight: '800', color: 'var(--primary-400)' }}>{email}</div>
                   </div>
+
+                  {/* Fallback: Show OTP on screen if email failed */}
+                  {forgotFallbackOtp && (
+                    <div style={{ background: '#fef3c7', border: '2px dashed #f59e0b', borderRadius: '8px', padding: '16px', marginBottom: '14px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '0.78rem', fontWeight: '700', color: '#92400e', marginBottom: '8px' }}>
+                        ⚠️ EMAIL DELIVERY FAILED — Use this code:
+                      </div>
+                      <div style={{ fontSize: '2rem', fontWeight: '900', letterSpacing: '8px', color: '#b45309', fontFamily: 'monospace' }}>
+                        {forgotFallbackOtp}
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: '#78350f', marginTop: '6px' }}>
+                        This code expires in 10 minutes.
+                      </div>
+                    </div>
+                  )}
 
                   <div className="form-group">
                     <label className="form-label">6-Digit Reset OTP</label>

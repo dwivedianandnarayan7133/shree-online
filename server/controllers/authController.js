@@ -55,16 +55,23 @@ const sendRegisterOtp = async (req, res) => {
       expiresAt: new Date(Date.now() + 10 * 60 * 1000)
     });
 
-    // Send 6-Digit OTP to Gmail (fast 3.5s SSL timeout)
+    // Send 6-Digit OTP to Gmail
+    let emailDelivered = false;
     try {
       await sendRegisterOtpEmail(cleanEmail, otp, name);
+      emailDelivered = true;
     } catch (mailErr) {
       console.warn('Gmail OTP dispatch notice:', mailErr.message);
     }
 
     res.json({
       success: true,
-      message: `A 6-digit verification code has been sent to ${cleanEmail}.`
+      emailDelivered,
+      // If email failed, include OTP directly so frontend can show it
+      fallbackOtp: emailDelivered ? undefined : otp,
+      message: emailDelivered
+        ? `A 6-digit verification code has been sent to ${cleanEmail}. Please check your inbox and spam folder.`
+        : `Email delivery failed. Your OTP code is shown below — please copy it now.`
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -172,8 +179,11 @@ const forgotPassword = async (req, res) => {
       expiresAt: new Date(Date.now() + 10 * 60 * 1000)
     });
 
+    // Send password reset OTP
+    let emailDelivered = false;
     try {
       await sendPasswordResetOtpEmail(cleanEmail, otp, user.name);
+      emailDelivered = true;
     } catch (mailErr) {
       console.warn('Password reset mail notice:', mailErr.message);
     }
@@ -188,7 +198,11 @@ const forgotPassword = async (req, res) => {
 
     res.json({
       success: true,
-      message: `A 6-digit password recovery code has been sent to ${cleanEmail}.`
+      emailDelivered,
+      fallbackOtp: emailDelivered ? undefined : otp,
+      message: emailDelivered
+        ? `A 6-digit recovery code has been sent to ${cleanEmail}. Check inbox and spam.`
+        : `Email delivery failed. Your OTP code is shown below — please copy it now.`
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
