@@ -8,9 +8,10 @@ import {
 } from 'lucide-react';
 import { api } from '../services/api';
 import { FileUploadZone } from '../components/FileUploadZone';
+import imglyRemoveBackground from '@imgly/background-removal';
 
 export const ImageTools = ({ setActivePage }) => {
-  const [activeSubTab, setActiveSubTab] = useState('passport'); // 'passport', 'signature', 'transform'
+  const [activeSubTab, setActiveSubTab] = useState('passport'); // 'passport', 'signature', 'transform', 'bg-remover'
 
   // Passport photo generator state
   const [passportFile, setPassportFile] = useState(null);
@@ -46,6 +47,11 @@ export const ImageTools = ({ setActivePage }) => {
   const [targetQuality, setTargetQuality] = useState(85);
   const [transResult, setTransResult] = useState(null);
   const [transLoading, setTransLoading] = useState(false);
+
+  // BG Remover state
+  const [bgFile, setBgFile] = useState(null);
+  const [bgResult, setBgResult] = useState(null);
+  const [bgLoading, setBgLoading] = useState(false);
 
   // Calculate lines info (6 photos per line on A4, 3 on 4x6)
   const photosPerLine = paperType === 'A4' ? 6 : 3;
@@ -350,6 +356,30 @@ export const ImageTools = ({ setActivePage }) => {
     }
   };
 
+  // Handle Background Removal
+  const handleRemoveBg = async () => {
+    if (!bgFile) {
+      alert('Please upload an image to remove the background.');
+      return;
+    }
+    setBgLoading(true);
+    try {
+      // Run the @imgly ML model client-side
+      const blob = await imglyRemoveBackground(bgFile);
+      const url = URL.createObjectURL(blob);
+      setBgResult({
+        downloadUrl: url,
+        result: {
+          fileName: `bg-removed-${Date.now()}.png`
+        }
+      });
+    } catch (err) {
+      alert('Error removing background: ' + err.message);
+    } finally {
+      setBgLoading(false);
+    }
+  };
+
   return (
     <div>
       <div className="page-header">
@@ -382,6 +412,12 @@ export const ImageTools = ({ setActivePage }) => {
           onClick={() => setActiveSubTab('transform')}
         >
           <Sliders size={16} /> Resize, Format & Compress
+        </button>
+        <button 
+          className={`tab-btn ${activeSubTab === 'bg-remover' ? 'active' : ''}`}
+          onClick={() => setActiveSubTab('bg-remover')}
+        >
+          <Layers size={16} /> AI Background Remover
         </button>
       </div>
 
@@ -902,6 +938,66 @@ export const ImageTools = ({ setActivePage }) => {
                       </span>
                       <a href={transResult.downloadUrl} download={transResult.result.fileName} className="btn btn-primary btn-sm">
                         <Download size={14} /> Download File
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. AI BACKGROUND REMOVER */}
+      {activeSubTab === 'bg-remover' && (
+        <div className="tool-workspace">
+          <div className="tool-panel">
+            <div className="card">
+              <div className="card-header"><div className="card-title"><span>AI Background Remover</span></div></div>
+              <div className="card-body">
+                <div className="form-group">
+                  <label className="form-label">Upload Image</label>
+                  <FileUploadZone 
+                    multiple={false}
+                    accept="image/*"
+                    onFilesSelected={(file) => { setBgFile(file); setBgResult(null); }}
+                    title="Upload photo to remove background"
+                  />
+                </div>
+                
+                <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '6px', padding: '12px', fontSize: '0.85rem', color: '#1e3a8a', marginBottom: '16px' }}>
+                  <strong>Note:</strong> The AI model runs entirely on your device browser. The first time you use it, it will download a small model (~40MB). Subsequent uses will be instant.
+                </div>
+
+                <button 
+                  className="btn btn-primary btn-lg w-full"
+                  disabled={!bgFile || bgLoading}
+                  onClick={handleRemoveBg}
+                >
+                  {bgLoading ? (
+                    <><RefreshCw size={16} className="animate-spin" /> Processing AI Background Removal (Please wait)...</>
+                  ) : (
+                    <><Sparkles size={16} /> Remove Background (Transparent PNG)</>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="tool-panel">
+            <div className="card">
+              <div className="card-header"><div className="card-title"><span>Result (Transparent PNG)</span></div></div>
+              <div className="card-body">
+                {!bgResult ? (
+                  <div className="preview-box"><p style={{ color: 'var(--text-muted)' }}>Transparent PNG result will appear here.</p></div>
+                ) : (
+                  <div>
+                    <div className="preview-box" style={{ background: 'url("data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h10v10H0zm10 10h10v10H10z\' fill=\'%23e5e7eb\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")' }}>
+                      <img src={bgResult.downloadUrl} alt="Background Removed" className="preview-img" />
+                    </div>
+                    <div style={{ marginTop: '16px' }}>
+                      <a href={bgResult.downloadUrl} download={bgResult.result.fileName} className="btn btn-primary w-full" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px' }}>
+                        <Download size={14} /> Download Transparent PNG
                       </a>
                     </div>
                   </div>

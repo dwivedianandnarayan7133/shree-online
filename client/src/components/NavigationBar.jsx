@@ -360,9 +360,15 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
         </div>
 
         <div className="agency-right-actions">
-          <button className="help-btn" onClick={() => handleItemClick('login')}>
-            Sign Up & Request Service
-          </button>
+          {user ? (
+            <button className="help-btn" onClick={() => logout()} style={{ background: '#fef2f2', color: '#ef4444', borderColor: '#f87171' }}>
+              Sign Out Securely
+            </button>
+          ) : (
+            <button className="help-btn" onClick={() => handleItemClick('login')}>
+              Sign Up & Request Service
+            </button>
+          )}
           <button className="search-icon-btn">
             <Search size={18} />
           </button>
@@ -401,15 +407,31 @@ export const NavigationBar = ({ activePage, setActivePage }) => {
                 </div>
               ))}
               <div style={{ padding: '20px' }}>
-                  <button className="help-btn" style={{ width: '100%' }} onClick={() => handleItemClick('customer-portal')}>
-                    Appoint Expert
-                  </button>
-                  <button 
-                    onClick={() => { handleItemClick('login'); }}
-                    style={{ width: '100%', padding: '10px', marginTop: '10px', background: '#e2e8f0', border: 'none', fontWeight: '700', borderRadius: '4px', cursor: 'pointer' }}
-                  >
-                    Operator Login
-                  </button>
+                  {user ? (
+                    <>
+                      <button className="help-btn" style={{ width: '100%', marginBottom: '10px' }} onClick={() => handleItemClick('dashboard')}>
+                        Access Dashboard
+                      </button>
+                      <button 
+                        onClick={() => { logout(); setMobileMenuOpen(false); }}
+                        style={{ width: '100%', padding: '12px', background: '#fee2e2', color: '#ef4444', border: '1px solid #fca5a5', fontWeight: '800', borderRadius: '6px', cursor: 'pointer' }}
+                      >
+                        Sign Out
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button className="help-btn" style={{ width: '100%' }} onClick={() => handleItemClick('customer-portal')}>
+                        Appoint Expert
+                      </button>
+                      <button 
+                        onClick={() => { handleItemClick('login'); }}
+                        style={{ width: '100%', padding: '10px', marginTop: '10px', background: '#e2e8f0', color: '#334155', border: 'none', fontWeight: '700', borderRadius: '4px', cursor: 'pointer' }}
+                      >
+                        Operator Login
+                      </button>
+                    </>
+                  )}
               </div>
             </div>
           </div>
