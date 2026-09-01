@@ -753,32 +753,37 @@ export const CustomerPortal = ({ setActivePage }) => {
                         <span style={{ fontWeight: '800', color: 'var(--primary-600)' }}>{trackedRequest.requestId}</span>
                         <StatusBadge status={trackedRequest.status} />
                       </div>
-                      <div style={{ fontSize: '0.9rem', color: '#334155', marginBottom: '6px' }}><strong>Service:</strong> {trackedRequest.serviceName}</div>
-                      <div style={{ fontSize: '0.9rem', color: '#334155' }}><strong>Name:</strong> {trackedRequest.customerName}</div>
-                      
+                      <div style={{ fontSize: '0.9rem', color: '#334155', marginBottom: '4px' }}><strong>Service:</strong> {trackedRequest.serviceName}</div>
+                      <div style={{ fontSize: '0.9rem', color: '#334155', marginBottom: '4px' }}><strong>Name:</strong> {trackedRequest.customerName}</div>
+                      <div style={{ fontSize: '0.9rem', color: '#334155' }}><strong>Submitted:</strong> {new Date(trackedRequest.createdAt).toLocaleDateString('en-IN')}</div>
+
+                      {trackedRequest.totalCost > 0 && (
+                        <div style={{ marginTop: '12px', padding: '10px 14px', background: '#fffbeb', border: '1px solid #f59e0b', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontWeight: '700', fontSize: '0.88rem', color: '#92400e' }}>💰 Bill Amount</span>
+                          <span style={{ fontWeight: '900', color: '#b45309', fontSize: '1.15rem' }}>₹{trackedRequest.totalCost}</span>
+                        </div>
+                      )}
+
                       {trackedRequest.status === 'completed' && (
-                        <div style={{ marginTop: '16px', padding: '12px', background: '#ecfdf5', border: '1px solid #10b981', borderRadius: '6px' }}>
-                          <h4 style={{ margin: '0 0 8px 0', color: '#047857', fontSize: '0.95rem' }}>✅ Operator Deliverables & Invoice</h4>
-                          <div style={{ fontSize: '0.9rem', marginBottom: '12px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span><strong>Total Bill Amount:</strong></span>
-                            <span style={{ fontWeight: '800', color: '#059669', fontSize: '1.1rem' }}>₹{trackedRequest.totalCost || 0}</span>
-                          </div>
-                          
-                          {trackedRequest.processedFiles?.length > 0 && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div style={{ marginTop: '12px', padding: '12px', background: '#ecfdf5', border: '1px solid #10b981', borderRadius: '6px' }}>
+                          <h4 style={{ margin: '0 0 8px 0', color: '#047857', fontSize: '0.9rem' }}>✅ Operator Deliverables Ready</h4>
+                          {trackedRequest.processedFiles?.length > 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                               {trackedRequest.processedFiles.map(pf => (
-                                <a 
-                                  key={pf.fileId}
-                                  href={api.getFileUrl(trackedRequest.requestId, pf.fileId)}
-                                  download
-                                  className="btn btn-primary"
-                                  style={{ padding: '8px', fontSize: '0.85rem' }}
-                                >
-                                  ⬇️ Download Original: {pf.originalName}
+                                <a key={pf.fileId} href={api.getFileUrl(trackedRequest.requestId, pf.fileId)} download className="btn btn-primary" style={{ padding: '8px', fontSize: '0.82rem' }}>
+                                  ⬇️ {pf.originalName}
                                 </a>
                               ))}
                             </div>
+                          ) : (
+                            <div style={{ fontSize: '0.82rem', color: '#64748b' }}>Please contact the operator to collect your documents.</div>
                           )}
+                        </div>
+                      )}
+
+                      {(trackedRequest.status === 'processing' || trackedRequest.status === 'waiting_customer') && (
+                        <div style={{ marginTop: '12px', padding: '10px 14px', background: '#eff6ff', border: '1px solid #3b82f6', borderRadius: '6px', fontSize: '0.84rem', color: '#1e40af' }}>
+                          🔄 Your request is being processed. You will be notified once ready.
                         </div>
                       )}
                     </div>
@@ -788,7 +793,7 @@ export const CustomerPortal = ({ setActivePage }) => {
 
               {/* TAB 3: MY REQUESTS */}
               {activeTab === 'my-requests' && user && (
-                <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                <div style={{ maxHeight: '420px', overflowY: 'auto' }}>
                   {loadingMyReqs ? (
                     <div style={{ textAlign: 'center', color: '#64748b' }}>Loading...</div>
                   ) : myRequests.length === 0 ? (
@@ -797,9 +802,24 @@ export const CustomerPortal = ({ setActivePage }) => {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       {myRequests.map(req => (
                         <div key={req.requestId} style={{ padding: '12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '0.85rem' }}>
-                          <div style={{ fontWeight: '800', color: 'var(--primary-600)' }}>{req.requestId}</div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                            <span style={{ fontWeight: '800', color: 'var(--primary-600)' }}>{req.requestId}</span>
+                            <StatusBadge status={req.status} />
+                          </div>
                           <div style={{ fontWeight: '700', margin: '4px 0' }}>{req.serviceName}</div>
-                          <StatusBadge status={req.status} />
+                          <div style={{ fontSize: '0.78rem', color: '#64748b' }}>{new Date(req.createdAt).toLocaleDateString('en-IN')}</div>
+                          {req.totalCost > 0 && (
+                            <div style={{ marginTop: '6px', fontWeight: '800', color: '#b45309' }}>₹{req.totalCost} bill</div>
+                          )}
+                          {req.status === 'completed' && req.processedFiles?.length > 0 && (
+                            <div style={{ marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              {req.processedFiles.map(pf => (
+                                <a key={pf.fileId} href={api.getFileUrl(req.requestId, pf.fileId)} download style={{ fontSize: '0.78rem', color: 'var(--primary-600)', fontWeight: '700' }}>
+                                  ⬇️ {pf.originalName}
+                                </a>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

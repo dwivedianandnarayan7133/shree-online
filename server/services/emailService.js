@@ -21,12 +21,13 @@ function createTransporter() {
 
   return nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
+    port: 587,
+    secure: false, // STARTTLS — works on Render (port 465 SSL is blocked on free plans)
+    requireTLS: true,
     auth: { user, pass },
-    connectionTimeout: 12000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000
+    connectionTimeout: 15000,
+    greetingTimeout: 12000,
+    socketTimeout: 20000
   });
 }
 
