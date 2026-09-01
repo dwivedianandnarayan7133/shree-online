@@ -35,9 +35,9 @@ export const Login = ({ setActivePage }) => {
   const [userCaptchaInput, setUserCaptchaInput] = useState('');
   const [captchaError, setCaptchaError] = useState(false);
 
-  // Registration Gmail OTP State
   const [registerOtpSent, setRegisterOtpSent] = useState(false);
   const [registerOtpCode, setRegisterOtpCode] = useState('');
+  const [registerRole, setRegisterRole] = useState('customer');
 
   // Forgot Password Gmail OTP State
   const [forgotStep, setForgotStep] = useState(1); // 1: Enter Email, 2: Enter OTP & New Password
@@ -154,7 +154,7 @@ export const Login = ({ setActivePage }) => {
         email: email.trim().toLowerCase(),
         password,
         phone: phone || '',
-        role: 'customer'
+        role: registerRole
       });
 
       if (res.success) {
@@ -197,7 +197,7 @@ export const Login = ({ setActivePage }) => {
           email: email.trim().toLowerCase(),
           password,
           phone: phone || '',
-          role: 'customer'
+          role: registerRole
         });
 
         if (res2.success) {
@@ -485,6 +485,34 @@ export const Login = ({ setActivePage }) => {
             <div>
               {!registerOtpSent ? (
                 <form onSubmit={handleSendRegisterOtp}>
+                  <div className="form-group" style={{ marginBottom: '16px' }}>
+                    <label className="form-label">Account Type</label>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '0.85rem' }}>
+                        <input 
+                          type="radio" 
+                          name="registerRole" 
+                          value="customer" 
+                          checked={registerRole === 'customer'} 
+                          onChange={(e) => setRegisterRole(e.target.value)} 
+                          style={{ accentColor: 'var(--primary-500)' }}
+                        />
+                        Customer
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '0.85rem' }}>
+                        <input 
+                          type="radio" 
+                          name="registerRole" 
+                          value="operator" 
+                          checked={registerRole === 'operator'} 
+                          onChange={(e) => setRegisterRole(e.target.value)} 
+                          style={{ accentColor: 'var(--primary-500)' }}
+                        />
+                        Staff / Operator
+                      </label>
+                    </div>
+                  </div>
+
                   <div className="form-group">
                     <label className="form-label">Full Name</label>
                     <input 
