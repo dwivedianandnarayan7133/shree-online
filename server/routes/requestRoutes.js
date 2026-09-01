@@ -8,7 +8,7 @@ const upload = require('../middleware/uploadMiddleware');
 router.post('/', upload.array('files', 10), requestController.createRequest);
 
 // Query requests (Authenticated: Operator, Admin, or Customer for own)
-router.get('/', requestController.getRequests);
+router.get('/', verifyToken, requestController.getRequests);
 router.get('/:id', requestController.getRequestById);
 
 // Update status and operator handover
