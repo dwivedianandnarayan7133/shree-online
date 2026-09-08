@@ -17,11 +17,9 @@ async function performOcr(inputPath, options = {}) {
 
   // 1. PDF File Extraction (.pdf)
   if (ext === '.pdf') {
-    let parser = null;
     try {
       const dataBuffer = fs.readFileSync(inputPath);
-      parser = new PDFParse({ data: dataBuffer });
-      const textResult = await parser.getText();
+      const textResult = await pdfParse(dataBuffer);
       const rawText = (textResult.text || '').trim();
 
       if (rawText.length > 0) {
@@ -39,24 +37,18 @@ async function performOcr(inputPath, options = {}) {
           }
         });
 
-        await parser.destroy();
-
         return {
           text: cleanText,
           confidence: 99,
           lineCount: lines.length,
           detectedTable: tableRows.length >= 2 ? tableRows : null,
           words: cleanText.split(/\s+/).filter(Boolean).length,
-          pages: textResult.total || 1,
+          pages: textResult.numpages || 1,
           format: 'PDF Document (.pdf)'
         };
       }
     } catch (err) {
       console.warn('PDF parser note:', err.message);
-    } finally {
-      if (parser) {
-        try { await parser.destroy(); } catch (e) {}
-      }
     }
   }
 

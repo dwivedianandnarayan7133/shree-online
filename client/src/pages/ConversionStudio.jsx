@@ -43,6 +43,11 @@ export const ConversionStudio = () => {
       return;
     }
 
+    if (restoreFile.type === 'application/pdf' || restoreFile.name.toLowerCase().endsWith('.pdf')) {
+      alert('PDF files cannot be directly restored. Please convert your PDF to an Image (JPG/PNG) in the Document Tools tab first, or upload an image file.');
+      return;
+    }
+
     setRestoring(true);
     try {
       const clientRes = await restoreOldDocumentClient(restoreFile, {
@@ -59,7 +64,7 @@ export const ConversionStudio = () => {
     }
   };
 
-  // Run OCR on document — 100% client-side structured extraction
+  // Run OCR on document — using backend API
   const handleRunOcr = async () => {
     if (!ocrFile) {
       alert('Please upload a scanned document or image for OCR.');
@@ -68,12 +73,17 @@ export const ConversionStudio = () => {
 
     setOcrRunning(true);
     try {
-      const clientRes = await extractOcrClient(ocrFile, ocrLang);
+      const formData = new FormData();
+      formData.append('file', ocrFile);
+      formData.append('lang', ocrLang);
+      
+      const clientRes = await api.extractOcr(formData);
       setOcrText(clientRes.result.text);
       setOcrStats({
         confidence: clientRes.result.confidence,
         lineCount: clientRes.result.lineCount,
-        words: clientRes.result.words
+        words: clientRes.result.words,
+        format: clientRes.result.format
       });
       if (clientRes.result.detectedTable && clientRes.result.detectedTable.length > 0) {
         setTableData(clientRes.result.detectedTable);
@@ -85,56 +95,46 @@ export const ConversionStudio = () => {
     }
   };
 
-  // Export to Word (.docx) — 100% client-side, no serverless call
-  const handleExportWord = () => {
+  // Export to Word (.docx) — using backend API
+  const handleExportWord = async () => {
     if (!ocrText) {
       alert('No text extracted to export.');
       return;
     }
+    setExportLoading(true);
     try {
-      let tableHtml = '';
-      if (tableData && tableData.length > 0) {
-        const rows = tableData.map(row =>
-          `<tr>${row.map(cell => `<td style="border:1px solid #ccc;padding:4px">${cell}</td>`).join('')}</tr>`
-        ).join('');
-        tableHtml = `<table style="border-collapse:collapse;width:100%;margin-top:16px">${rows}</table>`;
+      const res = await api.exportToWord({
+        text: ocrText,
+        tableData: tableData
+      });
+      if (res.success && res.downloadUrl) {
+        window.location.href = getFullUrl(res.downloadUrl);
       }
-      const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>Document</title></head><body><h2>Shree Online Sewa Kendra — Extracted Document</h2><pre style="font-family:Arial,sans-serif;font-size:13px;white-space:pre-wrap">${ocrText}</pre>${tableHtml}</body></html>`;
-      const blob = new Blob([html], { type: 'application/msword' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `document_${Date.now()}.doc`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
     } catch (err) {
       alert('Word export failed: ' + err.message);
+    } finally {
+      setExportLoading(false);
     }
   };
 
-  // Export to Excel (.xlsx)
-  const handleExportExcel = () => {
+  // Export to Excel (.xlsx) using backend API
+  const handleExportExcel = async () => {
     if (!tableData || tableData.length === 0) {
       alert('No tabular data to export.');
       return;
     }
+    setExportLoading(true);
     try {
-      const csv = tableData.map(row =>
-        row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
-      ).join('\n');
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `data_${Date.now()}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const res = await api.exportToExcel({
+        tableRows: tableData
+      });
+      if (res.success && res.downloadUrl) {
+        window.location.href = getFullUrl(res.downloadUrl);
+      }
     } catch (err) {
       alert('Export failed: ' + err.message);
+    } finally {
+      setExportLoading(false);
     }
   };
 
@@ -207,9 +207,10 @@ export const ConversionStudio = () => {
                   <label className="form-label">Upload Old / Blurry Scanned Document</label>
                   <FileUploadZone 
                     multiple={false}
-                    accept="*/*"
+                    accept="image/*"
                     onFilesSelected={(f) => { setRestoreFile(f); setRestoreResult(null); }}
                     title="Upload certificate, marksheet, or paper photo"
+                    subtitle="Supports JPG, PNG up to 50MB (No PDFs)"
                   />
                 </div>
 
