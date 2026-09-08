@@ -29,10 +29,8 @@ export const ConversionStudio = () => {
 
   // Editable Table Data
   const [tableData, setTableData] = useState([
-    ['S.No', 'Document / Item Description', 'Quantity', 'Remarks'],
-    ['1', 'Class 10th Marksheet (CBSE)', '1 Copy', 'Verified Original'],
-    ['2', 'Aadhaar Card Proof', '1 Copy', 'Verified Active'],
-    ['3', 'Income Certificate Slip', '1 Copy', 'Issued 2026']
+    ['Column 1', 'Column 2', 'Column 3'],
+    ['', '', '']
   ]);
   const [exportLoading, setExportLoading] = useState(false);
 
@@ -78,7 +76,7 @@ export const ConversionStudio = () => {
       formData.append('lang', ocrLang);
       
       const clientRes = await api.extractOcr(formData);
-      setOcrText(clientRes.result.text);
+      setOcrText(clientRes.result.text || '');
       setOcrStats({
         confidence: clientRes.result.confidence,
         lineCount: clientRes.result.lineCount,
@@ -87,6 +85,11 @@ export const ConversionStudio = () => {
       });
       if (clientRes.result.detectedTable && clientRes.result.detectedTable.length > 0) {
         setTableData(clientRes.result.detectedTable);
+      } else {
+        setTableData([
+          ['Column 1', 'Column 2', 'Column 3'],
+          ['', '', '']
+        ]);
       }
     } catch (err) {
       alert('OCR extraction failed: ' + (err.message || 'Please upload a clear JPG or PNG image.'));
