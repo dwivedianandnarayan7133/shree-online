@@ -1,7 +1,10 @@
-﻿const ocrService = require('../services/ocrService');
+const ocrService = require('../services/ocrService');
 const docxService = require('../services/docxService');
 const excelService = require('../services/excelService');
 const { logAudit } = require('../utils/logger');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
 
 // Run OCR on uploaded document/image
 const extractOcr = async (req, res) => {
@@ -12,7 +15,27 @@ const extractOcr = async (req, res) => {
     }
 
     const { lang = 'eng' } = req.body;
-    const result = await ocrService.performOcr(file.path, { lang });
+    let inputPath = file.path;
+    let tempFilePath = null;
+
+    // Handle memory storage (Serverless environments) where file.path is undefined but file.buffer exists
+    if (!inputPath && file.buffer) {
+      const sanitizedName = (file.originalname || 'upload').replace(/[^a-zA-Z0-9.-]/g, '_');
+      tempFilePath = path.join(os.tmpdir(), `${Date.now()}-${sanitizedName}`);
+      fs.writeFileSync(tempFilePath, file.buffer);
+      inputPath = tempFilePath;
+    }
+
+    if (!inputPath) {
+       return res.status(400).json({ success: false, message: 'File buffer or path is missing.' });
+    }
+
+    const result = await ocrService.performOcr(inputPath, { lang });
+
+    // Clean up temporary file created from buffer
+    if (tempFilePath && fs.existsSync(tempFilePath)) {
+      try { fs.unlinkSync(tempFilePath); } catch (e) {}
+    }
 
     await logAudit({
       action: 'OCR_EXTRACTION',
