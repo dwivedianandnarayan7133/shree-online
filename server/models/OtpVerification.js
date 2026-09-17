@@ -14,7 +14,7 @@ const OtpVerificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['register', 'forgot_password'],
+    enum: ['register', 'forgot_password', 'sms_otp'],
     default: 'register'
   },
   payload: {

@@ -11,6 +11,10 @@ router.post('/verify-register-otp', authController.verifyRegisterOtp);
 router.post('/forgot-password', authController.forgotPassword);
 router.post('/reset-password', authController.resetPassword);
 
+// SMS Horizon Mobile OTP flow
+router.post('/send-sms-otp', authController.sendSmsOtp);
+router.post('/verify-sms-otp', authController.verifySmsOtp);
+
 // Standard auth routes
 router.post('/register', authController.register);
 router.post('/login', authController.login);
