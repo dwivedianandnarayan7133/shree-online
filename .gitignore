@@ -1,4 +1,4 @@
-﻿# Dependencies
+# Dependencies
 node_modules/
 client/node_modules/
 server/node_modules/
@@ -23,8 +23,18 @@ uploads/processed/*
 
 # Environment variables & secrets
 .env
+.env.example
+.env-example
 .env.local
 .env.*.local
+*.env
+
+# Test files and test logs
+test_*.js
+test_*.txt
+test_*.log
+full_test_results.txt
+live_test_output.txt
 
 # Logs
 *.log
